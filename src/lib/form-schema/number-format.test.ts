@@ -12,7 +12,9 @@ import type {
 } from "@/lib/form-schema/number-format";
 
 const FORMATS: NumberFormatType[] = ["off", "number", "percent", "usd", "eur", "gbp", "custom"];
+
 const DECIMALS: DecimalSeparator[] = [".", ","];
+
 const THOUSANDS: ThousandsSeparator[] = ["none", "comma", "space"];
 
 describe("isFormattingOn", () => {
@@ -159,6 +161,7 @@ const ROUND_TRIP_VALUES = ["1234.5", "-1234.5", "0", "1000000", "0.25", "-7", "1
 
 const groupCharFor = (sep: ThousandsSeparator): string =>
   sep === "comma" ? "," : sep === "space" ? " " : "";
+
 const decimalCharFor = (sep: DecimalSeparator): string => sep;
 
 // A config is "coherent" only when formatting is ON and the decimal char differs
@@ -177,6 +180,7 @@ describe("round-trip identity: parse(format(x)) === x for every coherent config"
     for (const decimalSeparator of DECIMALS) {
       for (const thousandsSeparator of THOUSANDS) {
         const cfg: Required<NumberFormatConfig> = { format, decimalSeparator, thousandsSeparator };
+
         if (!isCoherent(cfg)) continue;
         const label = `${format}/${decimalSeparator}/${thousandsSeparator}`;
         describe(label, () => {
@@ -199,6 +203,7 @@ describe("incoherent configs — pinned, non-invertible behavior", () => {
       decimalSeparator: ",",
       thousandsSeparator: "comma",
     };
+
     expect(formatNumberValue("1234.5", cfg)).toBe("1234.5");
     // parse then reads "." as a non-decimal char (decimalSeparator is ","), dropping it.
     expect(parseNumberValue("1234.5", cfg)).toBe("12345");
@@ -210,6 +215,7 @@ describe("incoherent configs — pinned, non-invertible behavior", () => {
       decimalSeparator: ",",
       thousandsSeparator: "comma",
     };
+
     expect(formatNumberValue("1000000", cfg)).toBe("1,000,000");
     expect(parseNumberValue("1,000,000", cfg)).toBe("1.000000");
   });

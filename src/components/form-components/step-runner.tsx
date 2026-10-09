@@ -1,8 +1,6 @@
 // Shared step-runner primitives for the twin step renderers (StepForm client + StepFormRSC).
 // Keyboard/tracking hooks, the inner nav <Button>, the auto-action footer, and the branding badge
 // live here so the two renderers can't drift.
-import type { CSSProperties } from "react";
-
 import { TextSwap } from "@/components/transitions/text-swap";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
@@ -30,27 +28,34 @@ export const useFieldByFieldKeyboard =
   (event: React.KeyboardEvent<HTMLFormElement>) => {
     // React events bubble the React tree, so portaled UI (combobox, popovers) still reaches this handler. Bail if target isn't a DOM descendant of form, so popups handle own Enter/Esc (e.g. phone-input country combobox).
     const target = event.target as HTMLElement | null;
+
     if (target && formRef.current && !formRef.current.contains(target)) return;
 
     if (event.key === "Escape") {
       if (!canGoBack) return;
+
       // Defensive: bail if an in-form popover trigger is open — Esc shouldn't navigate away if focus stayed on trigger.
       if (formRef.current?.querySelector('[aria-expanded="true"]')) return;
       event.preventDefault();
       event.stopPropagation();
       goToPrevStep();
+
       return;
     }
 
     if (event.key !== "Enter") return;
+
     if (!target) return;
     const isInQuestion = target.closest("[data-bf-input]") !== null;
+
     const isNavButton =
       (target.tagName === "BUTTON" || target.getAttribute("role") === "button") && !isInQuestion;
+
     if (isNavButton) return;
 
     const isTextarea = target.tagName === "TEXTAREA";
     const isMetaEnter = event.metaKey || event.ctrlKey;
+
     if (isTextarea && !isMetaEnter) return;
 
     // stopPropagation stops widget keydown handlers (PopoverTrigger, Checkbox) reacting to Enter, else popover flashes open for a frame before next step.
@@ -68,6 +73,7 @@ export const useQuestionViewTracking = (
     if (!(tracking?.visitId && tracking.mode)) return;
     const visitId = tracking.visitId;
     const lastIndex = questions.length - 1;
+
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       enqueueQuestionProgress({
@@ -89,10 +95,8 @@ export const useQuestionViewTracking = (
 // Branding button-row layout driven by Buttons → Alignment (generate-theme-css BUTTON_ALIGN_BRANDING):
 // left button → badge right, right → badge left, center → badge centered below. The badge's `order`
 // (set via [data-bf-branding] in styles.css) does the left/right swap; the row owns direction/justify.
-export const brandingRowStyle: CSSProperties = {
-  flexDirection: "var(--bf-branding-dir, row)" as CSSProperties["flexDirection"],
-  justifyContent: "var(--bf-branding-justify, space-between)",
-};
+export const brandingRowClass =
+  "[flex-direction:var(--bf-branding-dir,row)] [justify-content:var(--bf-branding-justify,space-between)]";
 
 // Inline form-footer branding (Figma 25778-10461): "Made with Reform." — Inter gray/500 + the
 // Timeless Serif "Reform." wordmark. Renders beside the final Submit when settings.branding is on.
@@ -100,13 +104,16 @@ export const FormBrandingBadge = ({ className }: { className?: string }) => (
   <span
     // Inline fontSize: the form applies a base size via a non-layered rule that out-races Tailwind
     // utilities (same reason the submit button pins fontSize inline). Figma = 14px.
+    // oxlint-disable-next-line shadcn/no-inline-styles -- Deliberate inline pin: unlayered .bf-themed base font-size beats layered text-* utilities
     style={{ fontSize: "14px" }}
     // weight 420 + 0.28px tracking come from the shared rule (data-bf-branding) since the
     // .bf-themed variation(450)/letter-spacing(0.14px) defaults would otherwise override classes.
     data-bf-branding
-    className={`shrink-0 leading-[1.15] text-gray-500 ${className ?? ""}`}
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- 1.15 leading has no scale step; nearest would shift badge text
+    className={`shrink-0 leading-[1.15] text-muted-foreground ${className ?? ""}`}
   >
     Made with{" "}
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Timeless Serif wordmark stack has no theme token */}
     <span className="[font-family:'Timeless_Serif',ui-serif,Georgia,serif] italic">
       {APP_NAME}.
     </span>
@@ -115,6 +122,8 @@ export const FormBrandingBadge = ({ className }: { className?: string }) => (
 
 // Matches editor button: h-8, 13px font, px-2.5.
 const STEP_NAV_BTN_CLS = "h-8 gap-1.5 rounded-lg px-2.5";
+
+// oxlint-disable-next-line shadcn/no-inline-styles -- Deliberate inline pin: unlayered .bf-themed base font-size beats layered text-* utilities
 const STEP_NAV_BTN_STYLE = { fontSize: "13px" } as const;
 
 // Inner nav <Button> shared by both renderers. Previous = ghost-flat + leading chevron (never a
@@ -138,13 +147,14 @@ export const StepNavButton = ({
         variant="ghost-flat"
         onClick={onPrevious}
         style={STEP_NAV_BTN_STYLE}
-        className={cn(STEP_NAV_BTN_CLS, "text-gray-900")}
+        className={cn(STEP_NAV_BTN_CLS, "text-foreground")}
         prefix={<ChevronLeftIcon className="size-4" />}
       >
         {children}
       </Button>
     );
   }
+
   // Trailing chevron matches the Next button (Figma "→"); it also gives the label trailing room so
   // `.bf-themed` letter-spacing doesn't clip the last glyph ("Submit" → "Submi").
   return (
@@ -188,8 +198,10 @@ export const AutoActionFooter = ({
     // opposite per Buttons → Alignment. Enter/Esc still work (useFieldByFieldKeyboard).
     return (
       <div
-        className={`flex w-full items-center gap-3 ${branding ? "" : "justify-between"}`}
-        style={branding ? brandingRowStyle : undefined}
+        className={cn(
+          "flex w-full items-center gap-3",
+          branding ? brandingRowClass : "justify-between",
+        )}
       >
         <div className="flex items-center gap-2">
           {/* Back appears only when there's a previous step (Figma 27015:16542 step 1 = Next only). */}
@@ -198,8 +210,10 @@ export const AutoActionFooter = ({
               type="button"
               variant="ghost-flat"
               onClick={goToPrevStep}
+              // oxlint-disable-next-line shadcn/no-inline-styles -- Deliberate inline pin: unlayered .bf-themed base font-size beats layered text-* utilities
               style={{ fontSize: "14px" }}
-              className="h-auto rounded-[8px] px-2 py-1.5 font-[420] tracking-[0.28px] text-gray-900"
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 420 weight + 0.28px tracking have no scale steps
+              className="h-auto rounded-lg px-2 py-1.5 font-[420] tracking-[0.28px] text-foreground"
             >
               {t("back")}
             </Button>
@@ -209,8 +223,10 @@ export const AutoActionFooter = ({
               type="submit"
               data-bf-button=""
               disabled={isSubmitting}
+              // oxlint-disable-next-line shadcn/no-inline-styles -- Deliberate inline pin: unlayered .bf-themed base font-size beats layered text-* utilities
               style={{ fontSize: "14px" }}
-              className="h-auto gap-2 rounded-[8px] px-2 py-1.5 font-[420] tracking-[0.28px]"
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 420 weight + 0.28px tracking have no scale steps
+              className="h-auto gap-2 rounded-lg px-2 py-1.5 font-[420] tracking-[0.28px]"
               suffix={<ArrowRightIcon className="size-4" />}
             >
               <TextSwap key={label}>{label}</TextSwap>
@@ -223,14 +239,12 @@ export const AutoActionFooter = ({
   }
 
   return (
-    <div
-      className="flex w-full items-center gap-3 pt-2"
-      style={{ maxWidth: "var(--bf-input-width)" }}
-    >
+    <div className="flex w-full max-w-(--bf-input-width) items-center gap-3 pt-2">
       {submitVisible && (
         <Button
           type="submit"
           data-bf-button=""
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Deliberate inline pin: unlayered .bf-themed base font-size beats layered text-* utilities
           style={{ fontSize: "13px" }}
           className="h-9 gap-1.5 rounded-lg px-4"
           disabled={isSubmitting}

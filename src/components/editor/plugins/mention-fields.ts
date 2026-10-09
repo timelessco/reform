@@ -34,9 +34,13 @@ const NON_FIELD_TYPES = new Set(["pageBreak", "logicBlock", "formButton", "formH
  * option items collapse into one field, so only the first of a run counts. */
 const isFieldStart = (type: string | undefined, prevType: string | undefined): boolean => {
   if (!type) return false;
+
   if (INPUT_TYPE_TO_FIELD_TYPE[type]) return true;
+
   if (type === "formMatrix") return true;
+
   if (type === "formOptionItem") return prevType !== "formOptionItem";
+
   return false;
 };
 
@@ -59,11 +63,14 @@ export const getMentionableFields = (
   const fields = steps.flatMap(getFieldsFromSegments).filter((f) => f.fieldType !== "Button");
 
   // Parallel scan: top-level index where each field begins, in the same order as `fields`.
-  const nodes = editor.children as Array<{ type?: string }>;
+  const nodes = editor.children;
   const startIndices: number[] = [];
+
   for (let t = 0; t < nodes.length; t++) {
     const type = nodes[t]?.type;
+
     if (type && NON_FIELD_TYPES.has(type)) continue;
+
     if (isFieldStart(type, nodes[t - 1]?.type)) startIndices.push(t);
   }
 

@@ -19,9 +19,13 @@ import type { GestureLock, VelocitySample } from "@/lib/swipe-gesture";
  */
 
 const DRAWER_WIDTH_REM = 18;
+
 const DRAWER_WIDTH_PX = DRAWER_WIDTH_REM * 16;
+
 const EDGE_IGNORE_PX = 18;
+
 const OPEN_VELOCITY_THRESHOLD = 500;
+
 const OPEN_DISPLACEMENT_RATIO = 0.4;
 
 interface MobileSidebarDrawerProps {
@@ -57,6 +61,8 @@ export const MobileSidebarDrawer = ({
 }: MobileSidebarDrawerProps) => {
   const x = useMotionValue(open ? 0 : -DRAWER_WIDTH_PX);
   const overlayOpacity = useTransform(x, [-DRAWER_WIDTH_PX, 0], [0, 0.5]);
+  // MotionValues bind to custom properties too — the px suffix keeps translate() valid.
+  const drawerX = useTransform(x, (v) => `${v}px`);
   const gestureRef = useRef<GestureState>(freshGesture());
   // Mirror latest `open` for long-lived touch handlers without re-attaching on each toggle.
   const openRef = useRef(open);
@@ -79,6 +85,7 @@ export const MobileSidebarDrawer = ({
       document.addEventListener("touchmove", onTouchMove, { passive: false });
       moveAttached = true;
     };
+
     const detachMove = () => {
       if (!moveAttached) return;
       document.removeEventListener("touchmove", onTouchMove);
@@ -87,11 +94,14 @@ export const MobileSidebarDrawer = ({
 
     const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
+
       if (!touch) return;
+
       // iOS back-gesture reserve: Safari owns the first 18px.
       if (!openRef.current && touch.clientX < EDGE_IGNORE_PX) return;
       // Opt-out escape hatch for horizontally-scrollable children.
-      const target = e.target as Element | null;
+      const target = e.target instanceof Element ? e.target : null;
+
       if (target?.closest("[data-no-drawer-swipe]")) return;
 
       const g = gestureRef.current;
@@ -106,8 +116,10 @@ export const MobileSidebarDrawer = ({
 
     const onTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0];
+
       if (!touch) return;
       const g = gestureRef.current;
+
       if (g.samples.length === 0) return;
 
       const dx = touch.clientX - g.startX;
@@ -116,16 +128,22 @@ export const MobileSidebarDrawer = ({
 
       if (g.lock === null) {
         const direction = classifyDirection(dx, dy);
+
         if (direction === null) return;
+
         if (direction === "vertical") {
           g.lock = "scroll";
+
           return;
         }
+
         // When closed, leftward pans don't open anything — yield to scroll.
         if (!g.startedOpen && dx < 0) {
           g.lock = "scroll";
+
           return;
         }
+
         g.lock = "drawer";
         g.dragging = true;
       }
@@ -142,15 +160,19 @@ export const MobileSidebarDrawer = ({
     const onTouchEnd = () => {
       const g = gestureRef.current;
       detachMove();
+
       if (!g.dragging) {
         gestureRef.current = freshGesture();
+
         return;
       }
+
       const velocity = estimateVelocity(g.samples);
       const current = x.get();
       const displacement = (current + DRAWER_WIDTH_PX) / DRAWER_WIDTH_PX;
 
       let shouldOpen: boolean;
+
       if (velocity > OPEN_VELOCITY_THRESHOLD) shouldOpen = true;
       else if (velocity < -OPEN_VELOCITY_THRESHOLD) shouldOpen = false;
       else shouldOpen = displacement > OPEN_DISPLACEMENT_RATIO;
@@ -158,6 +180,7 @@ export const MobileSidebarDrawer = ({
       gestureRef.current = freshGesture();
 
       animate(x, shouldOpen ? 0 : -DRAWER_WIDTH_PX, { ...SPRING_CONFIG, velocity });
+
       if (shouldOpen !== openRef.current) notifyOpenChange(shouldOpen);
     };
 
@@ -177,20 +200,26 @@ export const MobileSidebarDrawer = ({
     <LazyMotion features={domAnimation} strict>
       <m.div
         aria-hidden
-        style={{
-          opacity: overlayOpacity,
-          pointerEvents: open ? "auto" : "none",
-        }}
-        className="fixed inset-0 z-40 bg-neutral-950"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--drawer-overlay-opacity": overlayOpacity } as React.CSSProperties
+        }
+        className={cn(
+          "fixed inset-0 z-40 bg-black opacity-(--drawer-overlay-opacity)",
+          open ? "pointer-events-auto" : "pointer-events-none",
+        )}
         onClick={() => onOpenChange(false)}
       />
       <m.aside
         role="dialog"
         aria-modal="true"
         aria-label="Sidebar"
-        style={{ x, width: `${DRAWER_WIDTH_REM}rem` }}
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--drawer-x": drawerX } as React.CSSProperties
+        }
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-sidebar text-sidebar-foreground shadow-xl",
+          "fixed inset-y-0 left-0 z-50 w-72 translate-x-(--drawer-x) bg-sidebar text-sidebar-foreground shadow-xl",
           "flex h-full flex-col",
           className,
         )}

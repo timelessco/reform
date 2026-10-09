@@ -19,6 +19,7 @@ export const NumberPopIn = ({ value, className }: NumberPopInProps) => {
     <span key={text} className={cn("t-digit-group is-animating", className)}>
       {characters.map((char, index) => {
         const stagger = index === lastIndex - 1 ? "1" : index === lastIndex ? "2" : undefined;
+
         return (
           <span key={`${text}-${index}`} className="t-digit" data-stagger={stagger}>
             {char}

@@ -1,6 +1,6 @@
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { getPluginTypes, isHotkey, KEYS } from "platejs";
-import type { PlateElementProps } from "platejs/react";
+import type { ComponentProps } from "react";
 
 import { triggerAIInput } from "@/components/editor/plugins/ai-input-kit";
 import { BlockSelection } from "@/components/ui/block-selection";
@@ -30,7 +30,11 @@ export const BlockSelectionKit = [
       },
     },
     render: {
-      belowRootNodes: (props) => <BlockSelection {...(props as unknown as PlateElementProps)} />,
+      // SAFETY: belowRootNodes carries the same plugin object BlockSelection reads;
+      // the type gap is duplicate package instances, and only plugin.key is read.
+      belowRootNodes: (props) => (
+        <BlockSelection {...(props as ComponentProps<typeof BlockSelection>)} />
+      ),
     },
   })),
 ];

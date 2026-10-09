@@ -3,6 +3,7 @@
 // editable editor registers its live `setNodes` setter by formId; the sidebar looks it up at
 // click time. Only the editable (non-readOnly) editor should register.
 type HeaderMediaField = "icon" | "cover" | "iconColor";
+
 type HeaderMediaSetter = (field: HeaderMediaField, value: string | null) => void;
 
 const setters = new Map<string, HeaderMediaSetter>();
@@ -10,6 +11,7 @@ const setters = new Map<string, HeaderMediaSetter>();
 /** Register the setter for a form; returns a cleanup that removes it (only if still current). */
 export const registerHeaderMediaSetter = (formId: string, setter: HeaderMediaSetter) => {
   setters.set(formId, setter);
+
   return () => {
     if (setters.get(formId) === setter) setters.delete(formId);
   };

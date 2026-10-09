@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 const subscribe = (callback: () => void) => {
   window.addEventListener("resize", callback, { passive: true });
+
   return () => window.removeEventListener("resize", callback);
 };
 

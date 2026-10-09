@@ -16,12 +16,13 @@ const SECTION_VALUE = "section";
  * scroll (above this Accordion) survive. Default 0 — uses outside this provider never re-key.
  */
 const SidebarSectionResetContext = createContext(0);
+
 export const SidebarSectionResetProvider = SidebarSectionResetContext.Provider;
 
 // Figma system-flat header label scale; shared by both variants.
 // Figma section header (node 25424-12009): Inter Medium 13px, 0.13px tracking, gray/500 (#999).
 const HEADER_LABEL_CLS =
-  "truncate text-[13px] leading-[1.15] font-medium tracking-[0.13px] text-gray-500";
+  "truncate text-[13px] leading-[1.15] font-medium tracking-[0.13px] text-muted-foreground";
 
 interface SidebarSectionProps {
   label: string;
@@ -129,6 +130,7 @@ const FlatCollapsibleSection = ({
   "label" | "children" | "action" | "headerRight" | "divider" | "initialOpen" | "className"
 >) => {
   const [open, setOpen] = useState(initialOpen);
+
   // Figma divider frame (node 25424-12791) = 8px tall, hairline centered → 4px above/below the line.
   // Paired with the parent's 16px section gap, the line lands 20px from content and 20px from the next header.
   return (
@@ -144,7 +146,7 @@ const FlatCollapsibleSection = ({
           <CaretDownIcon
             aria-hidden
             className={cn(
-              "size-2.5 shrink-0 text-gray-500 opacity-0 transition-[opacity,transform] group-hover/sec:opacity-100",
+              "size-2.5 shrink-0 text-muted-foreground opacity-0 transition-[opacity,transform] group-hover/sec:opacity-100",
               !open && "-rotate-90",
             )}
           />

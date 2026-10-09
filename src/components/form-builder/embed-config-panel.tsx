@@ -139,7 +139,8 @@ export const ConfigRow = ({
     return (
       <div className="flex h-7 items-center gap-3 overflow-clip bg-background">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-case text-[14px] leading-[1.15] font-[400] text-muted-foreground">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading token for 1.15; needs design decision */}
+          <span className="font-case text-base leading-[1.15] font-normal text-muted-foreground">
             {label}
           </span>
           {description && (
@@ -156,7 +157,7 @@ export const ConfigRow = ({
     <div
       className={`flex min-h-8.5 items-center gap-3 overflow-clip bg-secondary py-1.75 pl-2.5 ${
         // max-h-9.5
-        variant === "switch" ? "pr-[6px]" : "pr-[3px]"
+        variant === "switch" ? "pr-1.5" : "pr-0.75"
       }`}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -171,17 +172,8 @@ export const ConfigRow = ({
 };
 
 /**
- * Figma button: h-[24px] px-[8px] py-[5.5px] rounded-[5px] gap-[4px]
- * Must override SelectTrigger defaults: data-[size=default]:h-8, py-2, pe-2, ps-2.5, rounded-lg
- * Use data-[size=default]:h-[24px] to match specificity of the default variant class.
- */
-export const selectTriggerCls =
-  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] text-foreground font-medium whitespace-nowrap ";
-
-/**
  * Figma customize-sidebar inline value select: borderless, transparent, 24px tall,
  * 14px medium foreground value, gap-1, 10px down-caret (sizes the built-in SelectTrigger icon).
- * Separate from `selectTriggerCls` so the embed panel's trigger stays unchanged.
  */
 export const selectTriggerFigmaCls =
   "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-0 py-0 gap-1 w-auto text-[14px] leading-[1.15] text-gray-700 font-[450] font-case font-opsz-16 whitespace-nowrap [&_svg]:size-[10px] ";

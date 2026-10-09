@@ -18,6 +18,7 @@ import {
 } from "@/test/helpers";
 
 const FREE_PRODUCT_ID = PLAN_PRODUCT_IDS.free;
+
 const PRO_PRODUCT_ID = PLAN_PRODUCT_IDS.pro;
 
 // Minimal payload — handlers only read metadata.referenceId, productId, and (for `updated`) status.
@@ -66,6 +67,7 @@ describe("polar-handlers", () => {
       .select({ plan: organization.plan })
       .from(organization)
       .where(eq(organization.id, id));
+
     return row?.plan ?? null;
   };
 
@@ -77,6 +79,7 @@ describe("polar-handlers", () => {
 
     it("restores suspended domains", async () => {
       await setOrgPlan(orgId, "free");
+
       const domain = await createTestCustomDomain(orgId, {
         status: "suspended",
         previousStatus: "verified",
@@ -88,6 +91,7 @@ describe("polar-handlers", () => {
         .select({ status: customDomains.status, previousStatus: customDomains.previousStatus })
         .from(customDomains)
         .where(eq(customDomains.id, domain.id));
+
       expect(row).toStrictEqual({ status: "verified", previousStatus: null });
     });
 
@@ -120,10 +124,12 @@ describe("polar-handlers", () => {
       await handleSubscriptionDowngrade(buildPayload("subscription.canceled", { orgId }));
 
       await expect(readPlan(orgId)).resolves.toBe("free");
+
       const [row] = await db
         .select({ status: customDomains.status, previousStatus: customDomains.previousStatus })
         .from(customDomains)
         .where(eq(customDomains.id, domain.id));
+
       expect(row).toStrictEqual({ status: "suspended", previousStatus: "verified" });
     });
 
@@ -138,6 +144,7 @@ describe("polar-handlers", () => {
         .select({ status: customDomains.status, previousStatus: customDomains.previousStatus })
         .from(customDomains)
         .where(eq(customDomains.id, domain.id));
+
       expect(row).toStrictEqual({ status: "suspended", previousStatus: "verified" });
     });
 

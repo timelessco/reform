@@ -14,8 +14,10 @@
     "jsdoc"
   ],
   "jsPlugins": [
+    "@shadcn/lint",
     "@tanstack/eslint-plugin-query",
-    { "name": "react-hooks-js", "specifier": "eslint-plugin-react-hooks" }
+    { "name": "react-hooks-js", "specifier": "eslint-plugin-react-hooks" },
+    { "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }
   ],
   "categories": {
     "correctness": "off",
@@ -92,7 +94,349 @@
     "@tanstack/query/no-rest-destructuring": "warn",
     "@tanstack/query/stable-query-client": "error",
     "@tanstack/query/no-void-query-fn": "warn",
-    "@tanstack/query/no-unstable-deps": "warn"
+    "@tanstack/query/no-unstable-deps": "warn",
+
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-arbitrary-values": ["error", { "allow": ["layout"] }],
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "Icon$",
+            "allow": ["layout", "color", "shape", "effects", "motion"]
+          },
+          {
+            "pattern": "^Button$",
+            "allow": [
+              "layout",
+              "spacing",
+              "typography",
+              "color",
+              "shape",
+              "effects",
+              "motion",
+              "elevation-pop",
+              "elevation-sm"
+            ]
+          },
+          {
+            "pattern": "^SelectTrigger$",
+            "allow": [
+              "layout",
+              "spacing",
+              "typography",
+              "color",
+              "shape",
+              "effects",
+              "elevation-pop"
+            ]
+          },
+          {
+            "pattern": "^InputGroupButton$",
+            "allow": ["layout", "spacing", "typography", "color", "shape", "elevation-pop"]
+          },
+          {
+            "pattern": "^Input$",
+            "allow": ["layout", "spacing", "typography", "shape"]
+          },
+          {
+            "pattern": "^TabsTrigger$",
+            "allow": ["layout", "spacing", "typography", "color"]
+          },
+          {
+            "pattern": "^AccordionTrigger$",
+            "allow": ["layout", "spacing", "typography", "color", "motion"]
+          },
+          {
+            "pattern": "^SidebarHeader$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^ToggleSelect$",
+            "allow": ["layout", "spacing", "typography", "color", "shape", "effects"]
+          },
+          {
+            "pattern": "^Badge$",
+            "allow": ["layout", "spacing", "typography", "color", "shape"]
+          },
+          {
+            "pattern": "^Sidebar$",
+            "allow": [
+              "layout",
+              "typography",
+              "color",
+              "shape",
+              "motion",
+              "slide-in-from-right-[40%]"
+            ]
+          },
+          {
+            "pattern": "^DialogContent$",
+            "allow": [
+              "layout",
+              "spacing",
+              "color",
+              "shape",
+              "effects",
+              "motion",
+              "data-closed:zoom-out-[0.98]",
+              "data-open:zoom-in-[0.98]"
+            ]
+          },
+          {
+            "pattern": "^InputGroup$",
+            "allow": ["layout", "spacing", "color", "shape"]
+          },
+          {
+            "pattern": "^Card$",
+            "allow": ["layout", "color", "shape"]
+          },
+          {
+            "pattern": "^CopyButton$",
+            "allow": ["layout", "spacing", "typography", "color", "shape", "effects"]
+          },
+          {
+            "pattern": "^AlertDialogAction$",
+            "allow": ["layout", "color", "effects"]
+          },
+          {
+            "pattern": "^DropdownMenuItem$",
+            "allow": ["layout", "spacing", "typography", "color", "shape"]
+          },
+          {
+            "pattern": "^AccordionContent$",
+            "allow": ["layout", "spacing", "typography", "color", "shape"]
+          },
+          {
+            "pattern": "^Skeleton$",
+            "allow": ["layout", "shape"]
+          },
+          {
+            "pattern": "^DataGridColumnHeader$",
+            "allow": ["layout", "typography", "color"]
+          },
+          {
+            "pattern": "^CardContent$",
+            "allow": ["layout", "spacing", "typography", "color"]
+          },
+          {
+            "pattern": "^CollapsibleTrigger$",
+            "allow": ["layout", "spacing", "typography", "color", "shape", "motion"]
+          },
+          {
+            "pattern": "^EditorContainer$",
+            "allow": ["layout", "spacing", "shape", "effects"]
+          },
+          {
+            "pattern": "^SidebarFooter$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^Textarea$",
+            "allow": ["layout", "typography", "color", "shape"]
+          },
+          {
+            "pattern": "^AvatarFallback$",
+            "allow": ["layout", "typography", "color", "shape"]
+          },
+          {
+            "pattern": "^AccordionItem$",
+            "allow": ["layout", "color", "shape"]
+          },
+          {
+            "pattern": "^EditorStatic$",
+            "allow": ["layout", "spacing", "typography"]
+          },
+          {
+            "pattern": "^TabsList$",
+            "allow": ["layout", "spacing", "color"]
+          },
+          {
+            "pattern": "^Image$",
+            "allow": ["layout", "color", "shape", "effects"]
+          },
+          {
+            "pattern": "^DialogTitle$",
+            "allow": ["layout", "typography", "color"]
+          },
+          {
+            "pattern": "^DrawerContent$",
+            "allow": ["layout", "color", "shape", "effects", "preview-zoom-drawer"]
+          },
+          {
+            "pattern": "^DropdownMenuContent$",
+            "allow": ["layout", "spacing", "shape"]
+          },
+          {
+            "pattern": "^InputGroupInput$",
+            "allow": ["layout", "spacing", "typography", "color", "effects"]
+          },
+          {
+            "pattern": "^SidebarContent$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^InputOTPSlot$",
+            "allow": ["layout", "typography", "color", "shape", "form-input"]
+          },
+          {
+            "pattern": "^SidebarSection$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^ToolbarSearch$",
+            "allow": ["layout", "motion"]
+          },
+          {
+            "pattern": "^Checkbox$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^Empty$",
+            "allow": ["layout", "spacing", "shape"]
+          },
+          {
+            "pattern": "^ToolbarPill$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^TabsIndicator$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^Editor$",
+            "allow": ["layout", "shape"]
+          },
+          {
+            "pattern": "^DropdownMenuRadioItem$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^CardHeader$",
+            "allow": ["layout", "spacing", "shape"]
+          },
+          {
+            "pattern": "^DropdownMenuSubTrigger$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^PopoverContent$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^Label$",
+            "allow": ["layout", "spacing", "color"]
+          },
+          {
+            "pattern": "^SidebarGroup$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^Avatar$",
+            "allow": ["layout", "shape"]
+          },
+          {
+            "pattern": "^CardTitle$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^CardDescription$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^ViewToggle$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^DropdownSelect$",
+            "allow": ["layout", "form-input-error"]
+          },
+          {
+            "pattern": "^SignaturePad$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^MultiSelect$",
+            "allow": ["layout", "form-input-error"]
+          },
+          {
+            "pattern": "^ScrollArea$",
+            "allow": ["layout", "shape"]
+          },
+          {
+            "pattern": "^IconGlobe$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^SelectValue$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^TableCell$",
+            "allow": ["layout", "typography"]
+          },
+          {
+            "pattern": "^DatePicker$",
+            "allow": ["layout", "form-input-error"]
+          },
+          {
+            "pattern": "^InputOTPGroup$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^SidebarMenu$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^Tabs$",
+            "allow": ["layout", "spacing"]
+          },
+          {
+            "pattern": "^SelectItem$",
+            "allow": ["layout", "color"]
+          },
+          {
+            "pattern": "^Logo$",
+            "allow": ["layout", "color"]
+          }
+        ]
+      }
+    ],
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        "allow": [
+          "slate-dropLine",
+          "slate-blockToolbarWrapper",
+          "slate-gutterLeft",
+          "ignore-click-outside/toolbar"
+        ]
+      }
+    ],
+    "shadcn/require-static-classes": "error",
+
+    "oxc/no-accumulating-spread": "error",
+    "anti-slop/no-array-filter-map": "warn",
+    "anti-slop/no-reduce-accumulator-copy": "error",
+    "anti-slop/no-chained-type-assertions": "warn",
+    "anti-slop/no-conditional-empty-object-spread": "warn",
+    "anti-slop/no-known-value-widening": "warn",
+    "anti-slop/no-module-mocking": "warn",
+    "anti-slop/no-object-parameters": "warn",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-runtime-typeof": "warn",
+    "anti-slop/no-shape-in-symbol-names": "warn",
+    "anti-slop/no-unknown-parameters": "warn",
+    "anti-slop/no-unknown-returns": "warn",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "warn",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-readable-spacing": "warn",
+    "anti-slop/require-safety-comment-for-type-assertion": "warn"
   },
   "settings": {
     "jsx-a11y": {
@@ -128,7 +472,19 @@
     "**/.output/**",
     "**/dist/**",
     "**/public/**",
-    "**/evilcharts/**"
+    "**/evilcharts/**",
+    ".agent/**",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".continue/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".opencode/**",
+    ".pi/**",
+    ".roo/**",
+    ".windsurf/**",
+    "tools/oxlint/anti-slop/**"
   ],
   "overrides": [
     {
@@ -156,6 +512,20 @@
       "rules": {
         "unicorn/filename-case": "off",
         "unicorn/no-abusive-eslint-disable": "off"
+      }
+    },
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/require-static-classes": "off"
+      }
+    },
+    {
+      "files": ["src/lib/og/**"],
+      "rules": {
+        "shadcn/no-inline-styles": "off"
       }
     }
   ]

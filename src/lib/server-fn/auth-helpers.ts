@@ -11,6 +11,7 @@ type SessionWithActiveOrg = Session & {
 
 export const getActiveOrgId = (session: SessionWithActiveOrg): string => {
   const orgId = session.session.activeOrganizationId;
+
   if (typeof orgId !== "string" || orgId.length === 0) {
     throw createError({
       code: "auth/no-org" satisfies ErrorCode,
@@ -22,5 +23,6 @@ export const getActiveOrgId = (session: SessionWithActiveOrg): string => {
       fix: "Select or create an organization",
     });
   }
+
   return orgId;
 };

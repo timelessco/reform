@@ -6,7 +6,9 @@ import { slidingWindowRateLimit } from "@/lib/server-fn/rate-limit.server";
  * (ai-quota.server) — this caps a runaway client loop / leaked session regardless of plan. */
 
 export const WINDOW_MINUTES = 10;
+
 export const MAX_PER_WINDOW = 100;
+
 const CLEANUP_PROBABILITY = 0.01;
 
 // SQL literal: Postgres can't concat a parameterized int with text in an interval cast. Build-time constant, safe.
@@ -32,6 +34,7 @@ export const checkAiRequestRateLimit = async (orgId: string): Promise<AiRateLimi
     cleanupSql: sql`DELETE FROM ai_request_rate_limits WHERE window_start < now() - interval '1 hour'`,
     cleanupProbability: CLEANUP_PROBABILITY,
   });
+
   return {
     allowed: count <= MAX_PER_WINDOW,
     count,

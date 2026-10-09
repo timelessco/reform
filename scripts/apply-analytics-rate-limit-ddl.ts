@@ -10,12 +10,14 @@ import postgres from "postgres";
 config({ path: [".env.local", ".env"] });
 
 const DATABASE_URL = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+
 if (!DATABASE_URL) {
   console.error("Neither DIRECT_URL nor DATABASE_URL is set");
   process.exit(1);
 }
 
 const client = postgres(DATABASE_URL, { max: 1 });
+
 const db = drizzle({ client });
 
 const main = async () => {

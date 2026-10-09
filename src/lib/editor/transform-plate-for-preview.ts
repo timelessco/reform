@@ -1,5 +1,4 @@
-import type { Value } from "platejs";
-import type { OptionLabelStyle } from "@/components/ui/form-option-item-constants";
+import type { Descendant, TElement, Value } from "platejs";
 import { extractFileUploadFields } from "@/lib/form-schema/file-upload-types";
 import { hasMention } from "@/lib/editor/resolve-mentions";
 import type { LabelTokenNode } from "@/lib/editor/resolve-mentions";
@@ -17,12 +16,21 @@ import {
   buildMatrixEntries,
   buildOptionList,
   extractTextContent,
+  isButtonRole,
+  isOptionLabelStyle,
+  isPositiveNumber,
+  isString,
+  readNodeId,
+  readNumber,
+  readString,
   slugify,
 } from "./transform-plate-to-form";
 import type { PlateFormField } from "./transform-plate-to-form";
 
 export type StaticSegment = { type: "static"; nodes: Value };
+
 export type FieldSegment = { type: "field"; field: PlateFormField };
+
 export type PreviewSegment = StaticSegment | FieldSegment;
 
 export type PreviewStepResult = {
@@ -30,6 +38,16 @@ export type PreviewStepResult = {
   /** Raw Plate nodes for thank-you page (rendered entirely via PlateStatic) */
   thankYouNodes: Value | null;
 };
+
+/** Reduce a label child to the serializable token shape the mention renderer reads
+ * (text leaves plus mention metadata); the rest of platejs' open node type stays behind. */
+const toLabelTokenNode = (node: Descendant): LabelTokenNode => ({
+  ...(isString(node.text) && { text: node.text }),
+  ...(isString(node.type) && { type: node.type }),
+  ...(isString(node.value) && { value: node.value }),
+  ...(isString(node.fieldName) && { fieldName: node.fieldName }),
+  ...(isString(node.key) && { key: node.key }),
+});
 
 /** Plate Value → chunked preview segments. Static content (headings/paragraphs/etc.)
  * → StaticSegments (PlateStatic); form fields → FieldSegments. Splits on pageBreak
@@ -40,6 +58,7 @@ export const transformPlateForPreview = (rawValue: Value): PreviewStepResult => 
   const value = normalizeOptionNodes(rawValue);
   // formHeader handled separately by extractFormHeader.
   let startIdx = 0;
+
   if (value.length > 0 && value[0].type === "formHeader") {
     startIdx = 1;
   }
@@ -61,6 +80,7 @@ export const transformPlateForPreview = (rawValue: Value): PreviewStepResult => 
       if (node.isThankYouPage) {
         collectingThankYou = true;
       }
+
       continue;
     }
 
@@ -91,6 +111,7 @@ export const transformPlateForPreview = (rawValue: Value): PreviewStepResult => 
  * jump rule's target/source step id to a rendered step index. */
 export const getPreviewStepIds = (value: Value): string[] => {
   let startIdx = 0;
+
   if (value.length > 0 && value[0].type === "formHeader") startIdx = 1;
   const remaining = value.slice(startIdx);
 
@@ -105,13 +126,17 @@ export const getPreviewStepIds = (value: Value): string[] => {
         ids.push(current);
         chunkLen = 0;
       }
+
       if (node.isThankYouPage) collectingThankYou = true;
-      else current = (node as { id?: string }).id ?? current;
+      else current = readNodeId(node) ?? current;
       continue;
     }
+
     if (!collectingThankYou) chunkLen++;
   }
+
   if (chunkLen > 0 && !collectingThankYou) ids.push(current);
+
   return ids;
 };
 
@@ -138,15 +163,16 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
     i: number,
   ): {
     labelText: string;
-    labelNode: Record<string, unknown>;
+    labelNode: TElement;
     labelNodes?: LabelTokenNode[];
   } | null => {
     if (i <= 0) return null;
     const prev = nodes[i - 1];
     const prevType = prev.type;
+
     if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
 
-    const children = prev.children as Array<{ text?: string }>;
+    const children = prev.children;
     const labelText = extractTextContent(children);
     consumedIndices.add(i - 1);
 
@@ -157,16 +183,17 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
 
     // Carry raw children only when a mention token is present — keeps the plain-text fast
     // path for every ordinary label.
-    const labelNodes = hasMention(children) ? (children as unknown as LabelTokenNode[]) : undefined;
+    const labelNodes = hasMention(children) ? children.map(toLabelTokenNode) : undefined;
 
     return {
       labelText,
-      labelNode: prev as Record<string, unknown>,
-      ...(labelNodes ? { labelNodes } : {}),
+      labelNode: prev,
+      ...(labelNodes && { labelNodes }),
     };
   };
 
   let i = 0;
+
   while (i < nodes.length) {
     const node = nodes[i];
     const nodeType = node.type;
@@ -183,60 +210,66 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       flushStatic();
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const inputText = extractTextContent(node.children as Array<{ text?: string }>);
-      const placeholder = inputText || (node.placeholder as string) || "";
-      const minLength = node.minLength as number | undefined;
-      const maxLength = node.maxLength as number | undefined;
-      const defaultValue = node.defaultValue as string | undefined;
+      const inputText = extractTextContent(node.children);
+      const placeholder = inputText || readString(node, "placeholder") || "";
+      const minLength = readNumber(node, "minLength");
+      const maxLength = readNumber(node, "maxLength");
+      const defaultValue = readString(node, "defaultValue");
       const isFieldArray = node.isFieldArray === true ? true : undefined;
       const rawInitialRows = node.initialRows;
-      const initialRows =
-        isFieldArray && typeof rawInitialRows === "number" && rawInitialRows > 0
-          ? Math.floor(rawInitialRows)
-          : undefined;
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const initialRows =
+        isFieldArray && isPositiveNumber(rawInitialRows) ? Math.floor(rawInitialRows) : undefined;
+
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
       const fileUploadFields = nodeType === "formFileUpload" ? extractFileUploadFields(node) : {};
       const numberFields = nodeType === "formNumber" ? extractNumberFields(node) : {};
+
       const linearScaleFields =
         nodeType === "formLinearScale" ? extractLinearScaleFields(node) : {};
+
       const ratingFields = nodeType === "formRating" ? extractRatingFields(node) : {};
       const verifyEmail = nodeType === "formEmail" && node.verifyEmail === true ? true : undefined;
+
       const allowedCountries =
         nodeType === "formPhone" && Array.isArray(node.allowedCountries)
-          ? (node.allowedCountries.filter((c) => typeof c === "string") as string[])
+          ? node.allowedCountries.filter(isString)
           : undefined;
+
       const use24Hour = nodeType === "formTime" && node.use24Hour === true ? true : undefined;
 
+      // SAFETY: fieldType comes from INPUT_TYPE_TO_FIELD_TYPE under the truthy guard above, and
+      // each conditional prop is only produced by the node type that maps to it, so the literal
+      // always matches the corresponding PlateFormField member.
       segments.push({
         type: "field",
         field: {
           id: name,
           name,
-          fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
+          fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType],
           label: labelText || undefined,
-          labelType: label?.labelNode.type as string | undefined,
-          ...(label?.labelNodes ? { labelNodes: label.labelNodes } : {}),
+          labelType: label?.labelNode.type,
+          ...(label?.labelNodes && { labelNodes: label.labelNodes }),
           placeholder: placeholder || undefined,
           required: isRequired,
           minLength,
           maxLength,
           defaultValue,
-          isFieldArray,
+          ...(isFieldArray && { isFieldArray }),
           initialRows,
           ...fileUploadFields,
           ...numberFields,
           ...linearScaleFields,
           ...ratingFields,
-          ...(verifyEmail ? { verifyEmail } : {}),
-          ...(allowedCountries?.length ? { allowedCountries } : {}),
-          ...(use24Hour ? { use24Hour } : {}),
+          ...(verifyEmail && { verifyEmail }),
+          ...(allowedCountries?.length && { allowedCountries }),
+          ...(use24Hour && { use24Hour }),
         } as PlateFormField,
       });
       fieldIndex++;
@@ -250,13 +283,13 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       flushStatic();
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const rows = buildMatrixEntries(node.rows, "row");
-      const columns = buildMatrixEntries(node.columns, "column");
+      const rows = buildMatrixEntries(node, "row");
+      const columns = buildMatrixEntries(node, "column");
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
@@ -267,14 +300,14 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           name,
           fieldType: "Matrix",
           label: labelText || undefined,
-          labelType: label?.labelNode.type as string | undefined,
-          ...(label?.labelNodes ? { labelNodes: label.labelNodes } : {}),
+          labelType: label?.labelNode.type,
+          ...(label?.labelNodes && { labelNodes: label.labelNodes }),
           required: isRequired,
           rows,
           columns,
-          ...(node.multiple === true ? { multiple: true } : {}),
-          ...(node.randomizeOrder === true ? { shuffle: true } : {}),
-        } as PlateFormField,
+          ...(node.multiple === true && { multiple: true }),
+          ...(node.randomizeOrder === true && { shuffle: true }),
+        },
       });
       fieldIndex++;
       i++;
@@ -287,20 +320,22 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       flushStatic();
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const variant = (node.variant as string) || "checkbox";
+      const variant = readString(node, "variant") || "checkbox";
 
-      const optionNodes: Array<{ children?: Array<{ text?: string }>; image?: string }> = [];
+      const optionNodes: TElement[] = [];
       let j = i;
+
       while (j < nodes.length && nodes[j].type === "formOptionItem") {
-        optionNodes.push(nodes[j] as { children?: Array<{ text?: string }>; image?: string });
+        optionNodes.push(nodes[j]);
         j++;
       }
+
       const options = buildOptionList(optionNodes);
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
@@ -317,10 +352,13 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       const showImage = isChoiceGroup && node.showImage === true;
       // Shuffle applies to every option-group kind, Ranking included.
       const shuffle = node.randomizeOrder === true;
-      const optionLabel = isChoiceGroup
-        ? (node.optionLabel as OptionLabelStyle | undefined)
-        : undefined;
 
+      const optionLabel =
+        isChoiceGroup && isOptionLabelStyle(node.optionLabel) ? node.optionLabel : undefined;
+
+      // SAFETY: fieldType is a VARIANT_TO_FIELD_TYPE value (or the "Checkbox" fallback), and
+      // the group flags belong only to the Checkbox/MultiChoice kinds isChoiceGroup gates, so
+      // the literal always matches the corresponding PlateFormField member.
       segments.push({
         type: "field",
         field: {
@@ -328,14 +366,14 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           name,
           fieldType,
           label: fieldLabel || undefined,
-          labelType: label?.labelNode.type as string | undefined,
-          ...(label?.labelNodes ? { labelNodes: label.labelNodes } : {}),
+          labelType: label?.labelNode.type,
+          ...(label?.labelNodes && { labelNodes: label.labelNodes }),
           required: isRequired,
           options,
-          ...(shuffle ? { shuffle } : {}),
-          ...(showAsDropdown ? { showAsDropdown } : {}),
-          ...(showImage ? { showImage } : {}),
-          ...(optionLabel ? { optionLabel } : {}),
+          ...(shuffle && { shuffle }),
+          ...(showAsDropdown && { showAsDropdown }),
+          ...(showImage && { showImage }),
+          ...(optionLabel && { optionLabel }),
         } as PlateFormField,
       });
       fieldIndex++;
@@ -346,10 +384,11 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
     if (nodeType === "formButton") {
       flushStatic();
 
-      const childText = extractTextContent(node.children as Array<{ text?: string }>);
-      const btnText =
-        (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
-      const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+      const childText = extractTextContent(node.children);
+
+      const btnText = readString(node, "label") || childText || readString(node, "buttonText");
+
+      const btnRole = isButtonRole(node.buttonRole) ? node.buttonRole : "submit";
       const defaultText = btnRole === "next" ? "Next" : btnRole === "previous" ? "Back" : "Submit";
       const name = `button_${fieldIndex}`;
 
@@ -372,10 +411,12 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
     if (!consumedIndices.has(i)) {
       staticBuffer.push(node);
     }
+
     i++;
   }
 
   flushStatic();
+
   return segments;
 };
 
@@ -385,22 +426,26 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
 export const chunkSegmentsForFieldByField = (steps: PreviewSegment[][]): PreviewSegment[][] => {
   const flattened: PreviewSegment[][] = [];
   let pending: PreviewSegment[] = [];
+
   for (const step of steps) {
     for (const seg of step) {
       if (seg.type === "field" && seg.field.fieldType === "Button") continue;
       pending.push(seg);
+
       if (seg.type === "field") {
         flattened.push(pending);
         pending = [];
       }
     }
   }
+
   if (pending.length > 0) flattened.push(pending);
+
   return flattened.length > 0 ? flattened : steps;
 };
 
 export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
-  segments.filter((seg): seg is FieldSegment => seg.type === "field").map((seg) => seg.field);
+  segments.flatMap((seg) => (seg.type === "field" ? [seg.field] : []));
 
 export const EDITABLE_FIELD_TYPES = new Set([
   "Input",

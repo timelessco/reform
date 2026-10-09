@@ -64,7 +64,9 @@ const SEARCH_PREFIXES: readonly [string, string][] = [
 
 // Loopback/dev hosts = owner's own machine, not a real source.
 const SELF_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+
 const ANDROID_APP_PREFIX = "android-app://";
+
 const WWW_PREFIX_RE = /^www\./;
 
 const isSelfHost = (host: string): boolean => SELF_HOSTS.has(host) || host.endsWith(".localhost");
@@ -84,28 +86,37 @@ const matchSearchEngine = (host: string): string | null => {
       return source;
     }
   }
+
   return null;
 };
 
 export const resolveSource = ({ utmSource, referrer }: SourceInput): string => {
   const utm = utmSource?.trim();
+
   if (utm) {
     return utm;
   }
+
   if (!referrer) {
     return "direct";
   }
+
   // Android in-app referrers carry the package id as the "host".
   if (referrer.startsWith(ANDROID_APP_PREFIX)) {
     const pkg = referrer.slice(ANDROID_APP_PREFIX.length).split("/")[0]?.toLowerCase() ?? "";
+
     if (!pkg) {
       return "direct";
     }
+
     return SOURCE_BY_HOST[pkg] ?? pkg;
   }
+
   const host = referrerHost(referrer);
+
   if (!host || isSelfHost(host)) {
     return "direct";
   }
+
   return SOURCE_BY_HOST[host] ?? matchSearchEngine(host) ?? host;
 };

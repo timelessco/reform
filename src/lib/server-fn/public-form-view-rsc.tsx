@@ -9,5 +9,6 @@ export const getPublicFormViewRSC = createServerFn({ method: "GET" })
   .validator(v.object({ shortId: shortIdSchema }))
   .handler(async ({ data }) => {
     const { runPublicFormViewRSC } = await import("./public-form-view-rsc.impl");
+
     return runPublicFormViewRSC(data);
   });

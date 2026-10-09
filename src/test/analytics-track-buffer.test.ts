@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const recordQuestionProgressBatch = vi.fn();
+
 const recordFormVisit = vi.fn();
+
 const recordQuestionProgress = vi.fn();
+
 const updateFormVisit = vi.fn();
 
 vi.mock("@/lib/server-fn/analytics", () => ({
@@ -60,6 +63,7 @@ describe("question-progress client buffer", () => {
         }),
       );
     }
+
     expect(recordQuestionProgressBatch).toHaveBeenCalledTimes(1);
     const [arg] = recordQuestionProgressBatch.mock.calls[0] as [{ data: { items: EnqueueArgs[] } }];
     expect(arg.data.items).toHaveLength(5);

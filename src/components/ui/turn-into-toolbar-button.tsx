@@ -111,8 +111,10 @@ export const TurnIntoToolbarButton = (props: React.ComponentProps<typeof Dropdow
 
   const value = useSelectionFragmentProp({
     defaultValue: KEYS.p,
+    // SAFETY: the fragment selector only visits block elements, which are all TElements
     getProp: (node) => getBlockType(node as TElement),
   });
+
   const selectedItem = React.useMemo(
     () => turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ?? turnIntoItems[0],
     [value],

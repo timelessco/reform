@@ -44,12 +44,15 @@ export const DropdownSelect = ({
   // Roving focus across options: adds listbox-style ArrowUp/Down + Home/End; Tab still works natively.
   const handleOptionsKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+
     const buttons = Array.from(
       event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-dselect-option]"),
     );
+
     if (buttons.length === 0) return;
     const activeIndex = buttons.findIndex((btn) => btn === document.activeElement);
     let nextIndex = activeIndex;
+
     if (event.key === "ArrowDown") {
       nextIndex = activeIndex < 0 ? 0 : (activeIndex + 1) % buttons.length;
     } else if (event.key === "ArrowUp") {
@@ -60,6 +63,7 @@ export const DropdownSelect = ({
     } else if (event.key === "End") {
       nextIndex = buttons.length - 1;
     }
+
     if (nextIndex !== activeIndex) {
       event.preventDefault();
       buttons[nextIndex]?.focus();
@@ -109,11 +113,13 @@ export const DropdownSelect = ({
         align="start"
         sideOffset={4}
         className={cn("w-(--anchor-width) rounded-[12px] p-1", themeReanchor.className)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
         onKeyDown={handleOptionsKeyDown}
       >
         {options.map((opt) => {
           const isSelected = opt.value === value;
+
           return (
             <button
               key={opt.value}

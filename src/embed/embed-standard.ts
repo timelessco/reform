@@ -11,8 +11,10 @@ const loadEmbeds = (): void => {
   const iframes = document.querySelectorAll<HTMLIFrameElement>(
     "iframe[data-reform-src]:not([src])",
   );
+
   for (const iframe of iframes) {
     const src = iframe.dataset.reformSrc;
+
     if (src) {
       iframe.src = src;
     }
@@ -22,18 +24,23 @@ const loadEmbeds = (): void => {
 /** dynamicHeight: form posts {event:"Reform.Resize", height}; match sender by contentWindow, set its height. */
 const handleResize = (event: MessageEvent): void => {
   let data: { event?: string; height?: number };
+
   try {
     data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
   } catch {
     return;
   }
+
   if (data?.event !== "Reform.Resize" || typeof data.height !== "number") {
     return;
   }
+
   const iframes = document.querySelectorAll<HTMLIFrameElement>("iframe[data-reform-src]");
+
   for (const iframe of iframes) {
     if (iframe.contentWindow === event.source) {
       iframe.style.height = `${data.height}px`;
+
       return;
     }
   }

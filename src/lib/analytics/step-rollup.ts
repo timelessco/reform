@@ -1,4 +1,5 @@
 import type { QuestionDropoffRow, StepDropoffMetrics } from "@/types/analytics";
+
 export type { StepDropoffMetrics };
 
 interface StepAggregate {
@@ -23,7 +24,9 @@ export const rollupToSteps = (questions: readonly QuestionDropoffRow[]): StepDro
     if (q.stepId === null || q.stepIndex === null) {
       continue;
     }
+
     const existing = byStep.get(q.stepId);
+
     const agg: StepAggregate = existing ?? {
       stepId: q.stepId,
       stepIndex: q.stepIndex,
@@ -35,9 +38,11 @@ export const rollupToSteps = (questions: readonly QuestionDropoffRow[]): StepDro
       terminalDropoffCount: 0,
       questions: [],
     };
+
     if (!existing) {
       byStep.set(q.stepId, agg);
     }
+
     agg.viewCount = Math.max(agg.viewCount, q.viewCount);
     agg.startCount = Math.max(agg.startCount, q.startCount);
     agg.completeCount = Math.min(agg.completeCount, q.completeCount);
@@ -46,11 +51,14 @@ export const rollupToSteps = (questions: readonly QuestionDropoffRow[]): StepDro
   }
 
   const steps: StepDropoffMetrics[] = [];
+
   for (const agg of byStep.values()) {
     const dropoffCount = Math.max(0, agg.viewCount - agg.completeCount);
     const dropoffRate = agg.viewCount > 0 ? Math.round((dropoffCount / agg.viewCount) * 100) : null;
+
     const completionRate =
       agg.viewCount > 0 ? Math.round((agg.completeCount / agg.viewCount) * 100) : null;
+
     steps.push({
       stepId: agg.stepId,
       stepIndex: agg.stepIndex,

@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Column, RowData } from "@tanstack/table-core";
+import * as v from "valibot";
 
 import type { DataGridFeatures } from "@/components/ui/data-grid";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "@/components/ui/icons";
@@ -55,6 +56,7 @@ interface DataGridColumnHeaderProps<
 // in a styled tooltip (Figma 26582-15457). Overflow is measured via a callback ref (no effect).
 const TruncatedLabel = ({ title }: { title: string }) => {
   const [truncated, setTruncated] = useState(false);
+
   // ResizeObserver (not just mount) so truncation re-measures as columns resize/settle.
   // React 19 ref-cleanup disconnects it — no useEffect needed.
   const measureRef = useCallback((el: HTMLSpanElement | null) => {
@@ -63,8 +65,10 @@ const TruncatedLabel = ({ title }: { title: string }) => {
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
+
     return () => ro.disconnect();
   }, []);
+
   // Always wrap in the Tooltip with a STABLE trigger span — the ResizeObserver target never moves
   // between DOM positions, so it can't remount/oscillate at the overflow threshold. Only the
   // tooltip *content* is gated on actual overflow.
@@ -87,11 +91,20 @@ const TruncatedLabel = ({ title }: { title: string }) => {
 // the data grid and remounts the header cell, which would reset a local `useState(false)` and
 // snap the cell back to its label — losing the input and its focus. Only one column searches at a
 // time, which is the desired behavior. Reading goes through useSyncExternalStore (no useEffect).
-const colSearchStore = {
-  current: null as string | null,
+type ColSearchStore = {
+  current: string | null;
+  listeners: Set<() => void>;
+  subscribe: (listener: () => void) => () => void;
+  get: () => string | null;
+  set: (id: string | null) => void;
+};
+
+const colSearchStore: ColSearchStore = {
+  current: null,
   listeners: new Set<() => void>(),
   subscribe: (listener: () => void) => {
     colSearchStore.listeners.add(listener);
+
     return () => colSearchStore.listeners.delete(listener);
   },
   get: (): string | null => colSearchStore.current,
@@ -115,7 +128,8 @@ const ColumnSearchInput = <TData extends RowData, TValue>({
   title: string;
   onExit: () => void;
 }) => {
-  const [value, setValue] = useState((column.getFilterValue() as string | undefined) ?? "");
+  const initialFilter = column.getFilterValue();
+  const [value, setValue] = useState(v.is(v.string(), initialFilter) ? initialFilter : "");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const commit = useCallback(
@@ -147,11 +161,12 @@ const ColumnSearchInput = <TData extends RowData, TValue>({
             // flush the pending debounce; exit back to the header only when left empty
             clearTimeout(debounceRef.current);
             column.setFilterValue(value || undefined);
+
             if (!value) onExit();
           }}
           placeholder={title}
           aria-label={`Search ${title}`}
-          className="min-w-0 flex-1 bg-transparent text-[13px] font-[420] tracking-[0.26px] text-gray-600 outline-none placeholder:text-gray-500"
+          className="min-w-0 flex-1 bg-transparent text-[13px] font-[420] tracking-[0.26px] text-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
     </div>
@@ -178,6 +193,7 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
     colSearchStore.get,
     colSearchStore.get,
   );
+
   const isSearching = searchingColumnId === column.id;
   const canSearch = searchable && column.getCanFilter();
   const openSearch = useCallback(() => colSearchStore.set(column.id), [column.id]);
@@ -185,6 +201,7 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
 
   const getFullOrder = () => {
     const stateOrder = table.state.columnOrder;
+
     return stateOrder.length > 0 ? stateOrder : table.getAllLeafColumns().map((c) => c.id);
   };
 
@@ -193,10 +210,13 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
     const visible = table.getVisibleLeafColumns();
     const index = column.getIndex();
     const neighbor = visible[direction === "left" ? index - 1 : index + 1];
+
     // never swap with select checkbox column
     if (!neighbor || neighbor.id === "select") return undefined;
+
     // order splice can't cross a pin region — disable instead of silently no-oping
     if (neighbor.getIsPinned() !== column.getIsPinned()) return undefined;
+
     return neighbor;
   };
 
@@ -206,6 +226,7 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
   const moveColumn = useCallback(
     (direction: "left" | "right") => {
       const neighbor = getVisibleNeighbor(direction);
+
       if (!neighbor) return;
       const newOrder = [...getFullOrder()];
       const [moved] = newOrder.splice(newOrder.indexOf(column.id), 1);
@@ -406,6 +427,7 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
                 <DropdownMenuSubContent>
                   {table.getAllColumns().flatMap((col) => {
                     if (typeof col.accessorFn === "undefined" || !col.getCanHide()) return [];
+
                     return [
                       <DropdownMenuCheckboxItem
                         key={col.id}
@@ -446,7 +468,7 @@ export const DataGridColumnHeader = <TData extends RowData, TValue>({
           }}
           aria-label={`Search ${title}`}
           // Figma 27015:17071 — revealed icon only, no background pill; darkens on direct hover.
-          className="absolute end-1.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center text-muted-foreground opacity-0 transition-[opacity,color] group-hover/colsearch:opacity-100 hover:text-gray-800 focus-visible:opacity-100"
+          className="absolute end-1.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center text-muted-foreground opacity-0 transition-[opacity,color] group-hover/colsearch:opacity-100 hover:text-foreground focus-visible:opacity-100"
         >
           <FigSearchAltIcon className="size-4" />
         </button>

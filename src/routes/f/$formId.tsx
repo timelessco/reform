@@ -25,6 +25,7 @@ const CustomDomainFormIdRoute = () => {
   const search = Route.useSearch();
 
   const rawCustomization = loaderData?.form?.customization ?? null;
+
   const { resolvedTheme, embedConfig, handleThemeChange, showThemeToggle } = usePublicFormTheme({
     id: formId,
     rawCustomization,
@@ -35,10 +36,12 @@ const CustomDomainFormIdRoute = () => {
     () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
     [rawCustomization, resolvedTheme],
   );
+
   const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
 
   return (
     <>
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- Intentional <style> injection: build CSS bundle / generated per-form theme CSS */}
       {themeCss && <style>{themeCss}</style>}
       <PublicFormPage
         form={loaderData?.form ?? null}
@@ -87,6 +90,7 @@ export const Route = createFileRoute("/f/$formId")({
     const formOgImage = loaderData?.form?.ogImageUrl;
     const domainOgImage = loaderData?.domainMeta?.ogImageUrl ?? undefined;
     const googleFontUrl = getGoogleFontLinkUrl(loaderData?.form?.customization ?? null);
+
     return {
       meta: seo({
         formTitle,

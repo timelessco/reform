@@ -39,6 +39,7 @@ export const openOrgBillingPortal = createServerFn({ method: "POST" })
     // subscription's metadata, not the customer). Look up by email, then mint a session by customerId.
     const list = await polarClient.customers.list({ email, limit: 1 });
     const customer = list.result.items[0];
+
     if (!customer) {
       throw createError({
         code: "billing/no-customer" satisfies ErrorCode,

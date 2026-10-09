@@ -50,9 +50,12 @@ export type RecordQuestionProgressBatchInput = {
 // not see the form break. ──
 
 const ANALYTICS_WINDOW_MINUTES = 1;
+
 // Visits + per-question progress are chatty; 120/min/IP clears a long multi-step respondent.
 const ANALYTICS_MAX_PER_WINDOW = 120;
+
 const ANALYTICS_CLEANUP_PROBABILITY = 0.01;
+
 // SQL literal: Postgres can't cast a parameterized int into an interval. Build-time constant, safe.
 const ANALYTICS_WINDOW_INTERVAL_SQL = sql.raw(`interval '${ANALYTICS_WINDOW_MINUTES} minutes'`);
 
@@ -64,6 +67,7 @@ const isFormPublished = async (formId: string): Promise<boolean> => {
     .from(forms)
     .where(eq(forms.id, formId))
     .limit(1);
+
   return form?.status === "published";
 };
 
@@ -81,6 +85,7 @@ export const checkAnalyticsRateLimit = async (ip: string): Promise<boolean> => {
     cleanupSql: sql`DELETE FROM analytics_rate_limits WHERE window_start < now() - interval '1 hour'`,
     cleanupProbability: ANALYTICS_CLEANUP_PROBABILITY,
   });
+
   return count <= ANALYTICS_MAX_PER_WINDOW;
 };
 
@@ -96,9 +101,11 @@ export const recordFormVisitImpl = async (
 
   // Per-IP rate limit + published-form gate before any write (see ingestion guards above).
   const ip = getClientIp();
+
   if (ip && !(await checkAnalyticsRateLimit(ip))) {
     return { visitId: null };
   }
+
   if (!(await isFormPublished(data.formId))) {
     return { visitId: null };
   }
@@ -133,29 +140,37 @@ export const updateFormVisitImpl = async (data: UpdateFormVisitInput): Promise<{
   const updates: Partial<typeof formVisits.$inferInsert> = {
     updatedAt: new Date(),
   };
+
   if (data.didStartForm !== undefined) {
     updates.didStartForm = data.didStartForm;
   }
+
   if (data.didSubmit !== undefined) {
     updates.didSubmit = data.didSubmit;
   }
+
   if (data.submissionId !== undefined) {
     updates.submissionId = data.submissionId;
   }
+
   if (data.visitEndedAt !== undefined) {
     updates.visitEndedAt = data.visitEndedAt ? new Date(data.visitEndedAt) : null;
   }
+
   if (data.lcpMs !== undefined) {
     updates.lcpMs = data.lcpMs;
   }
+
   if (data.inpMs !== undefined) {
     updates.inpMs = data.inpMs;
   }
+
   if (data.cls !== undefined) {
     updates.cls = data.cls;
   }
 
   await db.update(formVisits).set(updates).where(eq(formVisits.id, data.visitId));
+
   return { ok: true };
 };
 
@@ -164,9 +179,11 @@ export const recordQuestionProgressImpl = async (
 ): Promise<{ ok: true }> => {
   // Per-IP rate limit + published-form gate before any write (best-effort: no-op, never throw).
   const ip = getClientIp();
+
   if (ip && !(await checkAnalyticsRateLimit(ip))) {
     return { ok: true };
   }
+
   if (!(await isFormPublished(data.formId))) {
     return { ok: true };
   }
@@ -214,19 +231,25 @@ export const recordQuestionProgressBatchImpl = async (
   // Rate-limit + published gate once per batch (not per item). A batch is one respondent's
   // session = one form, so the first item's formId is authoritative for the published check.
   const ip = getClientIp();
+
   if (ip && !(await checkAnalyticsRateLimit(ip))) {
     return { ok: true, processed: 0 };
   }
+
   const batchFormId = data.items[0]?.formId;
+
   if (batchFormId && !(await isFormPublished(batchFormId))) {
     return { ok: true, processed: 0 };
   }
 
   const now = new Date();
+
   // De-dup by (visitId, questionId): the conflict key. Postgres rejects a row hit twice in one
   // ON CONFLICT statement, so merge intra-batch dupes the way the upsert would (monotonic lifecycle).
   type Row = typeof formQuestionProgress.$inferInsert;
+
   const byKey = new Map<string, Row>();
+
   for (const item of data.items) {
     const key = `${item.visitId} ${item.questionId}`;
     const prev = byKey.get(key);
@@ -250,6 +273,7 @@ export const recordQuestionProgressBatchImpl = async (
   }
 
   const rows = [...byKey.values()];
+
   if (rows.length === 0) {
     return { ok: true, processed: 0 };
   }

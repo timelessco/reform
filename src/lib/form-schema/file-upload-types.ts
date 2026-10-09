@@ -119,12 +119,16 @@ export const resolveAllowedExtensions = (
   const list = Array.isArray(allowedFileExtensions)
     ? allowedFileExtensions.filter((e): e is string => typeof e === "string")
     : [];
+
   const flat = list.filter((e) => e.startsWith("."));
+
   if (flat.length > 0) return [...new Set(flat)];
+
   // Legacy: a single category id (+ optional subtype ids we can no longer map) ⇒ whole category.
   if (typeof allowedFileTypes === "string" && allowedFileTypes in LEGACY_CATEGORY_EXTENSIONS) {
     return LEGACY_CATEGORY_EXTENSIONS[allowedFileTypes];
   }
+
   return DEFAULT_FILE_UPLOAD_EXTENSIONS;
 };
 
@@ -133,10 +137,13 @@ export const resolveAllowedExtensions = (
 export const buildAcceptFromExtensions = (extensions: string[]): string => {
   const exts = extensions.length > 0 ? extensions : ALL_FILE_EXTENSIONS;
   const tokens = new Set<string>();
+
   for (const ext of exts) {
     tokens.add(ext);
+
     for (const mime of MIME_BY_EXT.get(ext) ?? []) tokens.add(mime);
   }
+
   return [...tokens].join(",");
 };
 
@@ -148,12 +155,15 @@ const MIME_EXT_ALIASES: Record<string, string> = {
 
 const EXT_BY_MIME: Record<string, string> = (() => {
   const map: Record<string, string> = {};
+
   for (const { ext, mimeTypes } of FILE_CATEGORIES.flatMap((c) => c.extensions)) {
     const bare = ext.replace(/^\./, "");
+
     for (const mime of mimeTypes) {
       if (!(mime in map)) map[mime] = bare;
     }
   }
+
   return { ...map, ...MIME_EXT_ALIASES };
 })();
 

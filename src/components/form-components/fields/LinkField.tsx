@@ -3,6 +3,7 @@ import type { FieldRendererProps } from "./shared";
 
 const LinkField = ({ element, form, name }: FieldRendererProps<"Link">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   return (
     <form.AppField name={fieldName}>
       {(f) => (

@@ -59,19 +59,25 @@ const readStoredRange = (): StoredTimeRange | null => {
   if (typeof window === "undefined") {
     return null;
   }
+
   try {
     const raw = window.localStorage.getItem(TIME_RANGE_STORAGE_KEY);
+
     if (!raw) {
       return null;
     }
+
     const parsed = JSON.parse(raw) as Partial<StoredTimeRange>;
+
     if (!parsed.filter || !TIME_RANGE_FILTERS.includes(parsed.filter)) {
       return null;
     }
+
     // A custom range is only valid with both endpoints; otherwise fall back.
     if (parsed.filter === "custom" && !(parsed.startDate && parsed.endDate)) {
       return null;
     }
+
     return { filter: parsed.filter, startDate: parsed.startDate, endDate: parsed.endDate };
   } catch {
     return null;
@@ -82,6 +88,7 @@ const writeStoredRange = (range: StoredTimeRange): void => {
   if (typeof window === "undefined") {
     return;
   }
+
   try {
     window.localStorage.setItem(TIME_RANGE_STORAGE_KEY, JSON.stringify(range));
   } catch {
@@ -93,12 +100,15 @@ const InsightsPage = () => {
   const { formId, workspaceId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const [filter, setFilter] = useState<TimeRangeFilter>(
     () => readStoredRange()?.filter ?? DEFAULT_FILTER,
   );
+
   const [startDate, setStartDate] = useState<string | undefined>(
     () => readStoredRange()?.startDate,
   );
+
   const [endDate, setEndDate] = useState<string | undefined>(() => readStoredRange()?.endDate);
 
   const insightsQuery = useQuery({
@@ -137,6 +147,7 @@ const InsightsPage = () => {
     dropoffQuery.isFetching ||
     vitalsQuery.isFetching ||
     availabilityQuery.isFetching;
+
   const handleRefresh = () => {
     void insightsQuery.refetch();
     void dropoffQuery.refetch();

@@ -19,7 +19,9 @@ import { getOrgPlan, getOrgPlanWithPolarSync } from "./plan-helpers.server";
 import { generateShortId } from "@/lib/short-id";
 
 const MAX_SHORT_ID_ATTEMPTS = 5;
+
 const PG_UNIQUE_VIOLATION = "23505";
+
 const SHORT_ID_CONSTRAINT = "forms_shortId_key";
 
 // SQLSTATE 23505 (unique_violation): collision only on the shortId index; FK/PK/other propagate.
@@ -65,6 +67,7 @@ export const createForm = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const now = new Date();
+
     // Generate-then-INSERT, retry only on forms.shortId UNIQUE violation. 7-char base62
     // (3.5T namespace) → collisions vanishing, happy path is one roundtrip.
     for (let attempt = 0; attempt < MAX_SHORT_ID_ATTEMPTS; attempt++) {
@@ -90,12 +93,14 @@ export const createForm = createServerFn({ method: "POST" })
             updatedAt: now,
           })
           .returning();
+
         return { form: serializeForm(form) };
       } catch (err) {
         if (isShortIdCollision(err)) continue;
         throw err;
       }
     }
+
     throw createError({
       code: "forms/short-id-collision" satisfies ErrorCode,
       status: 500,
@@ -152,6 +157,7 @@ export const updateForm = createServerFn({ method: "POST" })
     // Only public-visible field this fn flips is status off "published" (updateForm touches
     // draftSettings only); live settings change via publishFormVersion.
     const statusChanged = updateData.status !== undefined;
+
     if (statusChanged && form.lastPublishedVersionId) {
       await purgeFormCache(id);
     }
@@ -173,6 +179,7 @@ export const setFormAnalytics = createServerFn({ method: "POST" })
     // organization.plan drifts on missed webhook. OFF always allowed (downgrade path).
     if (data.enabled) {
       const plan = await getOrgPlanWithPolarSync(orgId, context.session.user.email ?? null);
+
       if (!planUnlocks(plan, "analytics")) {
         throw createError({
           code: "plan/pro-required" satisfies ErrorCode,
@@ -232,10 +239,12 @@ export const saveFormSettings = createServerFn({ method: "POST" })
     await requireScopedForm(context.session, data.formId);
 
     const sanitized = sanitizeFormSettings(data.settings);
+
     // Hash a non-empty, not-already-hashed password before persisting; never store plaintext.
     if (sanitized.password && !isHashedFormPassword(sanitized.password)) {
       sanitized.password = hashFormPassword(sanitized.password);
     }
+
     const now = new Date();
     await db.transaction(async (tx) => {
       await tx
@@ -261,6 +270,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     await requireScopedForm(context.session, data.id);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+
     if (!form) {
       throw createError({
         code: "forms/not-found" satisfies ErrorCode,
@@ -292,6 +302,7 @@ export const bulkArchiveForms = createServerFn({ method: "POST" })
       .set({ status: "archived", updatedAt: new Date() })
       .where(inArray(forms.id, data.ids))
       .returning({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId });
+
     // Drafts that go straight to trash have no edge cache to invalidate.
     const everPublished = updated.filter((r) => r.lastPublishedVersionId).map((r) => r.id);
     await purgeFormCacheBatch(everPublished);
@@ -570,6 +581,7 @@ export const assignFormDomain = createServerFn({ method: "POST" })
 
     if (customDomainId !== null) {
       const plan = await getOrgPlan(orgId);
+
       if (!planUnlocks(plan, "customDomains")) {
         throw createError({
           code: "domains/pro-required" satisfies ErrorCode,

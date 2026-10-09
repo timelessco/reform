@@ -21,6 +21,7 @@ const useUncontrolledSync = (
   React.useEffect(() => {
     const el = ref.current;
     const str = String(value);
+
     if (el && el !== document.activeElement && el.value !== str) el.value = str;
   }, [ref, value]);
 };
@@ -30,6 +31,7 @@ const useLatestRef = <T,>(value: T) => {
   React.useEffect(() => {
     ref.current = value;
   }, [value]);
+
   return ref;
 };
 
@@ -40,13 +42,16 @@ const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => 
   const max = Math.max(rn, gn, bn);
   const min = Math.min(rn, gn, bn);
   const l = (max + min) / 2;
+
   if (max === min) return [0, 0, l * 100];
   const d = max - min;
   const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
   let h = 0;
+
   if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0);
   else if (max === gn) h = (bn - rn) / d + 2;
   else h = (rn - gn) / d + 4;
+
   return [h * 60, s * 100, l * 100];
 };
 
@@ -59,6 +64,7 @@ const hslToRgb = (h: number, s: number, l: number): [number, number, number] => 
   let r1 = 0;
   let g1 = 0;
   let b1 = 0;
+
   if (hp < 1) [r1, g1, b1] = [c, x, 0];
   else if (hp < 2) [r1, g1, b1] = [x, c, 0];
   else if (hp < 3) [r1, g1, b1] = [0, c, x];
@@ -66,32 +72,34 @@ const hslToRgb = (h: number, s: number, l: number): [number, number, number] => 
   else if (hp < 5) [r1, g1, b1] = [x, 0, c];
   else [r1, g1, b1] = [c, 0, x];
   const m = ln - c / 2;
+
   return [(r1 + m) * 255, (g1 + m) * 255, (b1 + m) * 255];
 };
 
 const cssToHsl = (css: string): Hsl => {
   const { r, g, b } = cssColorToRgba(css);
   const [h, s, l] = rgbToHsl(r, g, b);
+
   return { h, s, l };
 };
 
 const hslToHex = (hsl: Hsl): string => {
   const [r, g, b] = hslToRgb(hsl.h, hsl.s, hsl.l);
+
   return rgbaToHex(r, g, b, 1);
 };
 
-const CHECKERED_BG =
-  'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==")';
-
-const HUE_TRACK =
-  "linear-gradient(to right, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%))";
+// Saturation/lightness square gradient for a given hue. Helpers keep the raw color string out of
+// JSX style values (the theme rules only allow colors to flow through tokens or helpers).
+const saturationBackground = (hue: number) =>
+  `linear-gradient(0deg, rgba(0,0,0,1), rgba(0,0,0,0)), linear-gradient(90deg, rgba(255,255,255,1), rgba(255,255,255,0)), hsl(${hue}, 100%, 50%)`;
 
 interface PanelPartProps {
   hsl: Hsl;
   setHsl: (next: Hsl) => void;
 }
 
-// Saturation/lightness square — ported from recollect's working Selection. Position is
+// Saturation/lightness square, ported from recollect's working Selection. Position is
 // derived directly from hsl (no separate drag state), and drags use pointer capture so the
 // handle tracks the cursor even outside the box.
 const SaturationSelection = ({ hsl, setHsl }: PanelPartProps) => {
@@ -103,6 +111,7 @@ const SaturationSelection = ({ hsl, setHsl }: PanelPartProps) => {
 
   const updateFromPointer = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
+
     if (!rect) return;
     const newX = clamp((clientX - rect.left) / rect.width, 0, 1);
     const newY = clamp((clientY - rect.top) / rect.height, 0, 1);
@@ -110,8 +119,6 @@ const SaturationSelection = ({ hsl, setHsl }: PanelPartProps) => {
     const l = (50 + 50 * (1 - newX)) * (1 - newY);
     setHsl({ h: hsl.h, s, l });
   };
-
-  const background = `linear-gradient(0deg, rgba(0,0,0,1), rgba(0,0,0,0)), linear-gradient(90deg, rgba(255,255,255,1), rgba(255,255,255,0)), hsl(${hsl.h}, 100%, 50%)`;
 
   return (
     <div
@@ -123,8 +130,11 @@ const SaturationSelection = ({ hsl, setHsl }: PanelPartProps) => {
       aria-valuetext={`Saturation ${round(hsl.s)}%, lightness ${round(hsl.l)}%`}
       role="slider"
       tabIndex={0}
-      className="relative h-[174px] w-full cursor-crosshair touch-none rounded-lg border-[0.5px] border-border/70 outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-      style={{ background }}
+      className="relative h-[174px] w-full cursor-crosshair touch-none rounded-lg border-[0.5px] border-border/70 outline-hidden [background:var(--saturation-selection-bg)] focus-visible:ring-2 focus-visible:ring-ring"
+      style={
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+        { "--saturation-selection-bg": saturationBackground(hsl.h) } as React.CSSProperties
+      }
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
         updateFromPointer(event.clientX, event.clientY);
@@ -137,8 +147,14 @@ const SaturationSelection = ({ hsl, setHsl }: PanelPartProps) => {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
-        style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+        className="pointer-events-none absolute top-(--saturation-thumb-y) left-(--saturation-thumb-x) size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          {
+            "--saturation-thumb-x": `${x * 100}%`,
+            "--saturation-thumb-y": `${y * 100}%`,
+          } as React.CSSProperties
+        }
       />
     </div>
   );
@@ -155,7 +171,7 @@ const Hue = ({ hsl, setHsl }: PanelPartProps) => (
     aria-label="Hue"
   >
     <Slider.Control className="relative flex h-2.5 w-full touch-none items-center">
-      <Slider.Track className="h-2.5 w-full rounded-full" style={{ background: HUE_TRACK }}>
+      <Slider.Track className="h-2.5 w-full rounded-full bg-[linear-gradient(to_right,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%))]">
         <Slider.Indicator />
         <Slider.Thumb className="size-3 rounded-full border-2 border-white bg-transparent shadow-md outline-hidden focus-visible:ring-2 focus-visible:ring-ring" />
       </Slider.Track>
@@ -203,10 +219,13 @@ interface ColorPickerProps {
 
 export const ColorPicker = ({ label, value, onChange, className }: ColorPickerProps) => {
   const textInputRef = React.useRef<HTMLInputElement>(null);
+
   const swatchHex = React.useMemo(() => {
     const { r, g, b, a } = cssColorToRgba(value);
+
     return rgbaToHex(r, g, b, a);
   }, [value]);
+
   useUncontrolledSync(textInputRef, swatchHex.toUpperCase());
 
   return (
@@ -228,9 +247,10 @@ export const ColorPicker = ({ label, value, onChange, className }: ColorPickerPr
           onChange={(e) => {
             const raw = e.target.value.trim();
             const normalized = raw.startsWith("#") ? raw : `#${raw}`;
+
             if (HEX_RE.test(normalized)) onChange(normalized);
           }}
-          className="w-[72px] bg-transparent text-right font-case text-[14px] leading-[1.15] font-[450] text-gray-700 uppercase outline-none font-opsz-16"
+          className="w-[72px] bg-transparent text-right font-case text-[14px] leading-[1.15] font-[450] text-foreground uppercase outline-none font-opsz-16"
           maxLength={9}
         />
         <Popover>
@@ -241,10 +261,15 @@ export const ColorPicker = ({ label, value, onChange, className }: ColorPickerPr
                 aria-label={`${label} color picker`}
                 // Figma swatch (node 25420-11688): 14×14, rounded-7, NO border (border shrank the fill to 12×12),
                 // shadow defines white-on-white (no border needed).
-                className="relative size-3.5 shrink-0 cursor-pointer overflow-hidden rounded-[7px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.4)]"
-                style={{ backgroundImage: CHECKERED_BG }}
+                className="relative size-3.5 shrink-0 cursor-pointer overflow-hidden rounded-[7px] bg-[url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.4)]"
               >
-                <span className="absolute inset-0" style={{ backgroundColor: swatchHex }} />
+                <span
+                  className="absolute inset-0 bg-(--color-picker-swatch-fill)"
+                  style={
+                    // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                    { "--color-picker-swatch-fill": swatchHex } as React.CSSProperties
+                  }
+                />
               </button>
             }
           />

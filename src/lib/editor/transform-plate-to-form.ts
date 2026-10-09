@@ -1,4 +1,4 @@
-import type { Value } from "platejs";
+import type { Descendant, TElement, Value } from "platejs";
 import type { OptionLabelStyle } from "@/components/ui/form-option-item-constants";
 import type { LabelTokenNode } from "@/lib/editor/resolve-mentions";
 import type {
@@ -18,14 +18,41 @@ import {
   extractRatingFields,
   resolveRequired,
 } from "@/lib/form-schema/form-field-constants";
+import * as v from "valibot";
 
-/** Loose Plate node shape for tree traversal in extractors */
-interface PlateNode {
-  type?: string;
-  text?: string;
-  children?: PlateNode[];
-  [key: string]: unknown;
-}
+/** Boundary readers for the open TElement props, which platejs types `unknown` via its
+ * index signature. Each read narrows to a real domain type before use. */
+export const isString = (value: unknown): value is string => v.is(v.string(), value);
+
+const isNumber = (value: unknown): value is number => v.is(v.number(), value);
+
+export const isPositiveNumber = (value: unknown): value is number =>
+  v.is(v.number(), value) && value > 0;
+
+const isNonEmptyString = (value: unknown): value is string =>
+  v.is(v.string(), value) && value.length > 0;
+
+export const isButtonRole = (value: unknown): value is "next" | "previous" | "submit" =>
+  value === "next" || value === "previous" || value === "submit";
+
+export const isOptionLabelStyle = (value: unknown): value is OptionLabelStyle =>
+  value === "none" || value === "letters" || value === "numbers";
+
+/** Props on TElement index as `unknown`; read one by name and narrow it. */
+export const readString = (node: TElement, key: string): string | undefined => {
+  const value = node[key];
+
+  return isString(value) ? value : undefined;
+};
+
+export const readNumber = (node: TElement, key: string): number | undefined => {
+  const value = node[key];
+
+  return isNumber(value) ? value : undefined;
+};
+
+export const readNodeId = (node: TElement | null | undefined): string | undefined =>
+  isString(node?.id) ? node?.id : undefined;
 
 type FormHeaderData = {
   title: string;
@@ -38,14 +65,16 @@ type FormHeaderData = {
 export const extractFormHeader = (value: Value): FormHeaderData | null => {
   if (value.length > 0 && value[0].type === "formHeader") {
     const node = value[0];
+
     return {
-      title: (node.title as string) || "",
-      icon: (node.icon as string | null) || null,
-      iconColor: (node.iconColor as string | null) || null,
-      cover: (node.cover as string | null) || null,
-      coverPosition: (node.coverPosition as number | undefined) ?? null,
+      title: readString(node, "title") || "",
+      icon: readString(node, "icon") || null,
+      iconColor: readString(node, "iconColor") || null,
+      cover: readString(node, "cover") || null,
+      coverPosition: readNumber(node, "coverPosition") ?? null,
     };
   }
+
   return null;
 };
 
@@ -400,10 +429,15 @@ export type PlateStaticElement =
 
 export type TransformedElement = PlateFormField | PlateStaticElement;
 
-export const extractTextContent = (children: Array<{ text?: string }>): string => {
+/** A Plate child that can carry text (text leaf, or an element with a stray text prop). */
+const isTextBearingNode = (child: unknown): child is { text?: unknown } =>
+  v.is(v.looseObject({ text: v.optional(v.unknown()) }), child);
+
+export const extractTextContent = (children: ReadonlyArray<unknown>): string => {
   if (!Array.isArray(children)) return "";
+
   return children
-    .map((child) => child.text || "")
+    .map((child) => (isTextBearingNode(child) && isString(child.text) ? child.text : ""))
     .join("")
     .trim();
 };
@@ -416,6 +450,7 @@ export const isFormInputType = (type: string | undefined): boolean =>
 
 /** Slugify a label, e.g. "Email Address" -> "email_address". */
 const NON_ALNUM_RE = /[^a-z0-9]+/g;
+
 const TRIM_UNDERSCORES_RE = /^_|_$/g;
 
 export const slugify = (str: string): string =>
@@ -425,101 +460,128 @@ export const slugify = (str: string): string =>
  * labels collide (e.g. two "Option 2" rows). Single-select must map a stored value
  * to exactly one option; duplicate values would highlight every matching row. */
 export const buildOptionList = (
-  nodes: Array<{ children?: Array<{ text?: string }>; image?: string }>,
+  nodes: ReadonlyArray<TElement>,
 ): { value: string; label: string; image?: string }[] => {
   const options: { value: string; label: string; image?: string }[] = [];
   const used = new Set<string>();
+
   for (const n of nodes) {
-    const optText = extractTextContent((n.children ?? []) as Array<{ text?: string }>);
+    const optText = extractTextContent(n.children ?? []);
     const optLabel = optText || `Option ${options.length + 1}`;
     let value = slugify(optLabel) || `option_${options.length + 1}`;
+
     if (used.has(value)) {
       let k = 2;
+
       while (used.has(`${value}_${k}`)) k++;
       value = `${value}_${k}`;
     }
+
     used.add(value);
-    options.push({
-      value,
-      label: optLabel,
-      ...(typeof n.image === "string" && n.image ? { image: n.image } : {}),
-    });
+
+    if (isNonEmptyString(n.image)) {
+      options.push({ value, label: optLabel, image: n.image });
+    } else {
+      options.push({ value, label: optLabel });
+    }
   }
+
   return options;
 };
+
+/** Matrix rows/columns ride on the void formMatrix node's props as a plain array. */
+const isMatrixEntryList = (value: unknown): value is Array<{ label?: string }> =>
+  Array.isArray(value);
 
 /** Matrix row/column nodes → {value,label}[] with unique values even when labels
  * collide or are blank. Answers are keyed by row/column value, so duplicate values
  * would conflate distinct rows. Mirrors buildOptionList. */
 export const buildMatrixEntries = (
-  raw: unknown,
+  node: TElement,
   prefix: "row" | "column",
 ): { value: string; label: string }[] => {
   const entries: { value: string; label: string }[] = [];
   const used = new Set<string>();
-  const list = Array.isArray(raw) ? (raw as { label?: string }[]) : [];
+  const raw = prefix === "row" ? node.rows : node.columns;
+  const list = isMatrixEntryList(raw) ? raw : [];
   const fallback = prefix === "row" ? "Row" : "Column";
+
   for (const e of list) {
     const label = e.label || `${fallback} ${entries.length + 1}`;
     let value = slugify(label);
+
     if (used.has(value)) {
       let k = 2;
+
       while (used.has(`${value}_${k}`)) k++;
       value = `${value}_${k}`;
     }
+
     used.add(value);
     entries.push({ value, label });
   }
+
   return entries;
 };
 
+/** True for Plate element nodes (as opposed to text leaves). */
+const isElementNode = (node: Descendant): node is TElement => "children" in node;
+
 /** Extracts list items from a Plate list node (ul/ol). Structure: ul > li > lic > text. */
-const extractListItems = (node: PlateNode): string[] => {
+const extractListItems = (node: TElement): string[] => {
   const items: string[] = [];
+
   if (!node.children || !Array.isArray(node.children)) return items;
 
   for (const li of node.children) {
-    if (li.type === "li" && li.children) {
+    if (isElementNode(li) && li.type === "li" && li.children) {
       // li content usually wrapped in a "lic" node.
       for (const child of li.children) {
-        if (child.type === "lic" || child.type === "p") {
-          const text = extractTextContent((child.children ?? []) as Array<{ text?: string }>);
+        if (isElementNode(child) && (child.type === "lic" || child.type === "p")) {
+          const text = extractTextContent(child.children);
+
           if (text) items.push(text);
-        } else if (child.text !== undefined) {
-          const text = child.text?.trim();
+        } else if (isString(child.text)) {
+          const text = child.text.trim();
+
           if (text) items.push(text);
         }
       }
     }
   }
+
   return items;
 };
 
 /** Extracts table rows from a Plate table node. Structure: table > tr > (th|td) > text. */
-const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean }[] => {
+const extractTableRows = (node: TElement): { cells: string[]; isHeader: boolean }[] => {
   const rows: { cells: string[]; isHeader: boolean }[] = [];
+
   if (!node.children || !Array.isArray(node.children)) return rows;
 
   for (const tr of node.children) {
-    if (tr.type === "tr" && tr.children) {
+    if (isElementNode(tr) && tr.type === "tr" && tr.children) {
       const cells: string[] = [];
       let isHeader = false;
 
       for (const cell of tr.children) {
-        if (cell.type === "th") {
+        if (isElementNode(cell) && cell.type === "th") {
           isHeader = true;
         }
+
         // Cells often have p > text structure
         let cellText = "";
-        if (cell.children) {
+
+        if (isElementNode(cell) && cell.children) {
           for (const cellChild of cell.children) {
-            if (cellChild.type === "p" && cellChild.children) {
+            if (isElementNode(cellChild) && cellChild.type === "p" && cellChild.children) {
               cellText += extractTextContent(cellChild.children);
-            } else if (cellChild.text !== undefined) {
+            } else if (isString(cellChild.text)) {
               cellText += cellChild.text;
             }
           }
         }
+
         cells.push(cellText.trim());
       }
 
@@ -528,6 +590,7 @@ const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean
       }
     }
   }
+
   return rows;
 };
 
@@ -553,31 +616,33 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
 
   /** Look back at value[i-1]: if in ALLOWED_LABEL_TYPES, extract text, mark consumed,
    * pop from elements if it was the last pushed item. */
-  const lookBackForLabel = (
-    i: number,
-  ): { labelText: string; labelNode: Record<string, unknown> } | null => {
+  const lookBackForLabel = (i: number): { labelText: string; labelNode: TElement } | null => {
     if (i <= 0) return null;
     const prev = value[i - 1];
     const prevType = prev.type;
+
     if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
 
-    const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
+    const labelText = extractTextContent(prev.children);
     consumedIndices.add(i - 1);
 
     // Pop label from elements if it was the most-recently pushed static item.
     if (elements.length > 0) {
       const last = elements[elements.length - 1];
+
       if ("static" in last && last.static) {
         // Does last static element match this label node?
         const lastId = last.id;
         const expectedPrefixes = ["h1_", "h2_", "h3_", "desc_", "empty_"];
         const isStaticLabel = expectedPrefixes.some((p) => lastId.startsWith(p));
+
         if (isStaticLabel) {
           // formLabel: always pop; heading/p/blockquote: pop only on content match.
           if (prevType === "formLabel") {
             elements.pop();
           } else {
-            const lastContent = "content" in last ? (last as { content: string }).content : "";
+            const lastContent = "content" in last ? last.content : "";
+
             if (lastContent === labelText || labelText === "") {
               elements.pop();
             }
@@ -586,10 +651,11 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       }
     }
 
-    return { labelText, labelNode: prev as Record<string, unknown> };
+    return { labelText, labelNode: prev };
   };
 
   let i = 0;
+
   while (i < value.length) {
     const node = value[i];
     const nodeType = node.type;
@@ -604,56 +670,62 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const inputText = extractTextContent(node.children as Array<{ text?: string }>);
-      const placeholder = inputText || (node.placeholder as string) || "";
-      const minLength = node.minLength as number | undefined;
-      const maxLength = node.maxLength as number | undefined;
-      const defaultValue = node.defaultValue as string | undefined;
+      const inputText = extractTextContent(node.children);
+      const placeholder = inputText || readString(node, "placeholder") || "";
+      const minLength = readNumber(node, "minLength");
+      const maxLength = readNumber(node, "maxLength");
+      const defaultValue = readString(node, "defaultValue");
       const isFieldArray = node.isFieldArray === true ? true : undefined;
       const rawInitialRows = node.initialRows;
-      const initialRows =
-        isFieldArray && typeof rawInitialRows === "number" && rawInitialRows > 0
-          ? Math.floor(rawInitialRows)
-          : undefined;
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const initialRows =
+        isFieldArray && isPositiveNumber(rawInitialRows) ? Math.floor(rawInitialRows) : undefined;
+
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
       const fileUploadFields = nodeType === "formFileUpload" ? extractFileUploadFields(node) : {};
       const numberFields = nodeType === "formNumber" ? extractNumberFields(node) : {};
+
       const linearScaleFields =
         nodeType === "formLinearScale" ? extractLinearScaleFields(node) : {};
+
       const ratingFields = nodeType === "formRating" ? extractRatingFields(node) : {};
       const verifyEmail = nodeType === "formEmail" && node.verifyEmail === true ? true : undefined;
+
       const allowedCountries =
         nodeType === "formPhone" && Array.isArray(node.allowedCountries)
-          ? (node.allowedCountries.filter((c) => typeof c === "string") as string[])
+          ? node.allowedCountries.filter(isString)
           : undefined;
+
       const use24Hour = nodeType === "formTime" && node.use24Hour === true ? true : undefined;
 
+      // SAFETY: fieldType comes from INPUT_TYPE_TO_FIELD_TYPE under the truthy guard above, and
+      // each conditional prop is only produced by the node type that maps to it, so the literal
+      // always matches the corresponding PlateFormField member.
       elements.push({
         id: name,
         name,
-        fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
+        fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType],
         label: labelText || undefined,
         placeholder: placeholder || undefined,
         required: isRequired,
         minLength,
         maxLength,
         defaultValue,
-        isFieldArray,
+        ...(isFieldArray && { isFieldArray }),
         initialRows,
         ...fileUploadFields,
         ...numberFields,
         ...linearScaleFields,
         ...ratingFields,
-        ...(verifyEmail ? { verifyEmail } : {}),
-        ...(allowedCountries?.length ? { allowedCountries } : {}),
-        ...(use24Hour ? { use24Hour } : {}),
+        ...(verifyEmail && { verifyEmail }),
+        ...(allowedCountries?.length && { allowedCountries }),
+        ...(use24Hour && { use24Hour }),
       } as PlateFormField);
       fieldIndex++;
       i++;
@@ -665,13 +737,13 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const rows = buildMatrixEntries(node.rows, "row");
-      const columns = buildMatrixEntries(node.columns, "column");
+      const rows = buildMatrixEntries(node, "row");
+      const columns = buildMatrixEntries(node, "column");
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
@@ -683,9 +755,9 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
         required: isRequired,
         rows,
         columns,
-        ...(node.multiple === true ? { multiple: true } : {}),
-        ...(node.randomizeOrder === true ? { shuffle: true } : {}),
-      } as PlateFormField);
+        ...(node.multiple === true && { multiple: true }),
+        ...(node.randomizeOrder === true && { shuffle: true }),
+      });
       fieldIndex++;
       i++;
       continue;
@@ -696,20 +768,22 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
       const labelNode = label?.labelNode ?? null;
-      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+      const isRequired = resolveRequired(node, labelNode);
 
-      const variant = (node.variant as string) || "checkbox";
+      const variant = readString(node, "variant") || "checkbox";
 
-      const optionNodes: PlateNode[] = [];
+      const optionNodes: TElement[] = [];
       let j = i;
+
       while (j < value.length && value[j].type === "formOptionItem") {
-        optionNodes.push(value[j] as PlateNode);
+        optionNodes.push(value[j]);
         j++;
       }
+
       const options = buildOptionList(optionNodes);
 
-      const stableId =
-        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const stableId = readNodeId(label?.labelNode) ?? readNodeId(node);
+
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
@@ -721,10 +795,13 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       const showImage = isChoiceGroup && node.showImage === true;
       // Shuffle applies to every option-group kind, Ranking included.
       const shuffle = node.randomizeOrder === true;
-      const optionLabel = isChoiceGroup
-        ? (node.optionLabel as OptionLabelStyle | undefined)
-        : undefined;
 
+      const optionLabel =
+        isChoiceGroup && isOptionLabelStyle(node.optionLabel) ? node.optionLabel : undefined;
+
+      // SAFETY: fieldType is a VARIANT_TO_FIELD_TYPE value (or the "Checkbox" fallback), and
+      // the group flags belong only to the Checkbox/MultiChoice kinds isChoiceGroup gates, so
+      // the literal always matches the corresponding PlateFormField member.
       elements.push({
         id: name,
         name,
@@ -732,10 +809,10 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
         label: labelText || undefined,
         required: isRequired,
         options,
-        ...(shuffle ? { shuffle } : {}),
-        ...(showAsDropdown ? { showAsDropdown } : {}),
-        ...(showImage ? { showImage } : {}),
-        ...(optionLabel ? { optionLabel } : {}),
+        ...(shuffle && { shuffle }),
+        ...(showAsDropdown && { showAsDropdown }),
+        ...(showImage && { showImage }),
+        ...(optionLabel && { optionLabel }),
       } as PlateFormField);
       fieldIndex++;
       i = j; // Advance past all consumed option nodes
@@ -743,10 +820,11 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
     }
 
     if (nodeType === "formButton") {
-      const childText = extractTextContent(node.children as Array<{ text?: string }>);
-      const btnText =
-        (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
-      const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+      const childText = extractTextContent(node.children);
+
+      const btnText = readString(node, "label") || childText || readString(node, "buttonText");
+
+      const btnRole = isButtonRole(node.buttonRole) ? node.buttonRole : "submit";
       const defaultText = btnRole === "next" ? "Next" : btnRole === "previous" ? "Back" : "Submit";
       const name = `button_${fieldIndex}`;
       elements.push({
@@ -766,6 +844,7 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
     if (ALLOWED_LABEL_TYPES.has(nodeType) && nodeType !== "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
       const nextType = nextNode ? nextNode.type : "";
+
       if (FORM_INPUT_NODE_TYPES.has(nextType)) {
         // Will be consumed as a label by the next input — skip static rendering
         i++;
@@ -773,16 +852,35 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
       }
 
       // Render as static content
-      const content = extractTextContent(node.children as Array<{ text?: string }>);
+      const content = extractTextContent(node.children);
+
       if (nodeType === "h1" || nodeType === "h2" || nodeType === "h3") {
         if (content) {
-          elements.push({
-            id: `${nodeType}_${elements.length}`,
-            name: `${nodeType}_${elements.length}`,
-            fieldType: nodeType.toUpperCase() as "H1" | "H2" | "H3",
-            content,
-            static: true,
-          });
+          if (nodeType === "h1") {
+            elements.push({
+              id: `h1_${elements.length}`,
+              name: `h1_${elements.length}`,
+              fieldType: "H1",
+              content,
+              static: true,
+            });
+          } else if (nodeType === "h2") {
+            elements.push({
+              id: `h2_${elements.length}`,
+              name: `h2_${elements.length}`,
+              fieldType: "H2",
+              content,
+              static: true,
+            });
+          } else {
+            elements.push({
+              id: `h3_${elements.length}`,
+              name: `h3_${elements.length}`,
+              fieldType: "H3",
+              content,
+              static: true,
+            });
+          }
         }
       } else if (content) {
         // p or blockquote with content -> Description
@@ -802,6 +900,7 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
           static: true,
         });
       }
+
       i++;
       continue;
     }
@@ -810,11 +909,13 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
     if (nodeType === "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
       const nextType = nextNode ? nextNode.type : "";
+
       if (FORM_INPUT_NODE_TYPES.has(nextType)) {
         // Will be consumed as a label by the next input
         i++;
         continue;
       }
+
       // Standalone formLabel with no input — skip it (no static rendering for bare labels)
       i++;
       continue;
@@ -846,6 +947,7 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
 
     if (nodeType === "ul") {
       const items = extractListItems(node);
+
       if (items.length > 0) {
         elements.push({
           id: `ul_${elements.length}`,
@@ -855,12 +957,14 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
           static: true,
         });
       }
+
       i++;
       continue;
     }
 
     if (nodeType === "ol") {
       const items = extractListItems(node);
+
       if (items.length > 0) {
         elements.push({
           id: `ol_${elements.length}`,
@@ -870,25 +974,31 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
           static: true,
         });
       }
+
       i++;
       continue;
     }
 
     if (nodeType === "toggle") {
-      const children = node.children as PlateNode[];
+      const children = node.children;
       let title = "";
-      const contentNodes: PlateNode[] = [];
+      const contentNodes: TElement[] = [];
 
       if (children && children.length > 0) {
-        if (children[0].children) {
-          title = extractTextContent(children[0].children);
-        } else if (children[0].text) {
-          title = children[0].text;
+        const first = children[0];
+
+        if (isElementNode(first) && first.children) {
+          title = extractTextContent(first.children);
+        } else if (isString(first.text)) {
+          title = first.text;
         }
-        contentNodes.push(...children.slice(1));
+
+        for (const child of children.slice(1)) {
+          if (isElementNode(child)) contentNodes.push(child);
+        }
       }
 
-      const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
+      const toggleContent = transformPlateStateToFormElements(contentNodes);
 
       elements.push({
         id: `toggle_${elements.length}`,
@@ -904,6 +1014,7 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
 
     if (nodeType === "table") {
       const rows = extractTableRows(node);
+
       if (rows.length > 0) {
         elements.push({
           id: `table_${elements.length}`,
@@ -913,13 +1024,14 @@ export const transformPlateStateToFormElements = (rawValue: Value): TransformedE
           static: true,
         });
       }
+
       i++;
       continue;
     }
 
     if (nodeType === "callout") {
-      const content = extractTextContent(node.children as Array<{ text?: string }>);
-      const emoji = node.emoji as string | undefined;
+      const content = extractTextContent(node.children);
+      const emoji = readString(node, "emoji");
       elements.push({
         id: `callout_${elements.length}`,
         name: `callout_${elements.length}`,

@@ -14,8 +14,10 @@ export const useFieldLabelText = (element: TElement): string =>
   useEditorSelector(
     (ed) => {
       const path = ed.api.findPath(element);
+
       if (!path || path.length === 0 || path[0] === 0) return "";
       const prev = (ed.children as TElement[])[path[0] - 1];
+
       return prev ? NodeApi.string(prev).trim() : "";
     },
     [element],

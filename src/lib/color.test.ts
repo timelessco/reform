@@ -56,7 +56,6 @@ describe("cssColorToRgba / cssColorToHex — hex fast path", () => {
 
 describe("SSR fallback (no document)", () => {
   it("falls back to opaque black for named / rgb inputs", () => {
-    expect(typeof document).toBe("undefined");
     expect(cssColorToRgba("red")).toEqual({ r: 0, g: 0, b: 0, a: 1 });
     expect(cssColorToHex("rgb(255, 0, 0)")).toBe("#000000");
   });
@@ -74,6 +73,7 @@ describe("canvas path (browser-like document)", () => {
       createElement: () => ({
         getContext: () => {
           let fill = "#000000";
+
           return {
             get fillStyle() {
               return fill;

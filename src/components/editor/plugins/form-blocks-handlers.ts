@@ -62,25 +62,31 @@ export const isFormButton = (node: TElement): boolean => node.type === "formButt
 
 // Block is only content after a preceding pageBreak → delete both, move cursor to prev content block. Returns true if handled.
 export const tryDeletePageBreakWithEmptyBlock = (editor: PlateEditor, blockPath: Path): boolean => {
-  const children = editor.children as TElement[];
+  const children = editor.children;
   const currentIndex = blockPath[0];
 
   let pageBreakIndex = -1;
+
   for (let i = currentIndex - 1; i >= 0; i--) {
     const prev = children[i];
+
     if (prev.type === "formButton") continue;
+
     if (prev.type === "pageBreak") {
       pageBreakIndex = i;
     }
+
     break;
   }
 
   if (pageBreakIndex === -1) return false;
 
   let hasOtherContent = false;
+
   for (let i = pageBreakIndex + 1; i < children.length; i++) {
     if (i === currentIndex) continue;
     const n = children[i];
+
     if (n.type === "pageBreak" || n.type === "formButton") break;
     hasOtherContent = true;
     break;
@@ -93,12 +99,15 @@ export const tryDeletePageBreakWithEmptyBlock = (editor: PlateEditor, blockPath:
     editor.tf.removeNodes({ at: blockPath });
     editor.tf.removeNodes({ at: [pageBreakIndex] });
   });
+
   if (prevPath) {
     const edges = editor.api.edges(prevPath);
+
     if (edges?.[1]) {
       editor.tf.select(edges[1]);
     }
   }
+
   return true;
 };
 
@@ -107,9 +116,11 @@ export const handleBackspace = (editor: PlateEditor, event: React.KeyboardEvent)
   if (event.key !== "Backspace") return;
 
   const block = editor.api.block();
+
   if (!block || !FORM_FIELD_TYPES.has(block[0].type)) return;
 
   const [node, path] = block;
+
   if (!editor.api.isEmpty(node)) return;
 
   // Empty formOptionItem → delete unless only option.
@@ -117,37 +128,45 @@ export const handleBackspace = (editor: PlateEditor, event: React.KeyboardEvent)
     event.preventDefault();
     event.stopPropagation();
 
-    const children = editor.children as TElement[];
+    const children = editor.children;
     const prevNode = children[path[0] - 1];
     const nextNode = children[path[0] + 1];
     const isPrevLabel = prevNode?.type === "formLabel";
     const isNextOption = nextNode?.type === "formOptionItem";
 
     if (isPrevLabel && !isNextOption) {
-      editor.tf.setNodes({ type: "p", variant: undefined } as unknown as Partial<TElement>, {
-        at: path,
-      });
+      editor.tf.setNodes(
+        { type: "p", variant: undefined },
+        {
+          at: path,
+        },
+      );
+
       return;
     }
 
     const prevPath: Path = [path[0] - 1];
     editor.tf.removeNodes({ at: path });
     const edges = editor.api.edges(prevPath);
+
     if (edges?.[1]) {
       editor.tf.select(edges[1]);
     }
+
     return;
   }
 
   if (PROTECTED_BUTTON_TYPES.has(node.type)) {
     event.preventDefault();
     event.stopPropagation();
+
     return;
   }
 
   if (tryDeletePageBreakWithEmptyBlock(editor, path)) {
     event.preventDefault();
     event.stopPropagation();
+
     return;
   }
 
@@ -161,14 +180,19 @@ export const handleFormFieldEnter = (editor: PlateEditor, event: React.KeyboardE
   if (event.key !== "Enter" || event.shiftKey) return false;
 
   const block = editor.api.block();
+
   if (!block) return false;
 
   const [node, path] = block;
+
   if (!FORM_FIELD_TYPES.has(node.type)) return false;
+
   if (node.type === "formOptionItem") return false;
+
   if (node.type === "formButton" || node.type === "pageBreak") {
     event.preventDefault();
     event.stopPropagation();
+
     return true;
   }
 
@@ -178,23 +202,32 @@ export const handleFormFieldEnter = (editor: PlateEditor, event: React.KeyboardE
 
   // Label directly above void form field: land paragraph after the whole label+input group, else no way to escape past trailing void input (e.g. file upload).
   let insertIndex = path[0] + 1;
+
   if (node.type === "formLabel") {
-    const siblings = editor.children as TElement[];
+    const siblings = editor.children;
     const next = siblings[insertIndex];
+
     // Option-based field (checkbox/multi-choice/dropdown/ranking): drop the caret into the first
     // option to fill it, instead of splitting a stray paragraph between the label and its options.
     if (next?.type === "formOptionItem") {
       moveToPath(editor, [insertIndex]);
+
       return true;
     }
+
     if (next && VOID_FORM_INPUT_TYPES.has(next.type)) {
       insertIndex += 1;
     }
   }
+
   const nextPath = [insertIndex];
-  editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
-    at: nextPath,
-  });
+  editor.tf.insertNodes(
+    { type: "p", children: [{ text: "" }] },
+    {
+      at: nextPath,
+    },
+  );
   moveToPath(editor, nextPath);
+
   return true;
 };

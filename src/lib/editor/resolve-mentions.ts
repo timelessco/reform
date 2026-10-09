@@ -10,9 +10,12 @@ export type MentionRun =
   | { kind: "value"; text: string }
   | { kind: "placeholder"; text: string };
 
+/** A form-field answer as held by the live form store: primitives, arrays, or absent. */
+export type MentionAnswer = string | number | boolean | ReadonlyArray<unknown> | null | undefined;
+
 export interface ResolveMentionsCtx {
   /** Current answer for a field `name` (from the live merged form values). */
-  getValue: (fieldName: string) => unknown;
+  getValue: (fieldName: string) => MentionAnswer;
   /** Display label for a field `name`, looked up fresh so renames stay in sync. */
   getLabel: (fieldName: string) => string | undefined;
 }
@@ -31,20 +34,30 @@ export interface LabelTokenNode {
 }
 
 /** Coerce an answer to display text. Arrays join with ", "; empty/blank → "". `0` stays "0". */
-export const formatMentionValue = (value: unknown): string => {
+export const formatMentionValue = (value: MentionAnswer): string => {
   if (value == null) return "";
+
   if (Array.isArray(value)) {
     return value
       .filter((v) => v != null && v !== "")
       .map((v) => String(v))
       .join(", ");
   }
+
   return String(value);
 };
 
+/** Minimal shape of a Plate node this resolver inspects — enough to spot mention
+ * tokens without pulling raw editor value types through the API. */
+export interface MentionNode {
+  type?: unknown;
+  text?: unknown;
+  fieldName?: unknown;
+}
+
 /** True when any child is a mention node — gates the slow structured render path. */
-export const hasMention = (nodes: unknown): boolean =>
-  Array.isArray(nodes) && nodes.some((n) => (n as LabelTokenNode)?.type === MENTION_TYPE);
+export const hasMention = (nodes: ReadonlyArray<MentionNode> | undefined): boolean =>
+  (nodes ?? []).some((n) => n?.type === MENTION_TYPE);
 
 /** Walk label/content children → runs, swapping mentions for live answers (or a faint
  * placeholder when unanswered/deleted). */
@@ -53,10 +66,12 @@ export const resolveMentions = (
   ctx: ResolveMentionsCtx,
 ): MentionRun[] => {
   const runs: MentionRun[] = [];
+
   for (const node of nodes ?? []) {
     if (node?.type === MENTION_TYPE) {
       const fieldName = node.fieldName ?? node.key ?? "";
       const text = formatMentionValue(ctx.getValue(fieldName));
+
       if (text) {
         runs.push({ kind: "value", text });
       } else {
@@ -65,10 +80,11 @@ export const resolveMentions = (
           text: ctx.getLabel(fieldName) ?? node.value ?? fieldName,
         });
       }
-    } else if (typeof node?.text === "string") {
+    } else if (node?.text !== undefined) {
       runs.push({ kind: "text", text: node.text });
     }
   }
+
   return runs;
 };
 
@@ -80,5 +96,6 @@ export const fieldsBefore = <T extends { name: string }>(
 ): T[] => {
   if (!cutoffName) return [...fields];
   const idx = fields.findIndex((f) => f.name === cutoffName);
+
   return idx === -1 ? [...fields] : fields.slice(0, idx);
 };

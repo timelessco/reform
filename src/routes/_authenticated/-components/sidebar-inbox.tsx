@@ -26,10 +26,12 @@ const formatNotificationClock = (value: string) => format(new Date(value), "h:mm
 // Figma 26669:11845 — batch notifications into Today / Yesterday / dated sections by latest activity.
 const groupNotificationsByDay = <T extends { latestSubmissionAt: string }>(items: readonly T[]) => {
   const buckets = new Map<string, { label: string; order: number; items: T[] }>();
+
   for (const item of items) {
     const date = new Date(item.latestSubmissionAt);
     const label = isToday(date) ? "Today" : isYesterday(date) ? "Yesterday" : format(date, "MMM d");
     const bucket = buckets.get(label);
+
     if (bucket) {
       bucket.items.push(item);
       bucket.order = Math.max(bucket.order, date.getTime());
@@ -37,6 +39,7 @@ const groupNotificationsByDay = <T extends { latestSubmissionAt: string }>(items
       buckets.set(label, { label, order: date.getTime(), items: [item] });
     }
   }
+
   return [...buckets.values()].sort((a, b) => b.order - a.order);
 };
 
@@ -51,6 +54,7 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
   const queryClient = useQueryClient();
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+
   const {
     notifications,
     readNotificationCount,
@@ -97,11 +101,13 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
   const pendingInvitations = (invitations ?? []).filter(
     (inv: { status: string }) => inv.status === "pending",
   );
+
   const hasNotifications = notifications.length > 0;
   const hasPendingInvitations = pendingInvitations.length > 0;
 
   return (
     // [font-variation-settings:normal] un-pins the global opsz20/wght450 so font-weight utils apply
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-variation unpin has no utility
     <div className="flex size-full flex-col [font-variation-settings:normal]">
       <SidebarHeader className="shrink-0 gap-2.25 space-y-2 pt-2 pb-3 pl-1">
         <div className="flex items-center justify-between gap-1">
@@ -112,7 +118,7 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
           <Button
             variant="ghost-flat"
             size="icon"
-            className="shrink-0 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+            className="shrink-0 rounded-lg p-1.25 text-foreground hover:text-foreground"
             onClick={onClose}
             aria-label="Close"
           >
@@ -128,14 +134,15 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
             <div className="-mx-1">
               {/* Figma 26669:11834 — section header: "Notifications" + mark-all (double-check). */}
               <div className="flex items-center justify-between py-2 pr-2 pl-4">
-                <span className="px-0.5 py-1 text-base leading-[1.15] font-[450] tracking-[0.14px] text-gray-800">
+                {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 450 weight + 0.14px tracking have no scale steps */}
+                <span className="px-0.5 py-1 text-base leading-[1.15] font-[450] tracking-[0.14px] text-foreground">
                   Notifications
                 </span>
                 {readNotificationCount > 0 && (
                   <Button
                     variant="ghost-flat"
                     size="icon"
-                    className="rounded-[8px] p-1.25 text-gray-800 hover:text-foreground"
+                    className="rounded-lg p-1.25 text-foreground hover:text-foreground"
                     disabled={isClearingAllRead}
                     onClick={() => void clearAllReadNotifications()}
                     aria-label="Clear all read"
@@ -150,12 +157,14 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
               <div className="flex flex-col gap-5 pt-1.5 pb-3.5">
                 {groupNotificationsByDay(notifications).map((group) => (
                   <div key={group.label} className="flex flex-col gap-2">
-                    <p className="pl-4 text-sm leading-[1.15] font-[450] tracking-[0.13px] text-gray-500">
+                    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 450 weight + 0.13px tracking have no scale steps */}
+                    <p className="pl-4 text-sm leading-[1.15] font-[450] tracking-[0.13px] text-muted-foreground">
                       {group.label}
                     </p>
                     <div className="flex flex-col">
                       {group.items.map((notification) => {
                         const isUnread = !notification.isRead && notification.unreadCount > 0;
+
                         const isBusy =
                           readingFormId === notification.formId ||
                           clearingFormId === notification.formId;
@@ -164,17 +173,19 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
                           <button
                             key={notification.id}
                             type="button"
-                            className="group flex w-full items-center gap-1.5 border-b border-gray-200 px-2 py-3 text-left transition-colors hover:rounded-[8px] hover:border-transparent hover:bg-gray-100"
+                            className="group flex w-full items-center gap-1.5 border-b border-border px-2 py-3 text-left transition-colors hover:rounded-lg hover:border-transparent hover:bg-accent"
                             onClick={() => void openNotification(notification)}
                             disabled={readingFormId === notification.formId}
                           >
                             {/* Message — 14px / Medium 450 / gray-800 / lh 1.5 (Figma 27015:15776). */}
-                            <span className="min-w-0 flex-1 text-base leading-[1.5] font-[450] tracking-[0.14px] text-gray-800">
+                            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.5 leading + 450 weight + 0.14px tracking have no scale steps */}
+                            <span className="min-w-0 flex-1 text-base leading-[1.5] font-[450] tracking-[0.14px] text-foreground">
                               {notification.formTitle || "Untitled"}
                             </span>
                             {/* Right cluster — time (13px / gray-550) + unread dot / hover-clear (Figma 27015:15777). */}
                             <span className="flex shrink-0 items-center gap-0.5">
-                              <span className="text-sm leading-[1.15] font-[450] tracking-[0.13px] text-[var(--color-gray-550)]">
+                              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 450 weight + 0.13px tracking have no scale steps */}
+                              <span className="text-sm leading-[1.15] font-[450] tracking-[0.13px] text-(--color-gray-550)">
                                 {formatNotificationClock(notification.latestSubmissionAt)}
                               </span>
                               {isUnread ? (
@@ -183,13 +194,15 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
                                   aria-label="Unread"
                                 >
                                   {/* Figma blue/500 #0289f7 — no token exists; matches logic-block-node.tsx precedent. */}
+                                  {/* oxlint-disable-next-line shadcn/no-raw-colors -- no token for Figma blue #0289f7 unread dot; needs design decision */}
+                                  {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma blue #0289f7 has no theme token; needs design decision */}
                                   <span className="size-1.5 rounded-full bg-[#0289f7]" />
                                 </span>
                               ) : (
                                 <Button
                                   variant="ghost"
                                   size="icon-xs"
-                                  className="size-4 shrink-0 text-[var(--color-gray-550)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+                                  className="size-4 shrink-0 text-(--color-gray-550) opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
                                   disabled={isBusy}
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -213,6 +226,7 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
 
           {hasPendingInvitations && (
             <>
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- 10px section label sits below text-2xs (11px); nearest would enlarge it */}
               <p className="mb-3 px-2 text-[10px] font-bold tracking-widest text-muted-foreground/30 uppercase">
                 Invitations
               </p>
@@ -234,7 +248,7 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
                           <UsersIcon className="size-4 text-muted-foreground" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[12px] text-foreground">
+                          <p className="text-xs text-foreground">
                             You've been invited to join{" "}
                             <span className="font-bold">
                               {(
@@ -244,7 +258,7 @@ export const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => 
                               ).organization?.name ?? "an organization"}
                             </span>
                           </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground/50">
+                          <p className="mt-0.5 text-2xs text-muted-foreground/50">
                             Role: <span className="capitalize">{invitation.role}</span>
                           </p>
                         </div>
@@ -321,8 +335,10 @@ export const SidebarInbox = () => {
   const [applyExitClass, setApplyExitClass] = useState(false);
 
   const [lastIsInboxOpen, setLastIsInboxOpen] = useState(isInboxOpen);
+
   if (lastIsInboxOpen !== isInboxOpen) {
     setLastIsInboxOpen(isInboxOpen);
+
     if (isInboxOpen) {
       prevOpenRef.current = true;
       setIsExiting(false);
@@ -335,9 +351,11 @@ export const SidebarInbox = () => {
 
   useIsomorphicLayoutEffect(() => {
     if (!isExiting) return;
+
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setApplyExitClass(true));
     });
+
     return () => cancelAnimationFrame(id);
   }, [isExiting]);
 
@@ -345,21 +363,25 @@ export const SidebarInbox = () => {
   useEffect(() => {
     if (!isExiting) return;
     const timeoutId = setTimeout(() => setIsExiting(false), EXIT_DURATION_MS);
+
     return () => clearTimeout(timeoutId);
   }, [isExiting]);
 
   const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
     if (e.target !== e.currentTarget) return;
+
     if (e.propertyName === "transform") setIsExiting(false);
   }, []);
 
   if (isMobile) return null;
+
   if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
 
   return (
     <div
       className={cn(
         "fixed top-0 bottom-0 z-40 flex w-80 flex-col border-r border-foreground/5 bg-background select-none",
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- left+opacity-only transition; transition-all would also animate background/border
         "transition-[left,opacity] duration-150 ease-out [[data-resizing]_&]:transition-none",
         state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
         applyExitClass && "opacity-0",

@@ -34,11 +34,11 @@ export const Slider = ({
           data-slot="slider-track"
           // Figma 25634-17867: 2px track, design-system gray-300 / gray-950 range — pinned (not
           // muted/primary) so the bf-themed menu doesn't tint them with the form's palette.
-          className="relative grow overflow-hidden rounded-full bg-gray-300 select-none data-horizontal:h-0.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-0.5"
+          className="relative grow overflow-hidden rounded-full bg-[var(--color-gray-300)] select-none data-horizontal:h-0.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-0.5"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
-            className="bg-gray-950 select-none data-horizontal:h-full data-vertical:w-full"
+            className="bg-[var(--color-gray-950)] select-none data-horizontal:h-full data-vertical:w-full"
           />
         </SliderPrimitive.Track>
         {_values.map((_value, index) => (

@@ -3,6 +3,7 @@ import { cn, parseTimestampAsUTC } from "@/lib/utils";
 
 describe("cn", () => {
   it("merges class names", () => {
+    // oxlint-disable-next-line shadcn/no-unknown-classes -- intentional non-class fixture for cn() unit test
     expect(cn("foo", "bar")).toBe("foo bar");
   });
 

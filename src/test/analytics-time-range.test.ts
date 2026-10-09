@@ -68,6 +68,7 @@ describe("resolveTimeRange", () => {
       { filter: "all_time", formCreatedAt: new Date("2026-01-01T08:30:00Z") },
       FIXED_NOW,
     );
+
     expect(result.start.toISOString()).toBe("2026-01-01T00:00:00.000Z");
     expect(result.end.toISOString()).toBe(FIXED_NOW.toISOString());
     expect(result.days[0]).toBe("2026-01-01");
@@ -79,6 +80,7 @@ describe("resolveTimeRange", () => {
       { filter: "all_time", formCreatedAt: new Date("2026-05-01T00:00:00Z") },
       FIXED_NOW,
     );
+
     expect(result.days).toStrictEqual(["2026-04-27"]);
     expect(result.start.toISOString()).toBe("2026-04-27T00:00:00.000Z");
   });
@@ -93,6 +95,7 @@ describe("resolveTimeRange", () => {
       { filter: "custom", startDate: "2026-04-05", endDate: "2026-04-01" },
       FIXED_NOW,
     );
+
     expect(result.days).toStrictEqual([
       "2026-04-01",
       "2026-04-02",
@@ -154,6 +157,7 @@ describe("resolveTimeRange", () => {
       },
       FIXED_NOW,
     );
+
     expect(result.days).toStrictEqual([
       "2026-04-01",
       "2026-04-02",
@@ -174,6 +178,7 @@ describe("resolveTimeRange", () => {
       },
       FIXED_NOW,
     );
+
     expect(result.days).toStrictEqual(["2026-04-10"]);
   });
 
@@ -186,6 +191,7 @@ describe("resolveTimeRange", () => {
       },
       FIXED_NOW,
     );
+
     expect(result.days).toStrictEqual(["2024-02-28", "2024-02-29", "2024-03-01"]);
   });
 
@@ -237,6 +243,7 @@ describe("splitTodayVsPast", () => {
       },
       FIXED_NOW,
     );
+
     const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
     expect(todayStart).toBeNull();
     expect(rawStart).toBeNull();
@@ -258,6 +265,7 @@ describe("splitTodayVsPast", () => {
       },
       FIXED_NOW,
     );
+
     const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
     expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
     expect(rawStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
@@ -285,6 +293,7 @@ describe("splitTodayVsPast", () => {
       { filter: "all_time", formCreatedAt: new Date("2026-04-25T00:00:00Z") },
       FIXED_NOW,
     );
+
     const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
     expect(pastDays).toStrictEqual(["2026-04-25", "2026-04-26"]);
     expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");

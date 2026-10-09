@@ -8,6 +8,7 @@
 // specifier to this stub lets both dev and prod resolve it deterministically.
 
 export class AccessTokenMissingError extends Error {}
+
 export class RefreshAccessTokenFailedError extends Error {}
 
 export const getContext = () => undefined;

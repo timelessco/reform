@@ -10,18 +10,23 @@ export const useFocusFirstField = (formRef: RefObject<HTMLFormElement | null>) =
   useMountEffect(() => {
     let cancelled = false;
     let innerHandle: number | null = null;
+
     const outerHandle = requestAnimationFrame(() => {
       innerHandle = requestAnimationFrame(() => {
         if (cancelled || !formRef.current) return;
+
         const focusable = formRef.current.querySelector(
           FOCUSABLE_FIELD_SELECTOR,
         ) as HTMLElement | null;
+
         focusable?.focus();
       });
     });
+
     return () => {
       cancelled = true;
       cancelAnimationFrame(outerHandle);
+
       if (innerHandle !== null) cancelAnimationFrame(innerHandle);
     };
   });

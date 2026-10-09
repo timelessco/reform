@@ -6,6 +6,7 @@ import { ensureActiveOrgForWorkspace } from "@/lib/server-fn/org";
 
 const WorkspaceLayout = () => {
   const { workspaceId } = Route.useParams();
+
   return <Outlet key={workspaceId} />;
 };
 

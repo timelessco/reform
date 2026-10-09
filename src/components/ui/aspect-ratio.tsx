@@ -8,6 +8,7 @@ export const AspectRatio = ({
   <div
     data-slot="aspect-ratio"
     style={
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
       {
         "--ratio": ratio,
       } as React.CSSProperties

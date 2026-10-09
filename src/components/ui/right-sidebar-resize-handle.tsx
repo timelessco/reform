@@ -2,8 +2,11 @@ import type * as React from "react";
 import { useCallback, useRef } from "react";
 
 export const RIGHT_SIDEBAR_WIDTH_MIN = 280;
+
 export const RIGHT_SIDEBAR_WIDTH_DEFAULT = 304;
+
 export const RIGHT_SIDEBAR_WIDTH_MAX = 420;
+
 export const RIGHT_SIDEBAR_WIDTH_KEY = "right_sidebar_width";
 
 export const RightSidebarResizeHandle = ({
@@ -62,6 +65,7 @@ export const RightSidebarResizeHandle = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const step = e.shiftKey ? 50 : 10;
+
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         setSidebarWidth(sidebarWidthRef.current + step);
@@ -81,8 +85,9 @@ export const RightSidebarResizeHandle = ({
       onMouseDown={handleMouseDown}
       onKeyDown={handleKeyDown}
       onDoubleClick={handleDoubleClick}
-      className="fixed top-0 bottom-0 z-50 w-0 cursor-col-resize after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-sidebar-border/50 active:after:bg-sidebar-border"
-      style={{ right: `${sidebarWidth}px` }}
+      className="fixed top-0 right-(--right-sidebar-handle-width) bottom-0 z-50 w-0 cursor-col-resize after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-sidebar-border/50 active:after:bg-sidebar-border"
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+      style={{ "--right-sidebar-handle-width": `${sidebarWidth}px` } as React.CSSProperties}
     />
   );
 };

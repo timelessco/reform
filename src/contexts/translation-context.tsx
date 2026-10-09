@@ -22,11 +22,13 @@ export const TranslationProvider = ({ language, children }: TranslationProviderP
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
       let str = translations[key] ?? key;
+
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           str = str.replaceAll(`{${k}}`, String(v));
         }
       }
+
       return str;
     },
     [translations],
@@ -39,21 +41,25 @@ export const TranslationProvider = ({ language, children }: TranslationProviderP
 
 export const useTranslation = (): TranslationContextValue => {
   const ctx = use(TranslationContext);
+
   if (!ctx) {
     // Fallback to English if no provider
     return {
       t: (key: TranslationKey, params?: Record<string, string | number>) => {
         const translations = getTranslations("en");
         let str = translations[key] ?? key;
+
         if (params) {
           for (const [k, v] of Object.entries(params)) {
             str = str.replaceAll(`{${k}}`, String(v));
           }
         }
+
         return str;
       },
       language: "en",
     };
   }
+
   return ctx;
 };

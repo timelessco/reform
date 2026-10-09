@@ -1,4 +1,5 @@
 export const APP_NAME = import.meta.env.VITE_APP_NAME || "Reform";
+
 // Strip trailing slash once so callers can concat paths without `//api/...`
 // (VITE_APP_WEBSITE_URL sometimes has one, e.g. preview deploys).
 export const APP_WEBSITE_URL = (

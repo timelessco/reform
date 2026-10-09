@@ -64,31 +64,23 @@ const footerCellSpacingVariants = cva("", {
   },
 });
 
-const getPinningStyles = <TData extends RowData>(
-  column: Column<DataGridFeatures, TData, unknown>,
-): CSSProperties => {
-  const isPinned = column.getIsPinned();
-
-  return {
-    left: isPinned === "left" ? `${column.getStart("left")}px` : undefined,
-    right: isPinned === "right" ? `${column.getAfter("right")}px` : undefined,
-    position: isPinned ? "sticky" : "relative",
-    width: column.getSize(),
-    zIndex: isPinned ? 1 : 0,
-  };
-};
-
 type DataGridTablePinnedBoundary = "top" | "bottom";
+
+type DataGridTableRowSections<TData extends RowData> = {
+  topRows: Row<DataGridFeatures, TData>[];
+  centerRows: Row<DataGridFeatures, TData>[];
+  bottomRows: Row<DataGridFeatures, TData>[];
+};
 
 const getDataGridTableRowSections = <TData extends RowData>(
   table: DataGridApi<TData>,
   rowsPinnable?: boolean,
-) => {
+): DataGridTableRowSections<TData> => {
   if (!rowsPinnable) {
     return {
-      topRows: [] as Row<DataGridFeatures, TData>[],
+      topRows: [],
       centerRows: table.getRowModel().rows,
-      bottomRows: [] as Row<DataGridFeatures, TData>[],
+      bottomRows: [],
     };
   }
 
@@ -104,6 +96,7 @@ const getDataGridTableResolvedRows = <TData extends RowData>(
   rowsPinnable?: boolean,
 ) => {
   const { topRows, centerRows, bottomRows } = getDataGridTableRowSections(table, rowsPinnable);
+
   const resolvedRows: Array<{
     row: Row<DataGridFeatures, TData>;
     pinnedBoundary?: DataGridTablePinnedBoundary;
@@ -144,12 +137,15 @@ const DataGridTableBase = ({ children }: { children: ReactNode }) => {
     if (!props.tableLayout?.columnsResizable) return undefined;
     const headers = table.getFlatHeaders();
     const colSizes: Record<string, number> = {};
+
     for (let i = 0; i < headers.length; i++) {
       const header = headers[i];
+
       if (!header) continue;
       colSizes[`--header-${header.id}-size`] = header.getSize();
       colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
     }
+
     return colSizes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -168,11 +164,17 @@ const DataGridTableBase = ({ children }: { children: ReactNode }) => {
         props.tableLayout?.width === "auto" ? "table-auto" : "table-fixed",
         !props.tableLayout?.columnsResizable && "",
         !props.tableLayout?.columnsDraggable && "border-separate border-spacing-0",
+        props.tableLayout?.columnsResizable && "w-(--data-grid-table-width)",
         props.tableClassNames?.base,
       )}
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
       style={
         props.tableLayout?.columnsResizable
-          ? { ...columnSizeVars, width: table.getTotalSize() }
+          ? ({
+              // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime-generated --header-*-size custom props; resizable-columns contract
+              ...columnSizeVars,
+              "--data-grid-table-width": `${table.getTotalSize()}px`,
+            } as CSSProperties)
           : undefined
       }
     >
@@ -180,11 +182,19 @@ const DataGridTableBase = ({ children }: { children: ReactNode }) => {
         {visibleColumns.map((column) => (
           <col
             key={column.id}
+            className={
+              props.tableLayout?.columnsResizable || props.tableLayout?.width === "fixed"
+                ? "w-(--data-grid-col-width)"
+                : undefined
+            }
+            // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
             style={
               props.tableLayout?.columnsResizable
-                ? { width: `calc(var(--col-${column.id}-size) * 1px)` }
+                ? ({
+                    "--data-grid-col-width": `calc(var(--col-${column.id}-size) * 1px)`,
+                  } as CSSProperties)
                 : props.tableLayout?.width === "fixed"
-                  ? { width: column.getSize() }
+                  ? ({ "--data-grid-col-width": `${column.getSize()}px` } as CSSProperties)
                   : undefined
             }
           />
@@ -212,11 +222,20 @@ const DataGridTableViewport = ({
     <div
       data-slot="data-grid-table-viewport"
       ref={viewportRef}
-      className={cn("min-w-full align-top", className)}
-      style={{
-        ...(props.tableLayout?.columnsResizable ? { width: table.getTotalSize() } : undefined),
-        ...style,
-      }}
+      className={cn(
+        "min-w-full align-top",
+        props.tableLayout?.columnsResizable && "w-(--data-grid-viewport-width)",
+        className,
+      )}
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+      style={
+        props.tableLayout?.columnsResizable
+          ? ({
+              "--data-grid-viewport-width": `${table.getTotalSize()}px`,
+              ...style,
+            } as CSSProperties)
+          : style
+      }
     >
       {children}
     </div>
@@ -279,15 +298,20 @@ const DataGridTableHeadRowCell = <TData extends RowData>({
 
   const { column } = header;
   const isPinned = column.getIsPinned();
+  const canPin = props.tableLayout?.columnsPinnable && column.getCanPin();
   const isLastLeftPinned = isPinned === "left" && column.getIsLastColumn("left");
   const isFirstRightPinned = isPinned === "right" && column.getIsFirstColumn("right");
+
   const isLastVisibleColumn =
     column.getIndex() === header.getContext().table.getVisibleLeafColumns().length - 1;
+
   const headerCellSpacing = headerCellSpacingVariants({
     size: props.tableLayout?.dense ? "dense" : "default",
   });
+
   // optional chaining: sorting feature is tree-shaken when unused in v9
   const isSorted = column.getCanSort?.() ? column.getIsSorted?.() : undefined;
+
   const ariaSort =
     isSorted === "asc"
       ? ("ascending" as const)
@@ -300,21 +324,28 @@ const DataGridTableHeadRowCell = <TData extends RowData>({
       key={header.id}
       ref={dndRef}
       aria-sort={ariaSort}
-      style={{
-        ...(props.tableLayout?.width === "fixed" &&
-          !props.tableLayout?.columnsResizable && {
-            width: header.getSize(),
-          }),
-        ...(props.tableLayout?.columnsPinnable && column.getCanPin() && getPinningStyles(column)),
-        ...(props.tableLayout?.columnsResizable && {
-          width: `calc(var(--header-${header.id}-size) * 1px)`,
-        }),
-        ...(dndStyle ? dndStyle : null),
-      }}
+      style={
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+        {
+          "--data-grid-cell-width": props.tableLayout?.columnsResizable
+            ? `calc(var(--header-${header.id}-size) * 1px)`
+            : canPin
+              ? `${column.getSize()}px`
+              : props.tableLayout?.width === "fixed"
+                ? `${header.getSize()}px`
+                : undefined,
+          "--data-grid-pin-left":
+            canPin && isPinned === "left" ? `${column.getStart("left")}px` : undefined,
+          "--data-grid-pin-right":
+            canPin && isPinned === "right" ? `${column.getAfter("right")}px` : undefined,
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Live dnd-kit transform/transition forwarded from data-grid-table-dnd-rows
+          ...(dndStyle ? dndStyle : null),
+        } as CSSProperties
+      }
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? "left" : isFirstRightPinned ? "right" : undefined}
       className={cn(
-        "relative h-9 text-left align-middle font-normal text-secondary-foreground/80 rtl:text-right [&:has([role=checkbox])]:pe-0",
+        "relative right-(--data-grid-pin-right) left-(--data-grid-pin-left) h-9 w-(--data-grid-cell-width) text-left align-middle font-normal text-secondary-foreground/80 rtl:text-right [&:has([role=checkbox])]:pe-0",
         headerCellSpacing,
         props.tableLayout?.cellBorder && "border-e",
         props.tableLayout?.columnsResizable && column.getCanResize() && "overflow-visible",
@@ -322,6 +353,7 @@ const DataGridTableHeadRowCell = <TData extends RowData>({
           column.getCanResize() &&
           isLastVisibleColumn &&
           "pe-8",
+        canPin && (isPinned ? "sticky z-1" : "z-0"),
         props.tableLayout?.columnsPinnable &&
           column.getCanPin() &&
           "data-pinned:bg-background/90 data-pinned:backdrop-blur-xs [&:not([data-pinned]):has(+[data-pinned])_div.cursor-col-resize:last-child]:opacity-0 [&[data-last-col=left]_div.cursor-col-resize:last-child]:opacity-0 [&[data-pinned=left][data-last-col=left]]:border-e! [&[data-pinned=right]:last-child_div.cursor-col-resize:last-child]:opacity-0 [&[data-pinned=right][data-last-col=right]]:border-s! [&[data-pinned][data-last-col]]:border-border",
@@ -343,8 +375,10 @@ const DataGridTableHeadRowCellResize = <TData extends RowData>({
   header: Header<DataGridFeatures, TData, unknown>;
 }) => {
   const { column } = header;
+
   const isLastVisibleColumn =
     column.getIndex() === header.getContext().table.getVisibleLeafColumns().length - 1;
+
   const resizeHandler = header.getResizeHandler();
 
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
@@ -366,7 +400,7 @@ const DataGridTableHeadRowCellResize = <TData extends RowData>({
         onMouseDown: handleMouseDown,
         onTouchStart: handleTouchStart,
         className: cn(
-          "user-select-none absolute top-0 z-10 flex h-full cursor-col-resize touch-none",
+          "absolute top-0 z-10 flex h-full cursor-col-resize touch-none select-none",
           isLastVisibleColumn
             ? "inset-e-0 w-5 justify-end before:hidden"
             : "-inset-e-2 w-5 justify-center before:absolute before:inset-y-0 before:w-px before:-translate-x-px before:bg-border",
@@ -401,11 +435,13 @@ const DataGridTableBody = ({ children }: { children: ReactNode }) => {
 
 const DataGridTableFoot = ({ children }: { children: ReactNode }) => {
   const { props } = useDataGrid();
+
   return <tfoot className={cn("border-t", props.tableClassNames?.footer)}>{children}</tfoot>;
 };
 
 const DataGridTableFootRow = ({ children }: { children: ReactNode }) => {
   const { props } = useDataGrid();
+
   return (
     <tr
       className={cn(
@@ -428,9 +464,11 @@ const DataGridTableFootRowCell = ({
   className?: string;
 }) => {
   const { props } = useDataGrid();
+
   const spacing = footerCellSpacingVariants({
     size: props.tableLayout?.dense ? "dense" : "default",
   });
+
   return (
     <td
       colSpan={colSpan}
@@ -476,19 +514,23 @@ const DataGridTableBodyRowSkeletonCell = <TData extends RowData>({
   column: Column<DataGridFeatures, TData, unknown>;
 }) => {
   const { props, table } = useDataGrid();
+
   const bodyCellSpacing = bodyCellSpacingVariants({
     size: props.tableLayout?.dense ? "dense" : "default",
   });
 
   return (
     <td
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
       style={
         props.tableLayout?.columnsResizable
-          ? { width: `calc(var(--col-${column.id}-size) * 1px)` }
+          ? ({
+              "--data-grid-cell-width": `calc(var(--col-${column.id}-size) * 1px)`,
+            } as CSSProperties)
           : undefined
       }
       className={cn(
-        "align-middle",
+        "w-(--data-grid-cell-width) align-middle",
         bodyCellSpacing,
         props.tableLayout?.cellBorder && "border-e",
         props.tableLayout?.columnsResizable && column.getCanResize() && "truncate",
@@ -528,6 +570,7 @@ const DataGridTableBodyRow = <TData extends RowData>({
   return (
     <tr
       ref={composeRefs(rowRef, dndRef)}
+      // oxlint-disable-next-line shadcn/no-inline-styles -- Live dnd-kit transform/transition forwarded from data-grid-table-dnd-rows
       style={{ ...(dndStyle ? dndStyle : null) }}
       data-state={table.options.enableRowSelection && isSelected ? "selected" : undefined}
       data-row-pinned={isRowPinned || undefined}
@@ -587,8 +630,10 @@ const DataGridTableBodyRowCell = <TData extends RowData>({
 
   const { column, row } = cell;
   const isPinned = column.getIsPinned();
+  const canPin = props.tableLayout?.columnsPinnable && column.getCanPin();
   const isLastLeftPinned = isPinned === "left" && column.getIsLastColumn("left");
   const isFirstRightPinned = isPinned === "right" && column.getIsFirstColumn("right");
+
   const bodyCellSpacing = bodyCellSpacingVariants({
     size: props.tableLayout?.dense ? "dense" : "default",
   });
@@ -597,21 +642,31 @@ const DataGridTableBodyRowCell = <TData extends RowData>({
     <td
       key={cell.id}
       ref={dndRef}
-      style={{
-        ...(props.tableLayout?.columnsPinnable && column.getCanPin() && getPinningStyles(column)),
-        ...(props.tableLayout?.columnsResizable && {
-          width: `calc(var(--col-${column.id}-size) * 1px)`,
-        }),
-        ...(dndStyle ? dndStyle : null),
-      }}
+      style={
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+        {
+          "--data-grid-cell-width": props.tableLayout?.columnsResizable
+            ? `calc(var(--col-${column.id}-size) * 1px)`
+            : canPin
+              ? `${column.getSize()}px`
+              : undefined,
+          "--data-grid-pin-left":
+            canPin && isPinned === "left" ? `${column.getStart("left")}px` : undefined,
+          "--data-grid-pin-right":
+            canPin && isPinned === "right" ? `${column.getAfter("right")}px` : undefined,
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Live dnd-kit transform/transition forwarded from data-grid-table-dnd-rows
+          ...(dndStyle ? dndStyle : null),
+        } as CSSProperties
+      }
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? "left" : isFirstRightPinned ? "right" : undefined}
       className={cn(
-        "align-middle",
+        "right-(--data-grid-pin-right) left-(--data-grid-pin-left) w-(--data-grid-cell-width) align-middle",
         bodyCellSpacing,
         props.tableLayout?.cellBorder && "border-e",
         props.tableLayout?.columnsResizable && column.getCanResize() && "truncate",
         cell.column.columnDef.meta?.cellClassName,
+        canPin && (isPinned ? "sticky z-1" : "z-0"),
         props.tableLayout?.columnsPinnable &&
           column.getCanPin() &&
           "data-pinned:bg-background/90 data-pinned:backdrop-blur-xs [&[data-pinned=left][data-last-col=left]]:border-e! [&[data-pinned=right][data-last-col=right]]:border-s! [&[data-pinned][data-last-col]]:border-border",
@@ -636,6 +691,7 @@ const DataGridTableRenderedRow = <TData extends RowData>({
 }) => {
   const { table } = useDataGrid();
   const isExpanded = useRowExpanded(table, row.id);
+
   return (
     <Fragment>
       <DataGridTableBodyRow row={row} pinnedBoundary={pinnedBoundary} rowRef={rowRef}>
@@ -739,6 +795,7 @@ const DataGridTableRowSelect = <TData extends RowData>({
 }) => {
   const { table } = useDataGrid();
   const isSelected = useRowSelected(table, row.id);
+
   return (
     <>
       <div
@@ -846,7 +903,7 @@ const DataGridTableBodyRows = <TData extends RowData>({ table }: { table: DataGr
 const MemoizedDataGridTableBodyRows = memo(
   DataGridTableBodyRows,
   (_prev, next) => !!next.table.state.columnResizing.isResizingColumn,
-) as typeof DataGridTableBodyRows;
+);
 
 const DataGridTableHeader = () => {
   const { table, props } = useDataGrid();

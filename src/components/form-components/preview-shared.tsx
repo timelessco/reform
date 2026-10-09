@@ -44,7 +44,7 @@ export const NoContentPlaceholder = () => (
 export const ShareWithOthers = ({ shareUrl }: { shareUrl: string }) => (
   <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2 pt-4">
     <p className="text-sm text-muted-foreground">Share with others</p>
-    <div className="flex h-[30px] w-full items-center gap-[6px] rounded-lg bg-muted/60 py-[3px] pr-[3px] pl-[10px]">
+    <div className="flex h-[30px] w-full items-center gap-1.5 rounded-lg bg-muted/60 py-0.75 pr-0.75 pl-2.5">
       <span className="min-w-0 flex-1 truncate text-sm font-normal text-muted-foreground">
         {shareUrl}
       </span>
@@ -52,7 +52,8 @@ export const ShareWithOthers = ({ shareUrl }: { shareUrl: string }) => (
         text={shareUrl}
         variant="ghost"
         size="sm"
-        className="h-6 shrink-0 gap-1 rounded-[5px] border-none bg-background px-2 text-sm text-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] [&_svg]:size-[13px]"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- copy-button shadow has no scale equivalent
+        className="h-6 shrink-0 gap-1 rounded-sm border-none bg-background px-2 text-sm text-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] [&_svg]:size-[13px]"
       >
         Copy
       </CopyButton>
@@ -70,10 +71,11 @@ export const DefaultThankYou = ({
   shareUrl?: string;
 }) => {
   const { t } = useTranslation();
+
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-        <SuccessCheck size={32} className="text-green-600" />
+      <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-(--color-success-soft)">
+        <SuccessCheck size={32} className="text-(--color-success-on-soft)" />
       </div>
       <h2 className="mb-2 text-2xl font-semibold">{t("thankYou")}</h2>
       <p className="mb-6 text-muted-foreground">{t("responseSubmitted")}</p>

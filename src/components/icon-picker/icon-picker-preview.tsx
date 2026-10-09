@@ -26,7 +26,13 @@ const getAdjustedColor = (color: string | undefined, isDarkMode: boolean) => {
 // Cross-doc `<use>` clones only the symbol's subtree; color via CSS `color` (inherits into `fill="currentColor"`), not `fill` (doesn't inherit across ref).
 // Full sprite because static-asset middleware intercepts `Sec-Fetch-Dest: image` before per-icon routes; sprite gzips ~306 KB, cached immutable.
 const StandaloneIcon = ({ name, color, size }: { name: string; color: string; size: string }) => (
-  <svg height={size} style={{ color }} viewBox="0 0 18 18" width={size}>
+  <svg
+    height={size}
+    className="text-(--icon-color)"
+    style={{ "--icon-color": color } as React.CSSProperties}
+    viewBox="0 0 18 18"
+    width={size}
+  >
     <use href={`${SPRITE_PATH}#${name}`} />
   </svg>
 );
@@ -51,6 +57,7 @@ const RenderedIcon = ({
   if (standaloneIcon && icon) {
     return <StandaloneIcon name={icon} color={color} size={iconSize} />;
   }
+
   return <>{matchedIcon?.icon(color, iconSize)}</>;
 };
 
@@ -81,10 +88,10 @@ export const IconPickerPreview = ({
     return (
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center",
+          "flex size-(--icon-size) shrink-0 items-center justify-center",
           disc && "rounded-full bg-sidebar",
         )}
-        style={{ width: `${size}px`, height: `${size}px` }}
+        style={{ "--icon-size": `${size}px` } as React.CSSProperties}
       >
         <RenderedIcon
           color="currentColor"
@@ -104,11 +111,9 @@ export const IconPickerPreview = ({
     // bg + shadow via CSS ([data-bf-logo-icon="minimal"]).
     return (
       <div
-        className="flex items-center justify-center rounded-full bg-card text-foreground shadow-[0px_1px_8px_0px_rgba(0,0,0,0.1)]"
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-        }}
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- logo-disc shadow has no scale equivalent
+        className="flex size-(--icon-size) items-center justify-center rounded-full bg-card text-foreground shadow-[0px_1px_8px_0px_rgba(0,0,0,0.1)]"
+        style={{ "--icon-size": `${size}px` } as React.CSSProperties}
       >
         <RenderedIcon
           color="currentColor"
@@ -126,12 +131,8 @@ export const IconPickerPreview = ({
 
   return (
     <div
-      className="flex items-center justify-center rounded-full"
-      style={{
-        backgroundColor: adjustedBgColor,
-        width: `${size}px`,
-        height: `${size}px`,
-      }}
+      className="flex size-(--icon-size) items-center justify-center rounded-full bg-(--icon-bg)"
+      style={{ "--icon-bg": adjustedBgColor, "--icon-size": `${size}px` } as React.CSSProperties}
     >
       <RenderedIcon
         color={fillColor}
@@ -170,8 +171,8 @@ export const ThemedFormIcon = ({
       <img
         src={icon}
         alt=""
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: `${size}px`, height: `${size}px` }}
+        className="size-(--icon-size) shrink-0 rounded-full object-cover"
+        style={{ "--icon-size": `${size}px` } as React.CSSProperties}
       />
     );
   }
@@ -197,9 +198,11 @@ export const ThemedFormIcon = ({
   const themedCustomization = customization
     ? { ...customization, mode: resolvedAppTheme }
     : customization;
+
   const themeVars =
     themedCustomization && Object.keys(themedCustomization).length > 0
-      ? getThemeStyleVars(themedCustomization)
+      ? // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
+        getThemeStyleVars(themedCustomization)
       : undefined;
 
   return (

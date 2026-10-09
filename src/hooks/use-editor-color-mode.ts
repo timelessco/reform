@@ -12,6 +12,7 @@ export const useEditorColorMode = () => {
     (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
     [],
   );
+
   const editorColorMode = data?.[0]?.editorColorMode ?? null;
 
   const setEditorColorMode = useCallback((mode: "light" | "dark" | null) => {

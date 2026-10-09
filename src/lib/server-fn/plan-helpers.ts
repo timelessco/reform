@@ -47,9 +47,11 @@ const FORM_INPUT_GATES: ReadonlyArray<{
 export const formSettingsFeatureGates = (data: FormProSettingsInput): FeatureGate[] => {
   const record = data as Record<string, unknown>;
   const gates: FeatureGate[] = [];
+
   for (const { field, gate, isActive } of FORM_INPUT_GATES) {
     if (isActive(record[field])) gates.push(gate);
   }
+
   return gates;
 };
 

@@ -42,9 +42,13 @@ const TabPanels = ({ activeTab }: { activeTab: SettingsTab }) => {
   const [openedDomains, setOpenedDomains] = useState(activeTab === "domains");
 
   if (activeTab === "account" && !openedAccount) setOpenedAccount(true);
+
   if (activeTab === "notifications" && !openedNotifications) setOpenedNotifications(true);
+
   if (activeTab === "members" && !openedMembers) setOpenedMembers(true);
+
   if (activeTab === "billing" && !openedBilling) setOpenedBilling(true);
+
   if (activeTab === "domains" && !openedDomains) setOpenedDomains(true);
 
   return (
@@ -95,12 +99,15 @@ export const SettingsDialog = () => {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- bespoke overlay tint (rgba 0.36) and 4px blur have no theme/scale equivalent; token swap would shift visuals
         overlayClassName="bg-[rgba(0,0,0,0.36)] backdrop-blur-[4px] duration-150"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- bespoke Figma elevation shadow and 0.98 zoom have no scale equivalent; nearest tokens would shift visuals
         className="flex h-[calc(100vh-2rem)] w-[calc(100vw-1rem)] max-w-none flex-col overflow-clip rounded-5xl p-0 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6),0px_105px_29px_0px_rgba(0,0,0,0),0px_67px_27px_0px_rgba(0,0,0,0.01),0px_38px_23px_0px_rgba(0,0,0,0.04),0px_17px_17px_0px_rgba(0,0,0,0.08),0px_4px_9px_0px_rgba(0,0,0,0.09)] ring-0 duration-150 sm:max-w-none md:h-[min(625px,calc(100vh-80px))] md:w-[760px] md:flex-row data-open:zoom-in-[0.98] data-closed:zoom-out-[0.98]"
       >
         {/* Left Sidebar (top tabs on mobile) */}
-        <div className="relative flex w-full shrink-0 flex-col after:absolute after:right-0 after:bottom-0 after:left-0 after:h-[0.5px] after:bg-[var(--color-gray-100)] md:w-[180px] md:after:top-0 md:after:left-auto md:after:h-auto md:after:w-[0.5px]">
+        <div className="relative flex w-full shrink-0 flex-col after:absolute after:right-0 after:bottom-0 after:left-0 after:h-[0.5px] after:bg-(--color-gray-100) md:w-[180px] md:after:top-0 md:after:left-auto md:after:h-auto md:after:w-[0.5px]">
           <div className="hidden px-2 pt-5 pb-3 md:block">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- tracking-[0.26px] has no value-identical step; nearest tracking token would shift visuals */}
             <p className="text-sm font-medium tracking-[0.26px] text-muted-foreground">Settings</p>
           </div>
 
@@ -108,6 +115,7 @@ export const SettingsDialog = () => {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
+
               return (
                 <SidebarItem
                   label={item.label}

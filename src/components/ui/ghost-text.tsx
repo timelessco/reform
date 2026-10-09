@@ -6,6 +6,7 @@ import { useElement, usePluginOption } from "platejs/react";
 export const GhostText = () => {
   const element = useElement();
 
+  // SAFETY: Plate assigns every block element a string id at creation
   const isSuggested = usePluginOption(CopilotPlugin, "isSuggested", element.id as string);
 
   if (!isSuggested) return null;

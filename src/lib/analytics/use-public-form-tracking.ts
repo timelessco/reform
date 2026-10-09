@@ -36,6 +36,7 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
     if (!enabled) {
       return;
     }
+
     if (typeof window === "undefined") {
       return;
     }
@@ -73,6 +74,7 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
       if (cancelled) {
         return;
       }
+
       visitIdRef.current = id;
       setVisitId(id);
     });
@@ -82,9 +84,11 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
       // doesn't race ahead of (and cancel) their delivery.
       flushQuestionProgressBuffer();
       const id = visitIdRef.current;
+
       if (!id) {
         return;
       }
+
       // visitEndedAt still feeds the dropoff terminal-question logic; duration is now derived
       // server-side (submission.createdAt − visitStartedAt), so no client timing is sent.
       fireUpdateVisitBeacon({
@@ -95,6 +99,7 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
         cls: vitalsRef.current.cls,
       });
     };
+
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
 

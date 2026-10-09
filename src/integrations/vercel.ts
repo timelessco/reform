@@ -12,6 +12,8 @@ export const vercelProjectId = (): string | undefined => process.env.VERCEL_PROJ
 /** Project id from env, throwing if unset. For server paths where a missing project is a config error, not a soft no-op. */
 export const requireVercelProjectId = (): string => {
   const id = vercelProjectId();
+
   if (!id) throw new Error("VERCEL_PROJECT_ID is not set");
+
   return id;
 };

@@ -9,11 +9,10 @@ export const STALE_CUSTOMIZATION_KEYS = ["coverFit"] as const;
 
 // Pure: returns a new map with stale keys removed. Null/undefined → {}.
 // Idempotent — re-running on its own output is a no-op.
-export const migrateCustomization = (
-  c: Record<string, string> | null | undefined,
-): Record<string, string> => {
+export const migrateCustomization = (c: Record<string, string> | null | undefined) => {
   if (!c) return {};
-  const out: Record<string, string> = { ...c };
+  const out = { ...c };
+
   for (const k of STALE_CUSTOMIZATION_KEYS) delete out[k];
 
   // Custom CSS is a single global `<style>` block, not per-mode. Older rows saved it
@@ -22,8 +21,10 @@ export const migrateCustomization = (
   // the bare `customCss` key (prefer light) and drop the dead prefixed keys.
   if (!out.customCss) {
     const legacy = out["light:customCss"] || out["dark:customCss"];
+
     if (legacy) out.customCss = legacy;
   }
+
   delete out["light:customCss"];
   delete out["dark:customCss"];
 

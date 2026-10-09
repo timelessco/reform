@@ -16,9 +16,13 @@ export const sortByManualOrder = <T extends { sortIndex?: string | null }>(
   [...items].toSorted((a, b) => {
     const aIdx = a.sortIndex ?? null;
     const bIdx = b.sortIndex ?? null;
+
     if (aIdx && bIdx) return aIdx < bIdx ? -1 : aIdx > bIdx ? 1 : 0;
+
     if (aIdx) return -1;
+
     if (bIdx) return 1;
+
     return fallback(a, b);
   });
 
@@ -49,6 +53,7 @@ export const applyReorder = <T>({
 
   const oldIdx = items.findIndex((it) => getId(it) === activeId);
   const newIdx = items.findIndex((it) => getId(it) === overId);
+
   if (oldIdx < 0 || newIdx < 0) return;
 
   const reordered = [...items];
@@ -78,9 +83,12 @@ export const getLeadingSortIndex = (
   items: readonly { sortIndex?: string | null }[],
 ): string | null => {
   let leading: string | null = null;
+
   for (const item of items) {
     const idx = item.sortIndex ?? null;
+
     if (idx && (leading === null || idx < leading)) leading = idx;
   }
+
   return leading;
 };

@@ -56,13 +56,16 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
 
   const selectedNodes = editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
   const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
+
   // Read required from the next sibling input node (not the label)
   const isRequired = selectedNodes.some(([node, path]) => {
     if (node.type !== "formLabel") return false;
     const nextPath = [...path];
     nextPath[nextPath.length - 1] += 1;
+
     try {
       const next = editor.api.node(nextPath);
+
       return next ? Boolean(next[0]?.required) : false;
     } catch {
       return false;
@@ -78,8 +81,10 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
           // Write required to the next sibling input node
           const nextPath = [...path];
           nextPath[nextPath.length - 1] += 1;
+
           try {
             const next = editor.api.node(nextPath);
+
             if (next) {
               editor.tf.setNodes({ required: !next[0]?.required }, { at: nextPath });
             }
@@ -101,7 +106,9 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
 
   const handleContextMenu = React.useCallback(
     (event: React.MouseEvent) => {
+      // SAFETY: context menu targets render inside the editor DOM, so dataset lives on an Element
       const dataset = (event.target as HTMLElement).dataset;
+
       const disabled =
         dataset?.slateEditor === "true" || readOnly || dataset?.plateOpenContextMenu === "false";
 
@@ -134,6 +141,7 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
   const handleTurnIntoH1 = React.useCallback(() => handleTurnInto(KEYS.h1), [handleTurnInto]);
   const handleTurnIntoH2 = React.useCallback(() => handleTurnInto(KEYS.h2), [handleTurnInto]);
   const handleTurnIntoH3 = React.useCallback(() => handleTurnInto(KEYS.h3), [handleTurnInto]);
+
   const handleTurnIntoBlockquote = React.useCallback(
     () => handleTurnInto(KEYS.blockquote),
     [handleTurnInto],

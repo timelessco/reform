@@ -13,9 +13,11 @@ const LandingEditor = lazy(() => import("./-components/landing-editor"));
 
 const checkHostIsApp = createServerFn({ method: "GET" }).handler(() => {
   const host = getRequestHost({ xForwardedHost: true });
+
   if (!isAppHost(host)) {
     throw notFound();
   }
+
   return { ok: true } as const;
 });
 
@@ -36,6 +38,7 @@ export const Route = createFileRoute("/")({
       if (isNotFound(e)) throw notFound();
       throw e;
     }
+
     if (typeof window !== "undefined") {
       const { localFormCollection } = await import("@/collections");
       await localFormCollection.preload();

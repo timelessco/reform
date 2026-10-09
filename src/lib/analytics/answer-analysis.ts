@@ -16,8 +16,10 @@ const ANSWER_CHOICE_TYPES = new Set([
 
 // Free-text → domain extraction (gmail.com, behance.net): list, not chart.
 const ANSWER_DOMAIN_TYPES = new Set(["Email", "Link"]);
+
 // Free-text with no extractable structure → bucket by response length.
 const ANSWER_LENGTH_TYPES = new Set(["Input", "Textarea"]);
+
 // Provided-or-not → Yes/No.
 const ANSWER_PRESENCE_TYPES = new Set(["FileUpload", "Signature"]);
 
@@ -26,9 +28,13 @@ const ANSWER_PRESENCE_TYPES = new Set(["FileUpload", "Signature"]);
 // prose buckets by length, uploads/signatures to Yes/No. Categorical stays a donut.
 export const resolveAnalysis = (fieldType: string, hasOptions: boolean): AnswerAnalysis => {
   if (hasOptions || ANSWER_CHOICE_TYPES.has(fieldType)) return "choice";
+
   if (ANSWER_DOMAIN_TYPES.has(fieldType)) return "domain";
+
   if (ANSWER_LENGTH_TYPES.has(fieldType)) return "length";
+
   if (ANSWER_PRESENCE_TYPES.has(fieldType)) return "presence";
+
   return "raw"; // Number, Date, Time, Phone, Matrix — low-cardinality top-N values
 };
 
@@ -39,11 +45,13 @@ const LENGTH_BUCKETS: { label: string; max: number }[] = [
   { label: "Medium", max: 160 },
   { label: "Detailed", max: Number.POSITIVE_INFINITY },
 ];
+
 export const lengthBucket = (len: number): string =>
   LENGTH_BUCKETS.find((b) => len <= b.max)?.label ?? "Detailed";
 
 export const emailDomain = (raw: string): string => {
   const at = raw.lastIndexOf("@");
+
   const domain =
     at >= 0
       ? raw
@@ -51,13 +59,16 @@ export const emailDomain = (raw: string): string => {
           .trim()
           .toLowerCase()
       : "";
+
   return domain || "other";
 };
 
 export const urlDomain = (raw: string): string => {
   const trimmed = raw.trim();
+
   try {
     const u = new URL(/^[a-z][\w+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+
     return u.hostname.replace(/^www\./, "").toLowerCase() || "other";
   } catch {
     return trimmed.toLowerCase() || "other";
@@ -72,7 +83,9 @@ export const capWithOthers = (
   if (sorted.length <= cap) return sorted;
   const head = sorted.slice(0, cap);
   const others = sorted.slice(cap).reduce((sum, e) => sum + e.value, 0);
+
   if (others > 0) head.push({ label: "Others", value: others });
+
   return head;
 };
 
@@ -101,33 +114,42 @@ export const buildAnswerDistribution = ({
       (e) => e.value > 0,
     );
   }
+
   if (analysis === "presence") {
     return [
       { label: "Yes", value: answered },
       { label: "No", value: Math.max(0, submissionCount - answered) },
     ].filter((e) => e.value > 0);
   }
+
   const sorted = [...counts.entries()]
     .map(([value, count]) => ({
       label: analysis === "choice" ? optionLabel(value) : value,
       value: count,
     }))
     .sort((a, b) => b.value - a.value);
+
   return analysis === "raw" ? sorted.slice(0, 8) : capWithOthers(sorted, 6);
 };
 
 // Flatten a stored answer (string | number | string[] | matrix record) to present string values.
 export const normalizeAnswer = (raw: unknown): string[] => {
   if (raw == null) return [];
+
   if (Array.isArray(raw)) return raw.filter((x) => String(x ?? "").trim() !== "").map(String);
+
   if (typeof raw === "object") {
     const out: string[] = [];
+
     for (const v of Object.values(raw as Record<string, unknown>)) {
       if (Array.isArray(v)) out.push(...v.filter((x) => String(x ?? "").trim() !== "").map(String));
       else if (String(v ?? "").trim() !== "") out.push(String(v));
     }
+
     return out;
   }
+
   const s = String(raw).trim();
+
   return s === "" ? [] : [s];
 };

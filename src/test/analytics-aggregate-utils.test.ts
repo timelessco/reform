@@ -3,14 +3,18 @@ import type { formQuestionProgress, formVisits } from "@/db/schema";
 import { buildDailyAnalyticsRows, buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
 
 type RawVisit = typeof formVisits.$inferSelect;
+
 type RawProgress = typeof formQuestionProgress.$inferSelect;
 
 const baseTimestamp = new Date("2026-04-27T12:00:00Z");
+
 const now = new Date("2026-04-28T01:00:00Z");
+
 const dateKey = "2026-04-27";
 
 const makeVisit = (overrides: Partial<RawVisit> & { id: string }): RawVisit => {
   const { id, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -45,6 +49,7 @@ const makeVisit = (overrides: Partial<RawVisit> & { id: string }): RawVisit => {
 
 const makeProgress = (overrides: Partial<RawProgress> & { id: string }): RawProgress => {
   const { id, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -110,6 +115,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v3", deviceType: "tablet" }),
       makeVisit({ id: "v4", deviceType: null }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     expect(row.deviceBreakdown).toStrictEqual({ desktop: 1, mobile: 1, tablet: 1 });
   });
@@ -121,6 +127,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v3", browser: "Opera" }),
       makeVisit({ id: "v4", browser: null }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     expect(row.browserBreakdown).toStrictEqual({ Chrome: 1, Safari: 1, Opera: 1, Other: 1 });
   });
@@ -132,6 +139,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v3", os: "FreeBSD" }),
       makeVisit({ id: "v4", os: null }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     expect(row.osBreakdown).toStrictEqual({ Windows: 1, iOS: 1, FreeBSD: 1, Other: 1 });
   });
@@ -145,6 +153,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v4", didSubmit: true, durationMs: null }),
       makeVisit({ id: "v5", didSubmit: true, durationMs: 3000 }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     // [1000, 2000, 3000] → avg 2000, median 2000.
     expect(row).toMatchObject({ avgDurationMs: 2000, medianDurationMs: 2000 });
@@ -155,6 +164,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v1", didSubmit: true, durationMs: 1_000 }),
       makeVisit({ id: "v2", didSubmit: true, durationMs: 3_600_000 }), // 60 min → capped to 30 min
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     // [1000, 1_800_000] → median = mean of the two = 900500.
     expect(row).toMatchObject({ medianDurationMs: 900_500 });
@@ -180,6 +190,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v3", country: "IN" }),
       makeVisit({ id: "v4", country: null }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     expect(row.countryBreakdown).toStrictEqual({ US: 2, IN: 1 });
   });
@@ -191,6 +202,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v3", utmSource: null }),
       makeVisit({ id: "v4", utmSource: "twitter" }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     expect(row.sourceBreakdown).toStrictEqual({
       google: 2,
@@ -205,6 +217,7 @@ describe("buildDailyAnalyticsRows", () => {
       makeVisit({ id: "v2", lcpMs: 2100, inpMs: null, cls: null }),
       makeVisit({ id: "v3", lcpMs: null, inpMs: null, cls: null }),
     ];
+
     const [row] = buildDailyAnalyticsRows(visits, dateKey, now);
     // LCP 2000 & 2100 both floor to the 2000 bucket (width 250).
     expect(row.lcpHistogram).toStrictEqual({ "2000": 2 });
@@ -260,6 +273,7 @@ describe("buildDailyDropoffRows", () => {
       dateKey,
       now,
     });
+
     expect(rows).toHaveLength(4);
     const lookup = new Map(rows.map((r) => [`${r.formId}:${r.questionId}`, r.viewCount]));
     expect(lookup.get("form-a:q1")).toBe(2);
@@ -281,12 +295,14 @@ describe("buildDailyDropoffRows", () => {
         completedAt: baseTimestamp,
       }),
     ];
+
     const [row] = buildDailyDropoffRows({
       rows: events,
       visits: [],
       dateKey,
       now,
     });
+
     // ADR-0002: dropoffCount = started && !completed = just p2 = 1.
     expect(row).toMatchObject({
       viewCount: 4,
@@ -305,6 +321,7 @@ describe("buildDailyDropoffRows", () => {
         startedAt: baseTimestamp,
       }),
     );
+
     const dropped: RawProgress[] = Array.from({ length: 50 }, (_, i) =>
       makeProgress({
         id: `d${i}`,
@@ -312,13 +329,16 @@ describe("buildDailyDropoffRows", () => {
         startedAt: baseTimestamp,
       }),
     );
+
     const events = [...completed, ...dropped];
+
     const [row] = buildDailyDropoffRows({
       rows: events,
       visits: [],
       dateKey,
       now,
     });
+
     expect(row).toMatchObject({
       viewCount: 100,
       completeCount: 50,
@@ -337,12 +357,14 @@ describe("buildDailyDropoffRows", () => {
         questionIndex: 7,
       }),
     ];
+
     const [row] = buildDailyDropoffRows({
       rows: events,
       visits: [],
       dateKey,
       now,
     });
+
     expect(row).toMatchObject({
       date: dateKey,
       formId: "form-x",

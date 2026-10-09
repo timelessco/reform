@@ -2,19 +2,26 @@ import type { OperatorId } from "./types";
 
 const isEmptyValue = (value: unknown): boolean => {
   if (value === null || value === undefined) return true;
+
   if (typeof value === "string") return value.trim() === "";
+
   // Consent/toggle: an unchecked boolean (false) is "empty"; checked (true) is filled.
   if (typeof value === "boolean") return value === false;
+
   if (Array.isArray(value)) return value.every((v) => isEmptyValue(v));
+
   // Matrix answers are a row→column record; `{}` (or all-empty rows) means unanswered.
   if (typeof value === "object") return Object.values(value).every((v) => isEmptyValue(v));
+
   return false;
 };
 
 /** Coerce an answer to a comparison string: arrays join with ", ", nullish → "". */
 export const asString = (value: unknown): string => {
   if (value === null || value === undefined) return "";
+
   if (Array.isArray(value)) return value.join(", ");
+
   return String(value);
 };
 
@@ -47,6 +54,7 @@ export const applyOperator = (
   if (OPERATORS_NEEDING_OPERAND.has(operator) && (operand === undefined || operand === "")) {
     return false;
   }
+
   switch (operator) {
     case "isEmpty":
       return isEmptyValue(answer);
@@ -74,12 +82,14 @@ export const applyOperator = (
       const b = Number(operand);
       const aIsNum = !Number.isNaN(a);
       const bIsNum = !Number.isNaN(b);
+
       // Both numeric → numeric compare. Both non-numeric → lexicographic, which is
       // chronological for ISO dates (YYYY-MM-DD) and zero-padded times (HH:MM).
       // A numeric/non-numeric mismatch is non-comparable → false.
       if (aIsNum !== bIsNum) return false;
       const sa = normalizeForCompare(asString(answer));
       const sb = normalizeForCompare(asString(operand));
+
       switch (operator) {
         case "greaterThan":
           return aIsNum ? a > b : sa > sb;
@@ -91,6 +101,7 @@ export const applyOperator = (
           return aIsNum ? a <= b : sa <= sb;
       }
     }
+
     default:
       return false;
   }

@@ -35,6 +35,7 @@ const getServerBaseURL = () => {
     process.env.VERCEL_BRANCH_URL ||
     process.env.VERCEL_URL ||
     "http://localhost:3000";
+
   return url.startsWith("http") ? url : `https://${url}`;
 };
 
@@ -53,6 +54,7 @@ export const auth = betterAuth({
       enabled: true,
       sendChangeEmailConfirmation: async (data) => {
         logger("[Auth] Sending change email confirmation", { userId: data.user.id });
+
         if (import.meta.env.DEV) {
           // Dev-only: print URL (no mail server). logger() = evlog debug,
           // stripped from prod.
@@ -69,6 +71,7 @@ export const auth = betterAuth({
         before: async (user) => {
           if (user.name?.trim()) return { data: user };
           const derived = user.email.split("@")[0]?.trim();
+
           return { data: { ...user, name: derived || user.email } };
         },
         after: async (user) => {
@@ -77,6 +80,7 @@ export const auth = betterAuth({
             const orgId = crypto.randomUUID();
 
             const orgName = user.name || user.email.split("@")[0];
+
             const [org] = await db
               .insert(schema.organization)
               .values({
@@ -132,6 +136,7 @@ export const auth = betterAuth({
               },
             };
           }
+
           return { data: session };
         },
       },

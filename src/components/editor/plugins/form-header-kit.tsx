@@ -1,5 +1,5 @@
 import { PathApi } from "platejs";
-import type { Path, TElement } from "platejs";
+import type { TElement } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 import { FormHeaderElement } from "@/components/ui/form-header-node";
 
@@ -16,6 +16,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       if (event.key !== "ArrowUp") return;
 
       const block = editor.api.block();
+
       if (!block) return;
 
       const [, path] = block;
@@ -24,11 +25,12 @@ export const FormHeaderPlugin = createPlatePlugin({
       if (path[0] !== 1) return;
 
       const selection = editor.selection;
+
       if (!selection || !editor.api.isCollapsed()) return;
 
-      // eslint-disable-next-line typescript-eslint/no-explicit-any
-      const edges = editor.api.edges(path) as any;
+      const edges = editor.api.edges(path);
       const start = edges?.[0];
+
       if (
         !start ||
         !PathApi.equals(selection.anchor.path, start.path) ||
@@ -40,6 +42,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       const titleTextarea = document.querySelector<HTMLTextAreaElement>(
         "[data-bf-header] textarea",
       );
+
       if (titleTextarea) {
         event.preventDefault();
         titleTextarea.focus();
@@ -59,7 +62,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       const path = entry[1];
 
       if (path.length === 0) {
-        const children = editorRef.children as TElement[];
+        const children: TElement[] = editorRef.children;
 
         // Ensure first child is formHeader
         if (children.length > 0 && children[0].type !== "formHeader") {
@@ -70,15 +73,20 @@ export const FormHeaderPlugin = createPlatePlugin({
               at: [headerIndex],
               to: [0],
             });
+
             return;
           }
         }
 
         // Ensure at least one paragraph after header
         if (children.length === 1 && children[0].type === "formHeader") {
-          editorRef.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
-            at: [1],
-          });
+          editorRef.tf.insertNodes(
+            { type: "p", children: [{ text: "" }] },
+            {
+              at: [1],
+            },
+          );
+
           return;
         }
       }
@@ -89,7 +97,7 @@ export const FormHeaderPlugin = createPlatePlugin({
     // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteBackward = (unit: any) => {
       const block = editorRef.api.block();
-      const [node, path] = (block as [TElement, Path]) ?? [];
+      const [node, path] = block ?? [];
 
       if (node?.type === "formHeader") {
         return;
@@ -98,10 +106,12 @@ export const FormHeaderPlugin = createPlatePlugin({
       // Prevent deleting backwards INTO the header
       if (path && path[0] === 1) {
         const selection = editorRef.selection;
+
         if (selection && editorRef.api.isCollapsed()) {
           // eslint-disable-next-line typescript-eslint/no-explicit-any
           const edges = editorRef.api.edges(path);
           const start = edges?.[0];
+
           if (
             start &&
             PathApi.equals(selection.anchor.path, start.path) &&
@@ -118,7 +128,7 @@ export const FormHeaderPlugin = createPlatePlugin({
     // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteForward = (unit: any) => {
       const block = editorRef.api.block();
-      const [node] = (block as [TElement, Path]) ?? [];
+      const [node] = block ?? [];
 
       if (node?.type === "formHeader") {
         return;
@@ -130,8 +140,10 @@ export const FormHeaderPlugin = createPlatePlugin({
     // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteFragment = (direction: any) => {
       const { selection } = editorRef;
+
       if (!selection) {
         deleteFragment(direction);
+
         return;
       }
 
@@ -151,14 +163,19 @@ export const FormHeaderPlugin = createPlatePlugin({
           });
 
           if (editorRef.children.length === 1) {
-            editorRef.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
-              at: [1],
-            });
+            editorRef.tf.insertNodes(
+              { type: "p", children: [{ text: "" }] },
+              {
+                at: [1],
+              },
+            );
             // eslint-disable-next-line typescript-eslint/no-explicit-any
             editorRef.tf.select(editorRef.api.edges([1])[0]);
           }
+
           return;
         }
+
         return;
       }
 

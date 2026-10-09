@@ -12,6 +12,7 @@ import { useTableContext } from "@/components/ui/data-grid";
 
 export const DataGridColumnVisibility = ({ trigger }: { trigger: ReactElement }) => {
   const table = useTableContext();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={trigger} />
@@ -20,6 +21,7 @@ export const DataGridColumnVisibility = ({ trigger }: { trigger: ReactElement })
           <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
           {table.getAllColumns().flatMap((column) => {
             if (typeof column.accessorFn === "undefined" || !column.getCanHide()) return [];
+
             return [
               <DropdownMenuCheckboxItem
                 key={column.id}

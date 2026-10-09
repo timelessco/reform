@@ -31,13 +31,17 @@ export const buildFormLogic = (
       .filter((f) => f.fieldType !== "Button")
       .map((f) => f.name),
   );
+
   const allFields: EngineField[] = [];
+
   for (const segs of steps) {
     for (const field of getFieldsFromSegments(segs)) {
       if (field.fieldType === "Button") continue;
       allFields.push({ name: field.name, required: field.required === true });
     }
   }
+
   const stepIds = isFieldByField ? steps.map((_, i) => `fbf-${i}`) : getPreviewStepIds(content);
+
   return { ruleset: extractRuleset(content), allFields, stepIds, stepFieldNames };
 };

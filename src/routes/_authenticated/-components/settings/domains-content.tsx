@@ -79,6 +79,7 @@ const fileToBase64 = (file: File): Promise<string> =>
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       const result = reader.result;
+
       if (typeof result === "string") {
         resolve(result);
       } else {
@@ -94,7 +95,8 @@ const fileToBase64 = (file: File): Promise<string> =>
 const StatusBadge = ({ status }: { status: DomainStatus }) => (
   <span
     className={cn(
-      "inline-flex shrink-0 items-center rounded-full px-1.5 py-[3px] text-xs leading-[1.15] font-medium tracking-[0.24px]",
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma badge type (lh 1.15, 0.24px tracking) has no scale equivalent
+      "inline-flex shrink-0 items-center rounded-full px-1.5 py-0.75 text-xs leading-[1.15] font-medium tracking-[0.24px]",
       STATUS_STYLES[status],
     )}
   >
@@ -111,17 +113,21 @@ export const DomainsContent = () => {
   const [newDomain, setNewDomain] = useState("");
   // Per-domain DNS records (TXT challenge + CNAME) from add/check/recheckDomainStatus, keyed by domain.id.
   const [dnsRecordsByDomainId, setDnsRecordsByDomainId] = useState<Record<string, DnsRecord[]>>({});
+
   const clearDnsRecords = useCallback((id: string) => {
     setDnsRecordsByDomainId((prev) => {
       if (!(id in prev)) return prev;
       const next = { ...prev };
       delete next[id];
+
       return next;
     });
   }, []);
+
   // Stacked detail screen: the domain whose DNS records / config is open (null = list).
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
   const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
+
   // Keep the dialog title in sync: the detail screen owns its own header (Figma 26281-7612).
   const openDetail = useCallback(
     (id: string) => {
@@ -130,6 +136,7 @@ export const DomainsContent = () => {
     },
     [setDomainsDetailOpen],
   );
+
   const closeDetail = useCallback(() => {
     setSelectedDomainId(null);
     setDomainsDetailOpen(false);
@@ -145,9 +152,11 @@ export const DomainsContent = () => {
 
   const isOwner = useMemo(() => {
     if (!membersData?.members || !session?.user?.id) return false;
+
     const currentMember = membersData.members.find(
       (m: { userId: string; role: string }) => m.userId === session.user.id,
     );
+
     return currentMember?.role === "owner";
   }, [membersData, session?.user?.id]);
 
@@ -165,6 +174,7 @@ export const DomainsContent = () => {
       setNewDomain("");
       const records = getDnsInstructions(result.domain, result.verification);
       setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
+
       if (result.warning) {
         toast.error(result.warning);
       } else {
@@ -181,6 +191,7 @@ export const DomainsContent = () => {
     onSuccess: (_data, domainId) => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       clearDnsRecords(domainId);
+
       if (selectedDomainId === domainId) closeDetail();
       toast.success("Domain removed");
     },
@@ -197,13 +208,17 @@ export const DomainsContent = () => {
       verification?: { type: string; domain: string; value: string }[];
     }) => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
+
       if (result.status === "verified") {
         clearDnsRecords(result.id);
         toast.success("Domain verified!");
+
         return;
       }
+
       const records = getDnsInstructions(result.domain, result.verification);
       setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
+
       if (result.status === "failed") {
         toast.error("Domain verification failed. Check your DNS records.");
       } else {
@@ -247,6 +262,7 @@ export const DomainsContent = () => {
 
   const handleAddDomain = useCallback(() => {
     const trimmed = newDomain.trim();
+
     if (!trimmed) return;
     mutateAddDomain(trimmed);
   }, [newDomain, mutateAddDomain]);
@@ -299,7 +315,7 @@ export const DomainsContent = () => {
         onAdd={handleAddDomain}
       />
 
-      <div className="h-px w-full bg-[var(--color-gray-100)]" />
+      <div className="h-px w-full bg-(--color-gray-100)" />
 
       <div className="flex flex-col gap-4">
         <p className="font-case text-base font-medium text-foreground">Added domains</p>
@@ -381,12 +397,13 @@ const AddDomainCard = ({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px label tracking has no scale equivalent */}
       <label className="text-base tracking-[0.28px] text-muted-foreground" htmlFor={domainInputId}>
         Add a custom domain
       </label>
       <InputGroup
         variant="borderless"
-        className="h-[30px] overflow-clip border-0 bg-secondary pr-[3px] ring-0"
+        className="h-[30px] overflow-clip border-0 bg-secondary pr-0.75 ring-0"
       >
         <InputGroupInput
           id={domainInputId}
@@ -432,15 +449,14 @@ const DomainRow = ({
   onRecheck,
   onDelete,
 }: DomainRowProps) => (
-  <div
-    className={cn("flex items-center py-1.5", !isLast && "border-b border-[var(--color-gray-100)]")}
-  >
+  <div className={cn("flex items-center py-1.5", !isLast && "border-b border-(--color-gray-100)")}>
     {/* Figma: domain 14/420/gray-800/opsz-24; flex-1 (Figma's fixed 200px → responsive) so the
         fixed-width status slot below keeps every badge column-aligned across rows. */}
     <button
       type="button"
       onClick={onOpen}
-      className="min-w-0 flex-1 truncate text-left text-base font-[420] text-gray-800 transition-colors font-opsz-24 hover:text-foreground"
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent
+      className="min-w-0 flex-1 truncate text-left text-base font-[420] text-foreground transition-colors font-opsz-24 hover:text-foreground"
     >
       {domain.domain}
     </button>
@@ -454,7 +470,7 @@ const DomainRow = ({
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 rounded-lg text-muted-foreground hover:text-gray-800"
+            className="size-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
             aria-label={`Actions for ${domain.domain}`}
           />
         }
@@ -510,11 +526,12 @@ const DomainDetail = ({
             type="button"
             onClick={onBack}
             aria-label="Back to domains"
-            className="-ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-gray-800 hover:bg-secondary"
+            className="-ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-secondary"
           >
             <ChevronLeftIcon className="size-4" />
           </button>
-          <span className="truncate text-xl font-[420] text-gray-950">{domain.domain}</span>
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
+          <span className="truncate text-xl font-[420] text-foreground">{domain.domain}</span>
         </div>
         {domain.status !== "verified" && (
           <Button
@@ -522,7 +539,8 @@ const DomainDetail = ({
             size="sm"
             onClick={onRecheck}
             disabled={isRecheckPending}
-            className="h-7 rounded-lg bg-[var(--color-gray-200)] px-2 text-base font-[450] tracking-[0.14px] text-foreground hover:bg-[var(--color-gray-300)]"
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.14px tracking have no scale equivalent
+            className="h-7 rounded-lg bg-(--color-gray-200) px-2 text-base font-[450] tracking-[0.14px] text-foreground hover:bg-(--color-gray-300)"
             prefix={isRecheckPending ? <Loader2Icon className="size-4 animate-spin" /> : undefined}
           >
             Verify Now
@@ -552,11 +570,13 @@ const DnsKeyValueRow = ({
   value: string;
   copyText?: string;
 }) => (
-  <div className="flex items-center gap-3 py-[7px]">
+  <div className="flex items-center gap-3 py-1.75">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
     <span className="min-w-0 flex-1 text-base font-[420] text-muted-foreground font-opsz-24">
       {label}
     </span>
-    <span className="flex items-center gap-1.5 text-base font-[420] whitespace-nowrap text-gray-800 font-opsz-24">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
+    <span className="flex items-center gap-1.5 text-base font-[420] whitespace-nowrap text-foreground font-opsz-24">
       <span className="truncate">{value}</span>
       {copyText && (
         <CopyButton text={copyText} variant="ghost" size="icon-xs" aria-label={`Copy ${label}`} />
@@ -568,8 +588,10 @@ const DnsKeyValueRow = ({
 const DomainDnsRecords = ({ records, domain }: { records: DnsRecord[]; domain: string }) => (
   <div className="flex flex-col gap-4">
     <div className="flex flex-col gap-1">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight has no scale equivalent */}
       <p className="text-base font-[450] text-foreground">DNS records</p>
-      <p className="text-base leading-[1.5] font-[420] tracking-[0.28px] text-muted-foreground font-opsz-24">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+      <p className="text-base leading-normal font-[420] tracking-[0.28px] text-muted-foreground font-opsz-24">
         Add these records to your domain name provider&rsquo;s DNS settings.
       </p>
     </div>
@@ -577,7 +599,7 @@ const DomainDnsRecords = ({ records, domain }: { records: DnsRecord[]; domain: s
       <div className="flex flex-col gap-4">
         {records.map((rec, i) => (
           <div key={`${rec.type}-${rec.name}-${rec.value}`} className="flex flex-col">
-            {i > 0 && <div className="mb-2 h-px w-full bg-[var(--color-gray-100)]" />}
+            {i > 0 && <div className="mb-2 h-px w-full bg-(--color-gray-100)" />}
             <DnsKeyValueRow label="Record type" value={rec.type} />
             <DnsKeyValueRow label="Name" value={rec.shortName ?? rec.name} />
             <DnsKeyValueRow label="Value" value={rec.value} copyText={rec.value} />
@@ -607,7 +629,8 @@ const DetectedProviderRow = ({ domain }: { domain: string }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1.5 rounded-lg bg-[var(--color-gray-100)] px-2.5 py-[7px] text-base font-[420] tracking-[0.14px] text-muted-foreground font-opsz-24">
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.14px tracking have no scale equivalent
+      <div className="flex items-center gap-1.5 rounded-lg bg-(--color-gray-100) px-2.5 py-1.75 text-base font-[420] tracking-[0.14px] text-muted-foreground font-opsz-24">
         <Loader2Icon className="size-3.5 animate-spin" />
         Detecting provider&hellip;
       </div>
@@ -617,16 +640,19 @@ const DetectedProviderRow = ({ domain }: { domain: string }) => {
   if (isError || !provider) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-[var(--color-gray-100)] px-2.5 py-[7px] text-base font-[420] tracking-[0.14px] font-opsz-24">
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.14px tracking have no scale equivalent
+    <div className="flex items-center gap-3 rounded-lg bg-(--color-gray-100) px-2.5 py-1.75 text-base font-[420] tracking-[0.14px] font-opsz-24">
       <span className="min-w-0 flex-1 text-muted-foreground">
-        Detected provider: <span className="tracking-[0.16px] text-gray-800">{provider.name}</span>
+        Detected provider:{" "}
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.16px tracking has no scale equivalent */}
+        <span className="tracking-[0.16px] text-foreground">{provider.name}</span>
       </span>
       {provider.dashboardUrl && (
         <a
           href={provider.dashboardUrl}
           target="_blank"
           rel="noreferrer"
-          className="whitespace-nowrap text-gray-800 hover:underline"
+          className="whitespace-nowrap text-foreground hover:underline"
         >
           {provider.dashboardUrl}
         </a>
@@ -668,8 +694,10 @@ const DomainConfigPanel = ({
       const metaField = type === "favicon" ? "faviconUrl" : "ogImageUrl";
 
       setUploading(true);
+
       try {
         const base64 = await fileToBase64(file);
+
         const result = await uploadEditorMedia({
           data: {
             base64,
@@ -677,6 +705,7 @@ const DomainConfigPanel = ({
             contentType: file.type || "image/png",
           },
         });
+
         setUrl(result.url);
         // Auto-commit URL to domain row — no second Save click. Mirrors account-settings inline save.
         onUpdateMeta({ domainId: domain.id, [metaField]: result.url });
@@ -699,6 +728,7 @@ const DomainConfigPanel = ({
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <label
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent
           className="text-base tracking-[0.28px] text-muted-foreground"
           htmlFor={siteTitleInputId}
         >
@@ -708,7 +738,7 @@ const DomainConfigPanel = ({
           variant="borderless"
           className={cn(
             "h-[30px] overflow-clip border-0 bg-secondary ring-0",
-            titleDirty && "pr-[3px]",
+            titleDirty && "pr-0.75",
           )}
         >
           <InputGroupInput
@@ -781,6 +811,7 @@ const DomainAssetUpload = ({
   buttonLabel,
 }: DomainAssetUploadProps) => (
   <div className="flex flex-1 flex-col gap-2">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
     <span className="text-base tracking-[0.28px] text-muted-foreground">{label}</span>
     <div className="flex items-center gap-3">
       {previewUrl && <img src={previewUrl} alt={previewAlt} className={previewClassName} />}
@@ -807,6 +838,7 @@ const DomainAssetUpload = ({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
+
           if (file) onChoose(file);
         }}
       />

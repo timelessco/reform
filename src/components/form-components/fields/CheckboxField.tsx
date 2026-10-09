@@ -25,12 +25,13 @@ const CheckboxField = ({ element, form }: FieldRendererProps<"Checkbox">) => {
       <form.AppField name={element.name}>
         {(f) => {
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+
           return (
             <>
               <MultiSelect
                 id={element.name}
                 options={options}
-                value={(f.state.value as string[] | undefined) ?? []}
+                value={Array.isArray(f.state.value) ? f.state.value : []}
                 onChange={(val) => f.handleChange(val)}
                 aria-invalid={hasErrors}
                 aria-labelledby={getAriaLabelledBy(element)}
@@ -48,7 +49,8 @@ const CheckboxField = ({ element, form }: FieldRendererProps<"Checkbox">) => {
     <form.AppField name={element.name}>
       {(f) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-        const selectedValues = (f.state.value as string[] | undefined) ?? [];
+        const selectedValues = Array.isArray(f.state.value) ? f.state.value : [];
+
         const toggle = (value: string, checked: boolean) => {
           if (checked) {
             f.handleChange([...selectedValues, value]);
@@ -87,6 +89,7 @@ const CheckboxField = ({ element, form }: FieldRendererProps<"Checkbox">) => {
             <div className="flex flex-col gap-2">
               {options.map((option, idx) => {
                 const isSelected = selectedValues.includes(option.value);
+
                 if (labelStyle === "none") {
                   return (
                     <label
@@ -102,6 +105,7 @@ const CheckboxField = ({ element, form }: FieldRendererProps<"Checkbox">) => {
                     </label>
                   );
                 }
+
                 return (
                   <button
                     key={option.value}
@@ -118,7 +122,7 @@ const CheckboxField = ({ element, form }: FieldRendererProps<"Checkbox">) => {
                       // focus ring (the keyboard handler programmatically focuses, which would show
                       // focus-visible on click); a subtle gray-100 bg marks keyboard focus instead.
                       "flex cursor-pointer flex-col items-start gap-1.5 rounded-lg px-2 py-1.5 text-left text-base transition-colors outline-none",
-                      isSelected ? "bg-gray-200" : "focus-visible:bg-gray-100",
+                      isSelected ? "bg-muted" : "focus-visible:bg-accent",
                     )}
                   >
                     <span className="flex items-center gap-1.5">

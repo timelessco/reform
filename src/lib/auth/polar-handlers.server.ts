@@ -26,20 +26,27 @@ type SubscriptionPayload =
 const extractOrgId = (payload: SubscriptionPayload): string | null => {
   const metadata = payload.data.metadata as { referenceId?: unknown } | null | undefined;
   const referenceId = metadata?.referenceId;
+
   return typeof referenceId === "string" && referenceId.length > 0 ? referenceId : null;
 };
 
 export const handleSubscriptionUpgrade = async (payload: SubscriptionPayload): Promise<void> => {
   const orgId = extractOrgId(payload);
+
   if (!orgId) {
     logger("[polar] subscription event missing referenceId metadata", payload.type);
+
     return;
   }
+
   const targetPlan = planForProductId(payload.data.productId);
+
   if (targetPlan === "free") {
     logger("[polar] unrecognized product on upgrade event, no plan change", payload.type, orgId);
+
     return;
   }
+
   try {
     const { applyUpgradeRestore } = await import("@/lib/server-fn/plan-cleanup.server");
     await applyUpgradeRestore(orgId, undefined, targetPlan);
@@ -50,10 +57,13 @@ export const handleSubscriptionUpgrade = async (payload: SubscriptionPayload): P
 
 export const handleSubscriptionDowngrade = async (payload: SubscriptionPayload): Promise<void> => {
   const orgId = extractOrgId(payload);
+
   if (!orgId) {
     logger("[polar] subscription event missing referenceId metadata", payload.type);
+
     return;
   }
+
   try {
     const { applyDowngradeCleanup } = await import("@/lib/server-fn/plan-cleanup.server");
     await applyDowngradeCleanup(orgId);
@@ -68,10 +78,13 @@ export const handleSubscriptionUpdated = async (
   payload: WebhookSubscriptionUpdatedPayload,
 ): Promise<void> => {
   const status = payload.data.status;
+
   if (status === "active" && planForProductId(payload.data.productId) !== "free") {
     await handleSubscriptionUpgrade(payload);
+
     return;
   }
+
   if (status === "canceled") {
     await handleSubscriptionDowngrade(payload);
   }

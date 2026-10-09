@@ -24,7 +24,9 @@ const openBilling = () => settingsDialogStore.open("billing");
 
 export const useHasPlan = (requiredPlan: RequiredPlan): boolean => {
   const { isPro, isBusiness } = useUserPlan();
+
   if (requiredPlan === "business") return isBusiness;
+
   return isPro || isBusiness;
 };
 
@@ -38,6 +40,7 @@ export const FeatureGate = ({
   const hasAccess = useHasPlan(requiredPlan);
 
   if (hasAccess) return <>{children}</>;
+
   if (fallback !== undefined) return <>{fallback}</>;
 
   const label = PLAN_LABEL[requiredPlan];

@@ -30,8 +30,10 @@ export const ThemeProvider = ({
   const [theme, setTheme] = React.useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem(storageKey) as Theme | null;
+
       if (savedTheme) return savedTheme;
     }
+
     return defaultTheme;
   });
 
@@ -71,6 +73,7 @@ export const ThemeProvider = ({
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => applyTheme(resolve());
       mediaQuery.addEventListener("change", handleChange);
+
       return () => mediaQuery.removeEventListener("change", handleChange);
     }
   }, [theme]);
@@ -80,6 +83,7 @@ export const ThemeProvider = ({
       if (typeof window !== "undefined") {
         localStorage.setItem(storageKey, newTheme);
       }
+
       setTheme(newTheme);
     },
     [storageKey],
@@ -107,23 +111,29 @@ export const useTheme = () => {
 // matchMedia at render-time alone would go stale until a reload).
 const subscribeSystemTheme = (onChange: () => void) => {
   if (typeof window === "undefined") return () => {};
+
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
   mq.addEventListener("change", onChange);
+
   return () => mq.removeEventListener("change", onChange);
 };
+
 const getSystemThemeSnapshot = (): "dark" | "light" =>
   typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
+
 const getSystemThemeServerSnapshot = (): "dark" | "light" => "light";
 
 /** Resolves "system" to the actual "dark" | "light" preference, reactively. */
 export const useResolvedTheme = (): "dark" | "light" => {
   const { theme } = useTheme();
+
   const systemTheme = React.useSyncExternalStore(
     subscribeSystemTheme,
     getSystemThemeSnapshot,
     getSystemThemeServerSnapshot,
   );
+
   return theme === "system" ? systemTheme : theme;
 };

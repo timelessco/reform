@@ -24,6 +24,7 @@ describe("isCronAuthorized", () => {
   afterEach(() => {
     if (origSecret === undefined) delete process.env.CRON_SECRET;
     else process.env.CRON_SECRET = origSecret;
+
     if (origVercel === undefined) delete process.env.VERCEL;
     else process.env.VERCEL = origVercel;
   });

@@ -3,12 +3,14 @@ import type { formAnalyticsDaily, formVisits } from "@/db/schema";
 import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
 
 type DailyRow = typeof formAnalyticsDaily.$inferSelect;
+
 type RawVisitRow = typeof formVisits.$inferSelect;
 
 const baseTimestamp = new Date("2026-04-27T00:00:00Z");
 
 const makeDaily = (overrides: Partial<DailyRow> & { date: string }): DailyRow => {
   const { date, ...rest } = overrides;
+
   return {
     id: `daily-${date}`,
     formId: "form-1",
@@ -38,6 +40,7 @@ const makeDaily = (overrides: Partial<DailyRow> & { date: string }): DailyRow =>
 
 const makeRaw = (overrides: Partial<RawVisitRow> & { id: string }): RawVisitRow => {
   const { id, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -179,6 +182,7 @@ describe("mergeInsightsMetrics", () => {
         countryBreakdown: { US: 2 },
       }),
     ];
+
     const todayRawRows = [
       makeRaw({ id: "r1", visitorHash: "v1", country: "US", utmSource: "twitter" }),
       makeRaw({ id: "r2", visitorHash: "v2", country: "IN", didSubmit: true }),
@@ -299,6 +303,7 @@ describe("mergeInsightsMetrics", () => {
         countryBreakdown: { US: 5, IN: 3 },
       }),
     ];
+
     const todayRawRows = [
       makeRaw({ id: "r1", country: "US" }),
       makeRaw({ id: "r2", country: "DE" }),
@@ -325,6 +330,7 @@ describe("mergeInsightsMetrics", () => {
         avgDurationMs: 1000,
       }),
     ];
+
     // Two submitted raw visits, each a 5000ms server-written completion durationMs.
     const todayRawRows = [
       makeRaw({ id: "r1", didSubmit: true, durationMs: 5000 }),

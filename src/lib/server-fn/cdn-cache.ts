@@ -1,5 +1,6 @@
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { vercel, vercelProjectId, vercelTeamId } from "@/integrations/vercel";
+
 // Public-form edge-cache flag. Was OFF: purges "succeeded" but stayed stale because we
 // emitted Cache-Tag (Fastly/Akamai) not Vercel-Cache-Tag, so edge stored responses untagged
 // and invalidateByTags matched nothing. Now emit Vercel-Cache-Tag + Vercel-CDN-Cache-Control
@@ -27,6 +28,7 @@ export const formCacheHeaders = (
   { gated }: { gated: boolean },
 ): Record<string, string> => {
   if (gated || !isCdnCacheEnabled()) return { "Cache-Control": PRIVATE_CACHE_CONTROL };
+
   return {
     // Vercel-CDN-Cache-Control is edge-only; plain Cache-Control would also hit browsers/proxies
     // (unwanted at s-maxage=1y). Edge prefers this header over Cache-Control when both present.
@@ -40,8 +42,10 @@ export const formCacheHeaders = (
 export const applyFormCacheHeaders = (formId: string, { gated }: { gated: boolean }) => {
   if (gated || !isCdnCacheEnabled()) {
     setResponseHeader("Cache-Control", PRIVATE_CACHE_CONTROL);
+
     return;
   }
+
   setResponseHeader("Vercel-CDN-Cache-Control", PUBLIC_CACHE_CONTROL_ENABLED);
   setResponseHeader("Vercel-Cache-Tag", formCacheTag(formId));
 };
@@ -70,17 +74,21 @@ export const purgeFormCacheBatch = async (formIds: string[]): Promise<void> => {
 
   if (formIds.length === 0) {
     log("empty formIds, skipping");
+
     return;
   }
 
   const projectId = vercelProjectId();
+
   if (!(process.env.VERCEL_TOKEN && projectId)) {
     log("missing VERCEL_TOKEN or projectId, skipping");
+
     return;
   }
 
   if (process.env.NODE_ENV !== "production" && process.env.FORCE_CDN_PURGE !== "1") {
     log("non-production and FORCE_CDN_PURGE!=1, skipping");
+
     return;
   }
 
@@ -93,6 +101,7 @@ export const purgeFormCacheBatch = async (formIds: string[]): Promise<void> => {
       teamId: vercelTeamId(),
       requestBody: { tags },
     });
+
     log("success", result);
   } catch (err) {
     console.error("[cdn-cache:purge] FAILED", err);

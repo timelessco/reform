@@ -40,6 +40,7 @@ export const authWorkspace = async (
       internal: { workspaceId, userId, organizationId },
     });
   }
+
   return { workspace: workspace[0] };
 };
 
@@ -73,6 +74,7 @@ export const authForm = async (formId: string, userId: string, organizationId: s
       internal: { formId, userId, organizationId },
     });
   }
+
   return { form: form[0] };
 };
 
@@ -109,6 +111,7 @@ export const authFormsBulk = async (formIds: string[], userId: string, organizat
       internal: { formIds, userId, organizationId, allowedCount: allowed.length },
     });
   }
+
   return { formIds: allowed.map((r) => r.id) };
 };
 
@@ -118,17 +121,20 @@ export const requireScopedWorkspace = async (
 ) => {
   const orgId = getActiveOrgId(session);
   const { workspace } = await authWorkspace(workspaceId, session.user.id, orgId);
+
   return { orgId, workspace };
 };
 
 export const requireScopedForm = async (session: SessionWithActiveOrg, formId: string) => {
   const orgId = getActiveOrgId(session);
   const { form } = await authForm(formId, session.user.id, orgId);
+
   return { orgId, form };
 };
 
 export const requireScopedFormsBulk = async (session: SessionWithActiveOrg, formIds: string[]) => {
   const orgId = getActiveOrgId(session);
   const { formIds: authorizedFormIds } = await authFormsBulk(formIds, session.user.id, orgId);
+
   return { orgId, formIds: authorizedFormIds };
 };

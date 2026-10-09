@@ -31,6 +31,7 @@ export const upsertSubmissionByDraft = async (
   const newId = crypto.randomUUID();
   const sanitizedJson = JSON.stringify(args.data);
   const nowIso = args.now.toISOString();
+
   const rows = await db.execute<{
     id: string;
     priorIsCompleted: boolean | null;
@@ -81,7 +82,9 @@ export const upsertSubmissionByDraft = async (
     FROM up
     LEFT JOIN prior ON prior."id" = up."id"
   `);
+
   const row = rows[0];
+
   return {
     submissionId: row?.id ?? newId,
     wasCompleted: row?.priorIsCompleted === true,

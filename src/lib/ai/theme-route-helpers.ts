@@ -25,6 +25,7 @@ export const pickThemePromptForPlan = (plan: ServerPlan): ThemePromptPick => {
       isPro: true,
     };
   }
+
   return {
     prompt: FORM_THEME_FREE_SYSTEM_PROMPT,
     toolName: "setFormThemeFree",

@@ -2,9 +2,12 @@ import { APP_NAME, APP_WEBSITE_URL } from "@/lib/config/app-config";
 
 const DEFAULT_DESCRIPTION =
   "A modern form builder application that lets you create, customize, and share beautiful forms with a rich text editor experience. Built with a real-time local-first architecture for instant responsiveness.";
+
 const DEFAULT_KEYWORDS =
   "form builder, online forms, survey builder, react forms, tanstack, reform";
+
 const DEFAULT_IMAGE = `${APP_WEBSITE_URL}/metadata/og.png`;
+
 const TWITTER_HANDLE = "@vijayabaskar56";
 
 type SeoInput = {
@@ -25,8 +28,10 @@ export const seo = ({
   noindex = false,
 }: SeoInput = {}) => {
   const resolvedTitle = title ?? (formTitle ? `${formTitle} | ${siteTitle}` : siteTitle);
+
   const resolvedDescription =
     description ?? (formTitle ? `Fill out ${formTitle}` : DEFAULT_DESCRIPTION);
+
   const resolvedImage = image || DEFAULT_IMAGE;
 
   const tags: Array<Record<string, string>> = [

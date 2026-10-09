@@ -158,6 +158,7 @@ export const loadFormForCustomDomain = async (
       .select({ value: count() })
       .from(submissions)
       .where(eq(submissions.formId, form.id));
+
     if (submissionCount >= settings.maxSubmissions) {
       return {
         form: null,
@@ -180,11 +181,13 @@ export const loadFormForCustomDomain = async (
     content: form.draftContent,
     icon: form.draftIcon,
   });
+
   const ogImageUrl = buildOgImageUrl({
     shortId: form.shortId,
     title: og.title,
     description: og.description,
   });
+
   const ogDescription = og.description;
 
   if (version) {

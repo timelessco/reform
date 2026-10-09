@@ -24,6 +24,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "show", target: "vat" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "FR" }, fields).visibility.vat).toBe(false);
     expect(evaluate(rs, { country: "DE" }, fields).visibility.vat).toBe(true);
   });
@@ -40,6 +41,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "hide", target: "extra" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "DE" }, fields).visibility.extra).toBe(true);
     expect(evaluate(rs, { country: "US" }, fields).visibility.extra).toBe(false);
   });
@@ -54,6 +56,7 @@ describe("evaluate — visibility", () => {
       },
       actions: [{ kind: "show", target: "vat" }],
     };
+
     const hide: Rule = {
       id: "hide",
       stepId: "s1",
@@ -63,6 +66,7 @@ describe("evaluate — visibility", () => {
       },
       actions: [{ kind: "hide", target: "vat" }],
     };
+
     // Both rules fire for country=DE; hide must win in either authoring order.
     expect(evaluate(ruleset([show, hide]), { country: "DE" }, fields).visibility.vat).toBe(false);
     expect(evaluate(ruleset([hide, show]), { country: "DE" }, fields).visibility.vat).toBe(false);
@@ -88,6 +92,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "show", target: "vat" }],
       },
     ]);
+
     // extra filled + visible (country DE) → vat shown.
     expect(evaluate(rs, { country: "DE", extra: "x" }, fields).visibility.vat).toBe(true);
     // extra filled but hidden (country US) → masked → vat stays hidden.
@@ -106,6 +111,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "setValue", target: "vat", value: "36" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "DE" }, fields).setValues.vat).toBe("36");
     expect(evaluate(rs, { country: "FR" }, fields).setValues.vat).toBeUndefined();
   });
@@ -122,6 +128,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "setValue", target: "extra", value: ["a", "b"] }],
       },
     ]);
+
     expect(evaluate(arr, { country: "DE" }, fields).setValues.extra).toEqual(["a", "b"]);
 
     const empty = ruleset([
@@ -135,6 +142,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "setValue", target: "extra", value: [] }],
       },
     ]);
+
     expect(evaluate(empty, { country: "DE" }, fields).setValues.extra).toBeUndefined();
   });
 
@@ -150,6 +158,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "clearValue", target: "vat" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "DE" }, fields).setValues.vat).toBe("");
     expect(evaluate(rs, { country: "FR" }, fields).setValues.vat).toBeUndefined();
   });
@@ -163,6 +172,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "setValue", target: "vat", value: "" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "DE" }, fields).setValues.vat).toBeUndefined();
   });
 
@@ -175,6 +185,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "hide", target: "vat" }],
       },
     ]);
+
     // Empty group must NOT vacuously pass — vat stays visible.
     expect(evaluate(rs, { country: "DE" }, fields).visibility.vat).toBe(true);
   });
@@ -191,6 +202,7 @@ describe("evaluate — visibility", () => {
         actions: [{ kind: "hide", target: "ghostField" }],
       },
     ]);
+
     const result = evaluate(rs, { country: "DE" }, fields);
     expect("ghostField" in result.visibility).toBe(false);
   });
@@ -210,6 +222,7 @@ describe("evaluate — combinators & grouping", () => {
       },
       actions: [{ kind: "hide", target: "vat" }],
     };
+
     expect(evaluate(ruleset([all]), { country: "DE", extra: "x" }, fields).visibility.vat).toBe(
       false,
     );
@@ -237,6 +250,7 @@ describe("evaluate — combinators & grouping", () => {
       },
       actions: [{ kind: "hide", target: "vat" }],
     };
+
     expect(evaluate(ruleset([rule]), { country: "CH" }, fields).visibility.vat).toBe(false);
     expect(evaluate(ruleset([rule]), { country: "DE", extra: "biz" }, fields).visibility.vat).toBe(
       false,
@@ -260,6 +274,7 @@ describe("evaluate — required, hideSubmit, redirect", () => {
         actions: [{ kind: "hide", target: "vat" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "DE" }, fields).effectiveRequired.vat).toBe(true);
     expect(evaluate(rs, { country: "US" }, fields).effectiveRequired.vat).toBe(false);
   });
@@ -276,6 +291,7 @@ describe("evaluate — required, hideSubmit, redirect", () => {
         actions: [{ kind: "require", target: "extra" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "FR" }, fields).effectiveRequired.extra).toBe(false);
     expect(evaluate(rs, { country: "DE" }, fields).effectiveRequired.extra).toBe(true);
   });
@@ -292,6 +308,7 @@ describe("evaluate — required, hideSubmit, redirect", () => {
         actions: [{ kind: "optional", target: "vat" }], // vat is base-required
       },
     ]);
+
     expect(evaluate(rs, { country: "FR" }, fields).effectiveRequired.vat).toBe(true);
     expect(evaluate(rs, { country: "DE" }, fields).effectiveRequired.vat).toBe(false);
   });
@@ -303,12 +320,14 @@ describe("evaluate — required, hideSubmit, redirect", () => {
       when: { combinator: "all", children: [{ source: "country", operator: "isNotEmpty" }] },
       actions: [{ kind: "require", target: "extra" }],
     };
+
     const optional: Rule = {
       id: "opt",
       stepId: "s1",
       when: { combinator: "all", children: [{ source: "country", operator: "isNotEmpty" }] },
       actions: [{ kind: "optional", target: "extra" }],
     };
+
     expect(
       evaluate(ruleset([require, optional]), { country: "DE" }, fields).effectiveRequired.extra,
     ).toBe(false);
@@ -335,6 +354,7 @@ describe("evaluate — required, hideSubmit, redirect", () => {
         actions: [{ kind: "redirect", url: "https://de.example.com" }],
       },
     ]);
+
     expect(evaluate(rs, { country: "" }, fields).hideSubmit).toBe(true);
     expect(evaluate(rs, { country: "DE" }, fields).hideSubmit).toBe(false);
     expect(evaluate(rs, { country: "DE" }, fields).redirectUrl).toBe("https://de.example.com");
@@ -361,6 +381,7 @@ describe("evaluate — resolveJump", () => {
         actions: [{ kind: "jump", toStep: THANK_YOU_STEP }],
       },
     ]);
+
     expect(evaluate(rs, { country: "US" }, fields).resolveJump("s1")).toBe("s3");
     expect(evaluate(rs, { country: "" }, fields).resolveJump("s1")).toBe(THANK_YOU_STEP);
     expect(evaluate(rs, { country: "DE" }, fields).resolveJump("s1")).toBeNull();
@@ -381,6 +402,7 @@ describe("evaluate — fail-closed orphans", () => {
         actions: [{ kind: "hide", target: "vat" }],
       },
     ]);
+
     expect(evaluate(rs, { ghost: "x" }, fields).visibility.vat).toBe(true); // hide never fires
   });
 });
@@ -438,6 +460,7 @@ describe("evaluate — setValue is never spontaneous (the prefill footgun)", () 
         actions: [{ kind: "setValue", target: "long", value: "Hello world this" }],
       },
     ]);
+
     const f: EngineField[] = [{ name: "short" }, { name: "long" }];
 
     it("fills on the first pass while the target is still empty", () => {
@@ -555,6 +578,7 @@ describe("evaluate — full operator × action matrix (text field)", () => {
             actions: [a.action],
           },
         ]);
+
         expect(a.present(evaluate(rs, { x: o.pass }, matrixFields))).toBe(true); // passes → effect on
         expect(a.absent(evaluate(rs, { x: o.fail }, matrixFields))).toBe(true); // fails → effect off
       });
@@ -578,6 +602,7 @@ describe("evaluate — full operator × action matrix (text field)", () => {
           actions: [{ kind: "hideSubmit" }],
         },
       ]);
+
     expect(evaluate(two("all"), { x: "a", tgt: "b" }, matrixFields).hideSubmit).toBe(true);
     expect(evaluate(two("all"), { x: "a", tgt: "z" }, matrixFields).hideSubmit).toBe(false);
     expect(evaluate(two("any"), { x: "a", tgt: "z" }, matrixFields).hideSubmit).toBe(true);
@@ -594,6 +619,7 @@ describe("evaluate — full operator × action matrix (text field)", () => {
       { name: "grid" }, // Matrix → row→column object
       { name: "tgt" },
     ];
+
     const rs = ruleset([
       {
         id: "r",
@@ -610,6 +636,7 @@ describe("evaluate — full operator × action matrix (text field)", () => {
         actions: [{ kind: "show", target: "tgt" }],
       },
     ]);
+
     // All four conditions pass → target shown.
     expect(
       evaluate(

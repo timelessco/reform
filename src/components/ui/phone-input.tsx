@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const getBrowserDefaultCountry = (): BasePhoneInput.Country | undefined => {
   if (typeof navigator === "undefined") return undefined;
   const region = navigator.language.split(/[-_]/)[1]?.toUpperCase();
+
   return region && BasePhoneInput.isSupportedCountry(region) ? region : undefined;
 };
 
@@ -66,6 +67,7 @@ function PhoneInput({
   // from navigator.language, then key the component to remount with the resolved value.
   const mounted = useMounted();
   const defaultCountry = defaultCountryProp ?? (mounted ? getBrowserDefaultCountry() : undefined);
+
   return (
     <PhoneInputContext.Provider
       value={{ variant: phoneInputSize, popupClassName, scrollAreaClassName }}
@@ -94,6 +96,7 @@ function PhoneInput({
         smartCaret={false}
         value={value || undefined}
         defaultCountry={defaultCountry}
+        // SAFETY: empty string signals a cleared input; the wrapper maps it back to undefined above
         onChange={(next) => onChange?.(next || ("" as BasePhoneInput.Value))}
         {...props}
       />
@@ -149,6 +152,7 @@ function CountrySelect({
 
   const filteredCountries = useMemo(() => {
     if (!searchValue) return countryList;
+
     return countryList.filter(({ label }) =>
       label.toLowerCase().includes(searchValue.toLowerCase()),
     );
@@ -204,6 +208,7 @@ function CountrySelect({
           themeReanchor.className,
           popupClassName,
         )}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
       >
         {/* One InputGroup carries bg + focus ring so icon and input read as one control.

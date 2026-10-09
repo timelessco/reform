@@ -1,17 +1,17 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FieldType } from "./fields/shared";
 
-const InputSkeleton = () => <Skeleton className="h-[30px] w-full rounded-[8px]" />;
+const InputSkeleton = () => <Skeleton className="h-[30px] w-full rounded-lg" />;
 
-const TextareaSkeleton = () => <Skeleton className="h-24 w-full rounded-[8px]" />;
+const TextareaSkeleton = () => <Skeleton className="h-24 w-full rounded-lg" />;
 
-const FileUploadSkeleton = () => <Skeleton className="h-20 w-full rounded-[8px]" />;
+const FileUploadSkeleton = () => <Skeleton className="h-20 w-full rounded-lg" />;
 
 const OptionListSkeleton = ({ withBadge = false }: { withBadge?: boolean }) => (
   <div className="flex flex-col gap-2">
     {["a", "b", "c"].map((id) => (
       <div className="flex items-center gap-2" key={id}>
-        <Skeleton className={withBadge ? "size-5 rounded" : "size-4 rounded-[4px]"} />
+        <Skeleton className={withBadge ? "size-5 rounded" : "size-4 rounded-xs"} />
         <Skeleton className="h-3 w-40 rounded-md" />
       </div>
     ))}
@@ -21,7 +21,7 @@ const OptionListSkeleton = ({ withBadge = false }: { withBadge?: boolean }) => (
 const LinearScaleSkeleton = () => (
   <div className="flex flex-wrap gap-2">
     {["a", "b", "c", "d", "e"].map((id) => (
-      <Skeleton className="size-8 rounded-[8px]" key={id} />
+      <Skeleton className="size-8 rounded-lg" key={id} />
     ))}
   </div>
 );
@@ -29,14 +29,14 @@ const LinearScaleSkeleton = () => (
 const RatingSkeleton = () => (
   <div className="flex gap-1">
     {["a", "b", "c", "d", "e"].map((id) => (
-      <Skeleton className="size-7 rounded-[4px]" key={id} />
+      <Skeleton className="size-7 rounded-xs" key={id} />
     ))}
   </div>
 );
 
-const MatrixSkeleton = () => <Skeleton className="h-28 w-full rounded-[8px]" />;
+const MatrixSkeleton = () => <Skeleton className="h-28 w-full rounded-lg" />;
 
-const SignatureSkeleton = () => <Skeleton className="h-40 w-full rounded-[8px]" />;
+const SignatureSkeleton = () => <Skeleton className="h-40 w-full rounded-lg" />;
 
 const FIELD_SKELETONS: Record<FieldType, React.ComponentType> = {
   Input: InputSkeleton,
@@ -59,5 +59,6 @@ const FIELD_SKELETONS: Record<FieldType, React.ComponentType> = {
 
 export const FieldSkeleton = ({ fieldType }: { fieldType: FieldType }) => {
   const Component = FIELD_SKELETONS[fieldType];
+
   return Component ? <Component /> : <InputSkeleton />;
 };

@@ -72,7 +72,8 @@ const PRESET_OPTIONS: { value: RangeValue; label: string }[] = [
 
 // Menu-item label: Figma 13px/450/0.13px/gray-800 (text-sm = 13px on this scale). font-case is on
 // the popup. Overrides the design-system item only where it measurably differs from the spec.
-const RANGE_ITEM_CLS = "justify-between font-[450] tracking-[0.13px] text-gray-800";
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.13px tracking have no scale equivalent
+const RANGE_ITEM_CLS = "justify-between font-[450] tracking-[0.13px] text-popover-foreground";
 
 // City → country (for flag emoji on the Cities breakdown; cities carry no ISO code).
 const CITY_COUNTRY: Record<string, string> = {
@@ -88,7 +89,7 @@ const CITY_COUNTRY: Record<string, string> = {
 };
 
 // ── Icon resolution (browser/OS/source brand glyphs from Figma; flags via emoji) ──
-// Raster brand logos (Figma image fills; SVG export is blank) — kept as <img>, not SVG components.
+// Raster brand logos (Figma image fills; SVG export is blank); kept as <img>, not SVG components.
 const BRAND_ICON: Record<string, string> = {
   chrome: "/icons/analytics/chrome.png",
   brave: "/icons/analytics/brave.png",
@@ -117,6 +118,7 @@ const flagEmoji = (code: string): string =>
 
 const countryLabel = (code: string): string => {
   if (!isAlpha2(code)) return code;
+
   try {
     return regionNames?.of(code.toUpperCase()) ?? code;
   } catch {
@@ -130,34 +132,51 @@ const lineCls = "size-4 shrink-0 text-muted-foreground";
 
 const resolveIcon = (kind: StatKind, key: string): React.ReactNode => {
   const k = key.toLowerCase();
+
   if (kind === "countries") {
-    return <span className="text-[14px] leading-none">{flagEmoji(key)}</span>;
+    return <span className="text-base leading-none">{flagEmoji(key)}</span>;
   }
+
   if (kind === "cities") {
     const cc = CITY_COUNTRY[key];
-    return <span className="text-[14px] leading-none">{cc ? flagEmoji(cc) : flagEmoji(key)}</span>;
+
+    return <span className="text-base leading-none">{cc ? flagEmoji(cc) : flagEmoji(key)}</span>;
   }
+
   if (kind === "devices") {
     if (k.includes("mobile")) return <MobileLineIcon className={lineCls} />;
+
     if (k.includes("tablet")) return <TabletLineIcon className={lineCls} />;
+
     return <DesktopLineIcon className={lineCls} />;
   }
+
   if (kind === "sources") {
     if (k.includes("linkedin")) return brandImg(BRAND_ICON.linkedin, "LinkedIn");
+
     if (k.includes("notion")) return brandImg(BRAND_ICON.notion, "Notion");
+
     if (k.includes("direct")) return <DirectArrowIcon className={lineCls} />;
+
     return <Globe className={lineCls} />;
   }
+
   // OS rows use vector brand glyphs (from icons.tsx); Apple is currentColor (no baked bg).
   if (kind === "os") {
     if (k.includes("mac") || k === "ios") return <AppleLineIcon className={lineCls} />;
+
     if (k.includes("windows")) return <WindowsIcon className={lineCls} />;
+
     if (k.includes("chrome")) return <ChromeOsIcon className={lineCls} />;
+
     if (k.includes("linux")) return <LinuxIcon className={lineCls} />;
   }
+
   // Other browsers match a raster brand image.
   const match = Object.keys(BRAND_ICON).find((brand) => k.includes(brand));
+
   if (match) return brandImg(BRAND_ICON[match], key);
+
   return <Globe className={lineCls} />;
 };
 
@@ -172,21 +191,23 @@ const formatDuration = (ms: number): string => {
   const totalSeconds = Math.round(ms / 1000);
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
+
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 };
 
 // ── Card chrome (rounded-12 border, light/dark via tokens) ──────────────────
 // Card surface (Figma light + dark): white in light; in dark a slightly-elevated #1c1c1c over the
 // #131313 page (not bg-card #292929 = too light, not gray-0 #131313 = full black) + gray/100 border.
-const cardClass =
-  "rounded-[12px] border border-[var(--color-gray-100)] bg-gray-0 dark:bg-[#1c1c1c]";
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- dark #1c1c1c surface is a deliberate Figma value with no theme token
+const cardClass = "rounded-2xl border border-(--color-gray-100) bg-card dark:bg-[#1c1c1c]";
 
 // Bottom fade that dissolves the last scrollable row into the card surface (Figma 27015:12198).
 const ScrollFade = () => (
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- 0.5px fade blur + dark #1c1c1c gradient stop have no scale equivalent
   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent backdrop-blur-[0.5px] dark:from-[#1c1c1c]" />
 );
 
-// Proportional-bar list row (Figma Rectangle 41927) — gray/100 bar behind a label/value pair, with an
+// Proportional-bar list row (Figma Rectangle 41927), gray/100 bar behind a label/value pair with an
 // optional leading icon. `widthPct` is pre-clamped by the caller (min-width floor differs per card).
 const ProportionalBarRow = ({
   label,
@@ -202,26 +223,29 @@ const ProportionalBarRow = ({
   <li className="relative flex h-7 shrink-0 items-center rounded-lg">
     <span
       aria-hidden
-      className="absolute inset-y-0 left-0 rounded-lg bg-[var(--color-gray-100)]"
-      style={{ width: `${widthPct}%` }}
+      className="absolute inset-y-0 left-0 w-[var(--bar-width)] rounded-lg bg-(--color-gray-100)"
+      style={{ "--bar-width": `${widthPct}%` } as React.CSSProperties}
     />
     <div className="relative flex w-full items-center gap-2 px-2">
       {icon != null && (
         <span className="flex size-4 shrink-0 items-center justify-center">{icon}</span>
       )}
-      <span className="min-w-0 flex-1 truncate text-[14px] tracking-[0.02em] text-gray-600">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em tracking has no scale equivalent */}
+      <span className="min-w-0 flex-1 truncate text-base tracking-[0.02em] text-muted-foreground">
         {label}
       </span>
-      <span className="shrink-0 text-[14px] tracking-[0.02em] text-gray-800 tabular-nums">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em tracking has no scale equivalent */}
+      <span className="shrink-0 text-base tracking-[0.02em] text-foreground tabular-nums">
         {value}
       </span>
     </div>
   </li>
 );
 
-// `hint` is a muted note (e.g. "49% skip rate"); `trend` is a colored vs-prior delta (Figma:
-// green = good, red = bad). Only one is shown — trend takes precedence when present.
+// `hint` is a muted note (e.g. "49% skip rate"); `trend` is a colored vs-prior delta (Figma
+// green = good, red = bad). Only one is shown; trend takes precedence when present.
 type Trend = { text: string; tone: "good" | "bad" };
+
 const MetricCard = ({
   label,
   value,
@@ -234,24 +258,25 @@ const MetricCard = ({
   trend?: Trend;
 }) => (
   <div className={cn(cardClass, "flex h-21 flex-1 flex-col justify-between p-3")}>
-    <span className="text-[13px] text-muted-foreground">{label}</span>
+    <span className="text-sm text-muted-foreground">{label}</span>
     <span className="flex items-baseline gap-2">
       {/* Figma value style (uniform across cards): Inter 18px / wght 540 / lh1.15 / +0.36px /
           gray-900. font-sans rebinds the weight axis so font-[540] actually renders. */}
-      <span className="font-sans text-[18px] leading-[1.15] font-[540] tracking-[0.36px] text-gray-900 tabular-nums">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 540 weight + 1.15 leading + 0.36px tracking have no scale equivalent */}
+      <span className="font-sans text-xl leading-[1.15] font-[540] tracking-[0.36px] text-foreground tabular-nums">
         {value}
       </span>
       {trend ? (
         <span
           className={cn(
-            "text-[13px] tabular-nums",
-            trend.tone === "good" ? "text-emerald-600" : "text-red-500",
+            "text-sm tabular-nums",
+            trend.tone === "good" ? "text-(--color-success)" : "text-destructive",
           )}
         >
           {trend.text}
         </span>
       ) : hint ? (
-        <span className="text-[13px] text-muted-foreground">{hint}</span>
+        <span className="text-sm text-muted-foreground">{hint}</span>
       ) : null}
     </span>
   </div>
@@ -262,6 +287,7 @@ const MetricCard = ({
 const pctTrend = (delta: number | null, goodWhenUp: boolean): Trend | undefined => {
   if (delta == null) return undefined;
   const up = delta > 0;
+
   return { text: `${up ? "+" : ""}${delta}%`, tone: up === goodWhenUp ? "good" : "bad" };
 };
 
@@ -269,8 +295,10 @@ const pctTrend = (delta: number | null, goodWhenUp: boolean): Trend | undefined 
 const durationTrend = (deltaMs: number | null): Trend | undefined => {
   if (deltaMs == null || deltaMs === 0) return undefined;
   const seconds = Math.round(Math.abs(deltaMs) / 1000);
+
   if (seconds === 0) return undefined;
   const faster = deltaMs < 0;
+
   return { text: `${seconds}s ${faster ? "faster" : "slower"}`, tone: faster ? "good" : "bad" };
 };
 
@@ -278,6 +306,7 @@ const durationTrend = (deltaMs: number | null): Trend | undefined => {
 // Proportional-bar rows (no leading icon), bar width = value / max. Used by both "Dropoff per
 // question" (% value) and "Time per question" (seconds). Capped height + bottom fade for overflow.
 type QuestionBarRow = { label: string; value: number };
+
 const QuestionBarListCard = ({
   title,
   rows,
@@ -290,19 +319,21 @@ const QuestionBarListCard = ({
   className?: string;
 }) => {
   const max = Math.max(1, ...rows.map((r) => r.value));
+
   return (
     <div
       className={cn(
         cardClass,
-        "relative flex h-[210px] flex-col gap-[14px] overflow-hidden px-1.5 pt-[14px] pb-2",
+        "relative flex h-[210px] flex-col gap-3.5 overflow-hidden px-1.5 pt-3.5 pb-2",
         className,
       )}
     >
-      <h3 className="px-2 text-[15px] font-medium tracking-[0.02em] text-gray-800">{title}</h3>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.02em tracking have no scale equivalent */}
+      <h3 className="px-2 text-[15px] font-medium tracking-[0.02em] text-foreground">{title}</h3>
       {rows.length === 0 ? (
-        <p className="px-2 pb-3 text-[13px] text-muted-foreground">No data yet</p>
+        <p className="px-2 pb-3 text-sm text-muted-foreground">No data yet</p>
       ) : (
-        <ul className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-[3px] overflow-y-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-0.75 overflow-y-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {rows.map((row, i) => (
             <ProportionalBarRow
               key={i}
@@ -334,6 +365,7 @@ const StatCard = ({
     const entries = Object.entries(data ?? {}).filter(([, v]) => v > 0);
     entries.sort((a, b) => b[1] - a[1]);
     const max = entries[0]?.[1] ?? 1;
+
     return entries.map(([key, value]) => ({ key, value, pct: Math.max(12, (value / max) * 100) }));
   }, [data]);
 
@@ -342,18 +374,19 @@ const StatCard = ({
     <div
       className={cn(
         cardClass,
-        "relative flex flex-col gap-[14px] overflow-hidden px-1.5 pt-[14px] pb-2",
+        "relative flex flex-col gap-3.5 overflow-hidden px-1.5 pt-3.5 pb-2",
         scrollable && "h-[250px]",
       )}
     >
-      <h3 className="px-2 text-[15px] font-medium tracking-[0.02em] text-gray-800">{title}</h3>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.02em tracking have no scale equivalent */}
+      <h3 className="px-2 text-[15px] font-medium tracking-[0.02em] text-foreground">{title}</h3>
       {rows.length === 0 ? (
-        <p className="px-2 pb-3 text-[13px] text-muted-foreground">No data yet</p>
+        <p className="px-2 pb-3 text-sm text-muted-foreground">No data yet</p>
       ) : (
         // 3px gap between rows (Figma); when capped, the list scrolls (scrollbar hidden).
         <ul
           className={cn(
-            "flex flex-col gap-[3px]",
+            "flex flex-col gap-0.75",
             scrollable &&
               "min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
           )}
@@ -369,22 +402,25 @@ const StatCard = ({
           ))}
         </ul>
       )}
-      {/* Bottom fade/blur (Figma 26835:11928) — hints at scrollable overflow below. */}
+      {/* Bottom fade/blur (Figma 26835:11928); hints at scrollable overflow below. */}
       {scrollable && rows.length > 0 && <ScrollFade />}
     </div>
   );
 };
 
 // ── Answer cards (Answers tab, Figma 26844:15323) ───────────────────────────
-const answerCardClass = cn(cardClass, "p-[14px]");
-// Render shape comes from the server's `analysis` discriminator: `choice` → donut, everything
+const answerCardClass = cn(cardClass, "p-3.5");
+
+// Render shape comes from the server's `analysis` discriminator; `choice` → donut, everything
 // else (domain/length/presence/raw) → bar list. Rating/scale donuts use the gold palette.
 const RATING_TYPES = new Set(["Rating", "LinearScale"]);
+
 const GOLD_PALETTE = ["#fcca3f", "#f2b202", "#d99800", "#b18202", "#8a6500"];
 
 const AnswerDonutCard = ({ q }: { q: QuestionAnswerSummary }) => (
-  <div className={cn(answerCardClass, "flex flex-col items-center gap-[14px]")}>
-    <h3 className="w-full truncate text-[14px] font-medium tracking-[0.14px] text-gray-900">
+  <div className={cn(answerCardClass, "flex flex-col items-center gap-3.5")}>
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.14px tracking has no scale equivalent */}
+    <h3 className="w-full truncate text-base font-medium tracking-[0.14px] text-foreground">
       {q.label}
     </h3>
     <AnswerDonut
@@ -398,19 +434,22 @@ const AnswerDonutCard = ({ q }: { q: QuestionAnswerSummary }) => (
 
 const AnswerBarCard = ({ q, unit }: { q: QuestionAnswerSummary; unit: string }) => {
   const sum = q.distribution.reduce((acc, d) => acc + d.value, 0) || 1;
+
   return (
     <div className={cn(answerCardClass, "relative flex flex-col gap-3 overflow-hidden")}>
       <div className="flex flex-col gap-1">
-        <h3 className="truncate text-[14px] font-medium tracking-[0.14px] text-gray-900">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.14px tracking has no scale equivalent */}
+        <h3 className="truncate text-base font-medium tracking-[0.14px] text-foreground">
           {q.label}
         </h3>
-        <p className="text-[13px] text-gray-500">
+        <p className="text-sm text-muted-foreground">
           {numberFormatter.format(q.answered)} {unit}
         </p>
       </div>
-      <ul className="flex max-h-[120px] [scrollbar-width:none] flex-col gap-[3px] overflow-y-auto pb-1 [&::-webkit-scrollbar]:hidden">
+      <ul className="flex max-h-[120px] [scrollbar-width:none] flex-col gap-0.75 overflow-y-auto pb-1 [&::-webkit-scrollbar]:hidden">
         {q.distribution.map((d, i) => {
           const pct = Math.round((d.value / sum) * 100);
+
           return (
             <ProportionalBarRow
               key={i}
@@ -427,17 +466,16 @@ const AnswerBarCard = ({ q, unit }: { q: QuestionAnswerSummary; unit: string }) 
 };
 
 type AnalyticsTab = "visits" | "answers" | "dropoffs";
+
 const TABS: { id: AnalyticsTab; label: string; icon: React.ReactNode }[] = [
   { id: "visits", label: "Visits", icon: <TabVisitsIcon className="size-4" /> },
   { id: "answers", label: "Answers", icon: <TabAnswersIcon className="size-4" /> },
   { id: "dropoffs", label: "Dropoffs", icon: <TabDropoffsIcon className="size-4" /> },
 ];
 
-// Range submenu — pick a start + end on a range calendar (future dates disabled; the calendar's
-// range mode guarantees end ≥ start). Apply commits YYYY-MM-DD strings and closes the whole menu.
-// Uses an inline panel pattern (like block-menu.tsx) instead of a nested submenu popup, so the
-// calendar inherits CSS variables correctly in dark mode.
-// Section label + range dropdown + export menu — shared by the Visits & Dropoffs tabs.
+// Range submenu: start + end on a range calendar (future dates disabled; range mode guarantees end ≥ start).
+// Apply commits YYYY-MM-DD and closes the whole menu. Inline panel (like block-menu.tsx), not a nested submenu popup, so the calendar inherits CSS vars in dark mode.
+// Section label + range dropdown + export menu, shared by the Visits & Dropoffs tabs.
 const SectionToolbar = ({
   label,
   range,
@@ -456,6 +494,7 @@ const SectionToolbar = ({
   onSelectViewMode?: (mode: "list" | "chart") => void;
 }) => (
   <div className="mt-6 flex items-center justify-between gap-3">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px section title has no scale equivalent */}
     <span className="text-[15px] font-semibold text-foreground">{label}</span>
     <div className="flex items-center gap-2">
       {/* {viewMode && onSelectViewMode && (
@@ -515,6 +554,7 @@ const SectionToolbar = ({
           <Button
             size="sm"
             suffix={<ChevronDown className="size-4 shrink-0" />}
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.14px tracking has no scale equivalent
             className="h-7 rounded-lg font-case text-base tracking-[0.14px]"
           />
         }
@@ -545,13 +585,14 @@ const AnalyticsPage = () => {
   const completionRate = analyticsCompletionRate(metrics);
   const breakdowns = useMemo(() => analyticsBreakdowns(metrics), [metrics]);
 
-  // Dropoff data (Dropoffs tab) — fetched only when that tab is active.
+  // Dropoff data (Dropoffs tab), fetched only when that tab is active.
   const { data: dropoffData, isLoading: dropoffLoading } = useQuery({
     queryKey: ["analytics-dropoff", formId, rangeArgs],
     queryFn: () => getFormDropoff({ data: { formId, ...rangeArgs } }),
     staleTime: 30_000,
     enabled: tab === "dropoffs",
   });
+
   const dropoff: QuestionDropoffMetrics | undefined = dropoffData;
   const [viewModeOverride, setViewModeOverride] = useState<"list" | "chart" | null>(null);
   const hasPages = dropoff?.steps && dropoff.steps.length > 1;
@@ -561,13 +602,14 @@ const AnalyticsPage = () => {
   const totalDropoffs = analyticsTotalDropoffs(dropoff);
   const biggestDropoff = analyticsBiggestDropoff(dropoffRows);
 
-  // Answers data (Answers tab) — fetched only when that tab is active.
+  // Answers data (Answers tab), fetched only when that tab is active.
   const { data: answersData, isLoading: answersLoading } = useQuery({
     queryKey: ["analytics-answers", formId, rangeArgs],
     queryFn: () => getFormAnswers({ data: { formId, ...rangeArgs } }),
     staleTime: 30_000,
     enabled: tab === "answers",
   });
+
   const answers: FormAnswerMetrics | undefined = answersData;
   const answerQuestions = useMemo(() => visibleAnswerQuestions(answers), [answers]);
   const mostSkipped = useMemo(() => mostSkippedQuestion(answers), [answers]);
@@ -577,10 +619,13 @@ const AnalyticsPage = () => {
 
   const handleExport = (format: "csv" | "pdf" | "excel") => {
     if (!metrics) return;
+
     if (format !== "csv") {
       toast.message(`${format.toUpperCase()} export coming soon`);
+
       return;
     }
+
     const lines = [
       ["Metric", "Value"],
       ["Visits", String(metrics.totalVisits)],
@@ -588,6 +633,7 @@ const AnalyticsPage = () => {
       ["Completion rate", `${completionRate}%`],
       ["Completion time", formatDuration(metrics.avgVisitDurationMs)],
     ];
+
     const csv = lines.map((r) => r.map((c) => `"${c.replaceAll('"', '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
@@ -600,31 +646,33 @@ const AnalyticsPage = () => {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
       <div className="mx-auto w-full max-w-[748px] px-6 py-6">
-        {/* Title (Figma 26835:12210) — 18px SemiBold gray-950. font-sans re-binds the wght axis so
+        {/* Title (Figma 26835:12210), 18px SemiBold gray-950. font-sans re-binds the wght axis so
             font-semibold actually renders 600 (the inherited fvs wght otherwise pins it to ~450). */}
-        <h1 className="font-sans text-[18px] leading-[1.15] font-semibold text-gray-950">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 1.15 line-height has no scale equivalent */}
+        <h1 className="font-sans text-xl leading-[1.15] font-semibold text-foreground">
           Analytics
         </h1>
 
-        {/* Tabs (Figma 26835:12159) — shared line-variant Tabs: Base UI slides the indicator between
+        {/* Tabs (Figma 26835:12159); shared line-variant Tabs, Base UI slides the indicator between
             tabs (same component + animation as the settings page). gray/200 rail, gray/900 active. */}
         <Tabs value={tab} onValueChange={(value) => setTab(value as AnalyticsTab)} className="mt-5">
           <TabsList
             variant="line"
             size="default"
-            className="h-auto! w-full justify-start gap-6 border-gray-200! p-0!"
+            className="h-auto! w-full justify-start gap-6 border-border-soft! p-0!"
           >
             {TABS.map((t) => (
               <TabsTrigger
                 key={t.id}
                 value={t.id}
-                className="h-8! flex-none gap-2 px-0! font-[420]! tracking-[0.02em] text-gray-600 hover:text-gray-800 data-active:text-gray-950 [&_svg]:size-4"
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.02em tracking have no scale equivalent
+                className="h-8! flex-none gap-2 px-0! font-[420]! tracking-[0.02em] text-muted-foreground hover:text-foreground data-active:text-foreground [&_svg]:size-4"
               >
                 {t.icon}
                 {t.label}
               </TabsTrigger>
             ))}
-            <TabsIndicator className="bg-gray-950!" />
+            <TabsIndicator className="bg-foreground!" />
           </TabsList>
         </Tabs>
 
@@ -638,7 +686,7 @@ const AnalyticsPage = () => {
               onExport={handleExport}
             />
 
-            {/* Metric cards — values + "vs previous period" trends. */}
+            {/* Metric cards; values + "vs previous period" trends. */}
             <div className="mt-5 flex gap-3">
               <MetricCard
                 label="Visits"
@@ -662,14 +710,15 @@ const AnalyticsPage = () => {
               />
             </div>
 
-            {/* Activity chart (Figma 26835:11656) — fixed 200px card, gray/100 border. Title 15px
+            {/* Activity chart (Figma 26835:11656); fixed 200px card, gray/100 border. Title 15px
                 medium; the series legend lives only in the hover tooltip (no header legend). */}
             <div className={cn(cardClass, "mt-3 flex h-[200px] flex-col overflow-hidden")}>
-              <h3 className="px-[13px] pt-[13px] text-[15px] font-medium tracking-[0.02em] text-gray-900">
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.02em tracking have no scale equivalent */}
+              <h3 className="px-3.25 pt-3.25 text-[15px] font-medium tracking-[0.02em] text-foreground">
                 Form activity over time
               </h3>
               {chartData.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center text-[14px] text-muted-foreground">
+                <div className="flex flex-1 items-center justify-center text-base text-muted-foreground">
                   {isLoading ? "Loading…" : "No activity for this range"}
                 </div>
               ) : (
@@ -703,7 +752,7 @@ const AnalyticsPage = () => {
               onSelectViewMode={setViewModeOverride}
             />
 
-            {/* Stat cards (Figma 26889:17288) — values + "vs previous period" trends. */}
+            {/* Stat cards (Figma 26889:17288); values + "vs previous period" trends. */}
             <div className="mt-5 flex gap-3">
               <MetricCard
                 label="Total dropoffs"
@@ -739,15 +788,16 @@ const AnalyticsPage = () => {
               <div
                 className={cn(
                   cardClass,
-                  "mt-3 flex h-[383px] items-center justify-center text-[14px] text-muted-foreground",
+                  "mt-3 flex h-[383px] items-center justify-center text-base text-muted-foreground",
                 )}
               >
                 Loading…
               </div>
             ) : dropoff?.steps && dropoff.steps.length > 1 ? (
-              /* Funnel chart (Figma 26989:10813) — fixed 383px card; smoothly tapered descending area. */
+              /* Funnel chart (Figma 26989:10813); fixed 383px card, smoothly tapered descending area. */
               <div className={cn(cardClass, "mt-3 flex h-[383px] flex-col overflow-hidden")}>
-                <h3 className="px-[13px] pt-[13px] text-[15px] font-medium tracking-[0.02em] text-gray-900">
+                {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.02em tracking have no scale equivalent */}
+                <h3 className="px-3.25 pt-3.25 text-[15px] font-medium tracking-[0.02em] text-foreground">
                   Dropoff funnel over time
                 </h3>
                 <div className="min-h-0 flex-1 p-4">
@@ -755,7 +805,7 @@ const AnalyticsPage = () => {
                 </div>
               </div>
             ) : dropoffRows.length > 0 ? (
-              /* Single-page: Hide funnel entirely and show Dropoff per question card in high-fidelity full-width 424px layout */
+              /* Single-page: hide the funnel, show Dropoff per question full-width at 424px */
               <div className="mt-3">
                 <QuestionBarListCard
                   title="Dropoff per question"
@@ -763,6 +813,7 @@ const AnalyticsPage = () => {
                     const displayLabel = r.label.startsWith(r.qLabel)
                       ? r.label
                       : `${r.qLabel}. ${r.label}`;
+
                     return { label: displayLabel, value: r.rate };
                   })}
                   format={(v) => `${Math.round(v)}%`}
@@ -773,7 +824,7 @@ const AnalyticsPage = () => {
               <div
                 className={cn(
                   cardClass,
-                  "mt-3 flex h-[300px] items-center justify-center text-[14px] text-muted-foreground",
+                  "mt-3 flex h-[300px] items-center justify-center text-base text-muted-foreground",
                 )}
               >
                 No drop-off data for this range
@@ -792,7 +843,7 @@ const AnalyticsPage = () => {
               onExport={handleExport}
             />
 
-            {/* Stat cards (Figma 26844:15300) — values + "vs previous period" trends. */}
+            {/* Stat cards (Figma 26844:15300); values + "vs previous period" trends. */}
             <div className="mt-5 flex gap-3">
               <MetricCard
                 label="Submissions"
@@ -829,9 +880,9 @@ const AnalyticsPage = () => {
               />
             </div>
 
-            {/* Per-question answer cards — donut (choice/rating) or top-answers bar list. */}
+            {/* Per-question answer cards; donut (choice/rating) or top-answers bar list. */}
             {answerQuestions.length === 0 ? (
-              <div className="mt-5 flex h-40 items-center justify-center text-[14px] text-muted-foreground">
+              <div className="mt-5 flex h-40 items-center justify-center text-base text-muted-foreground">
                 {answersLoading ? "Loading…" : "No answers for this range"}
               </div>
             ) : (

@@ -10,17 +10,20 @@ import { FORM_INPUT_CLS, useFieldBinding } from "./shared";
 import type { FieldRendererProps } from "./shared";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const normalize = (email: string) => email.trim().toLowerCase();
 
 const EmailField = ({ element, form, name }: FieldRendererProps<"Email">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
   const ctx = useEmailVerificationStore();
+
   // No provider (editor canvas / embeds) → standalone mock store.
   const [fallbackStore] = useState<EmailVerificationStore>(() => ({
     mode: "mock",
     formId: null,
     tokens: new Map(),
   }));
+
   const store = ctx ?? fallbackStore;
   const verifyEnabled = element.verifyEmail === true;
 
@@ -55,6 +58,7 @@ const EmailField = ({ element, form, name }: FieldRendererProps<"Email">) => {
         onSubmit: ({ value }) => {
           if (typeof value !== "string" || value.trim() === "") return undefined;
           const entry = store.tokens.get(fieldName);
+
           return entry && entry.email === normalize(value)
             ? undefined
             : "Please verify your email to continue";
@@ -67,7 +71,7 @@ const EmailField = ({ element, form, name }: FieldRendererProps<"Email">) => {
             value={(f.state.value as string | undefined) ?? ""}
             fieldName={fieldName}
             store={store}
-            input={<f.Input {...inputProps} className="h-[30px] form-input pr-7 pl-[10px]" />}
+            input={<f.Input {...inputProps} className="h-[30px] form-input pr-7 pl-2.5" />}
           />
           <f.FieldError />
         </>
@@ -107,6 +111,7 @@ const VerifyEmailFlow = ({
   if (verifiedEntry && value && verifiedEntry.email !== normalize(value)) {
     store.tokens.delete(fieldName);
   }
+
   if (status !== "idle" && sentTo && normalize(value) !== sentTo) {
     setStatus("idle");
     setSentTo(null);
@@ -120,11 +125,13 @@ const VerifyEmailFlow = ({
       setStatus("sending");
       setError(null);
       setOtp("");
+
       try {
         if (store.mode === "live" && store.formId) {
           const { challenge } = await sendEmailOtp({
             data: { formId: store.formId, email: target },
           });
+
           challengeRef.current = challenge;
         } else {
           const code = Math.floor(100_000 + Math.random() * 900_000).toString();
@@ -134,6 +141,7 @@ const VerifyEmailFlow = ({
             duration: 10_000,
           });
         }
+
         setSentTo(target);
         setStatus("sent");
       } catch (err) {
@@ -149,8 +157,10 @@ const VerifyEmailFlow = ({
       if (!sentTo) return;
       setStatus("verifying");
       setError(null);
+
       try {
         let token = "mock";
+
         if (store.mode === "live" && store.formId) {
           if (!challengeRef.current) throw new Error("Request a new code");
           ({ verifiedToken: token } = await verifyEmailOtp({
@@ -159,6 +169,7 @@ const VerifyEmailFlow = ({
         } else if (code !== mockCodeRef.current) {
           throw new Error("That code didn't match — check the toast and try again");
         }
+
         store.tokens.set(fieldName, { email: sentTo, token });
         setStatus("idle");
         setSentTo(null);
@@ -174,7 +185,9 @@ const VerifyEmailFlow = ({
 
   const maybeSend = useCallback(() => {
     if (isVerified || status === "sending" || status === "verifying") return;
+
     if (!EMAIL_RE.test(value.trim())) return;
+
     if (status === "sent" && sentTo === normalize(value)) return; // already pending for this email
     void requestCode(value);
   }, [isVerified, status, sentTo, value, requestCode]);
@@ -198,6 +211,7 @@ const VerifyEmailFlow = ({
       onBlur={(e) => {
         // Leaving the email input (not moving into the OTP strip) also triggers a send.
         const next = e.relatedTarget as Node | null;
+
         if (!e.currentTarget.contains(next)) maybeSend();
       }}
     >
@@ -207,7 +221,7 @@ const VerifyEmailFlow = ({
           <span
             data-testid="email-verified-badge"
             title="Email verified"
-            className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 animate-in text-green-600 duration-200 zoom-in-75 fade-in"
+            className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 animate-in text-(--color-success) duration-200 zoom-in-75 fade-in"
           >
             <VerifiedIcon className="size-4" />
           </span>

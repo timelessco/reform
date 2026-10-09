@@ -99,6 +99,7 @@ it("never leaks PII / content keys into the serialized audit envelope", () => {
     }),
   );
   const serialized = JSON.stringify(captured.events).toLowerCase();
+
   for (const key of FORBIDDEN_KEYS) {
     expect(serialized.includes(`"${key}":`)).toBe(false);
   }

@@ -115,6 +115,7 @@ export const getFormInAppNotificationPreference = createServerFn({ method: "GET"
     }
 
     const isOwner = form.createdByUserId === userId;
+
     if (!isOwner) {
       return { canManageInAppNotifications: false, inAppNotifications: false };
     }

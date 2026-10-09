@@ -1,6 +1,7 @@
 /** Local draft form utilities — dynamic UUIDs to avoid ID collisions during sync. */
 
 const LOCAL_FORM_ID_KEY = "local-draft-form-id";
+
 const LOCAL_WORKSPACE_ID_KEY = "local-draft-workspace-id";
 
 /** Get/create a per-session local form ID — unique per user, prevents sync collisions. */
@@ -10,10 +11,12 @@ export const getLocalFormId = (): string => {
   }
 
   let id = localStorage.getItem(LOCAL_FORM_ID_KEY);
+
   if (!id) {
     id = crypto.randomUUID();
     localStorage.setItem(LOCAL_FORM_ID_KEY, id);
   }
+
   return id;
 };
 
@@ -26,10 +29,12 @@ export const getLocalWorkspaceId = (): string => {
   }
 
   let id = localStorage.getItem(LOCAL_WORKSPACE_ID_KEY);
+
   if (!id) {
     id = crypto.randomUUID();
     localStorage.setItem(LOCAL_WORKSPACE_ID_KEY, id);
   }
+
   return id;
 };
 

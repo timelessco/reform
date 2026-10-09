@@ -23,11 +23,13 @@ const useUploadErrorToast = () => {
 
         break;
       }
+
       case UploadErrorCode.INVALID_FILE_TYPE: {
         toast.error(`The type of files ${data.files.map((f) => f.name).join(", ")} is invalid`);
 
         break;
       }
+
       case UploadErrorCode.TOO_LARGE: {
         toast.error(
           `The size of files ${data.files
@@ -37,11 +39,13 @@ const useUploadErrorToast = () => {
 
         break;
       }
+
       case UploadErrorCode.TOO_LESS_FILES: {
         toast.error(`The mini um number of files is ${data.minFileCount} for ${data.fileType}`);
 
         break;
       }
+
       case UploadErrorCode.TOO_MANY_FILES: {
         toast.error(
           `The maximum number of files is ${data.maxFileCount} ${

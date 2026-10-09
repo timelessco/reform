@@ -41,6 +41,7 @@ const buildPayload = async (base: Awaited<ReturnType<typeof loadFormForCustomDom
   const firstStepFieldTypes = stepComponents[0]
     ? [...new Set(stepComponents[0].fields.map((f) => f.fieldType))]
     : [];
+
   const preloadModuleUrls = await getFieldChunkUrls(firstStepFieldTypes);
 
   // Card-mode logic payload (this path renders un-chunked card steps).

@@ -25,4 +25,3 @@ pre-commit:
       glob:
         - "**/*.ts"
         - "**/*.tsx"
-

@@ -57,6 +57,7 @@ export const getTestUtils = async (): Promise<TestHelpers> => {
     const ctx = await auth.$context;
     _test = ctx.test as unknown as TestHelpers;
   }
+
   return _test;
 };
 
@@ -65,17 +66,20 @@ export const createTestOrg = async (ownerId: string) => {
   const org = t.createOrganization({ name: "Test Org", slug: `test-${ownerId}` });
   await t.saveOrganization(org);
   await t.addMember({ userId: ownerId, organizationId: org.id, role: "owner" });
+
   return org;
 };
 
 export const createTestMember = async (userId: string, organizationId: string) => {
   const t = await getTestUtils();
+
   return t.addMember({ userId, organizationId, role: "member" });
 };
 
 export const createTestWorkspace = async (orgId: string, creatorId: string) => {
   const id = crypto.randomUUID();
   const now = new Date();
+
   const [workspace] = await db
     .insert(schema.workspaces)
     .values({
@@ -87,6 +91,7 @@ export const createTestWorkspace = async (orgId: string, creatorId: string) => {
       updatedAt: now,
     })
     .returning();
+
   return workspace;
 };
 
@@ -97,6 +102,7 @@ export const createTestForm = async (
 ) => {
   const id = crypto.randomUUID();
   const now = new Date();
+
   const [form] = await db
     .insert(schema.forms)
     .values({
@@ -114,6 +120,7 @@ export const createTestForm = async (
       updatedAt: now,
     })
     .returning();
+
   return form;
 };
 
@@ -123,11 +130,13 @@ export const cleanupTestUser = async (userId: string) => {
     .select({ organizationId: schema.member.organizationId })
     .from(schema.member)
     .where(eq(schema.member.userId, userId));
+
   const orgIds = orgRows.map((r) => r.organizationId);
 
   if (orgIds.length > 0) {
     await db.delete(schema.organization).where(inArray(schema.organization.id, orgIds));
   }
+
   // member + user_workspace_order have no FK cascade — clear explicitly.
   await db.delete(schema.member).where(eq(schema.member.userId, userId));
   await db.delete(schema.userWorkspaceOrder).where(eq(schema.userWorkspaceOrder.userId, userId));
@@ -153,6 +162,7 @@ export const createTestCustomDomain = async (
 ) => {
   const id = crypto.randomUUID();
   const now = new Date();
+
   const [domain] = await db
     .insert(schema.customDomains)
     .values({
@@ -165,5 +175,6 @@ export const createTestCustomDomain = async (
       updatedAt: now,
     })
     .returning();
+
   return domain;
 };

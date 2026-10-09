@@ -7,6 +7,8 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, withHOC } from "platejs/react";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import { Tweet } from "react-tweet";
+import type { CSSProperties } from "react";
+import * as v from "valibot";
 
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,7 @@ export const MediaEmbedElement = withHOC(
     } = useMediaState({
       urlParsers: [parseTwitterUrl, parseVideoUrl],
     });
+
     const width = useResizableValue("width");
     const provider = embed?.provider;
 
@@ -115,7 +118,16 @@ export const MediaEmbedElement = withHOC(
               />
             </Resizable>
 
-            <Caption style={{ width }} align={align}>
+            <Caption
+              className="w-[var(--caption-width)]"
+              align={align}
+              // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+              style={
+                {
+                  "--caption-width": v.is(v.number(), width) ? `${width}px` : width,
+                } as CSSProperties
+              }
+            >
               <CaptionTextarea placeholder="Write a caption..." />
             </Caption>
           </figure>

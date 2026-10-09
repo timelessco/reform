@@ -30,12 +30,13 @@ const MultiChoiceField = ({ element, form }: FieldRendererProps<"MultiChoice">) 
       <form.AppField name={element.name}>
         {(f) => {
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+
           return (
             <>
               <DropdownSelect
                 id={element.name}
                 options={options}
-                value={(f.state.value as string | undefined) ?? ""}
+                value={String(f.state.value ?? "")}
                 onChange={(val) => f.handleChange(val)}
                 aria-invalid={hasErrors}
                 aria-labelledby={getAriaLabelledBy(element)}
@@ -53,7 +54,7 @@ const MultiChoiceField = ({ element, form }: FieldRendererProps<"MultiChoice">) 
     <form.AppField name={element.name}>
       {(f) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-        const selectedValue = (f.state.value as string | undefined) ?? "";
+        const selectedValue = String(f.state.value ?? "");
 
         // Letter/Number labels double as hotkeys: press an option's ordinal to pick it.
         const handleKeyDown = getKeyDownHandler((idx) => {
@@ -85,6 +86,7 @@ const MultiChoiceField = ({ element, form }: FieldRendererProps<"MultiChoice">) 
             <div className="flex flex-col gap-2">
               {options.map((option, idx) => {
                 const isSelected = selectedValue === option.value;
+
                 return (
                   <button
                     key={option.value}
@@ -102,8 +104,8 @@ const MultiChoiceField = ({ element, form }: FieldRendererProps<"MultiChoice">) 
                       // programmatically focuses); a subtle gray-100 bg marks keyboard focus instead.
                       "flex cursor-pointer flex-col items-start gap-1.5 rounded-lg px-2 py-1.5 text-left text-base transition-colors outline-none",
                       isSelected
-                        ? "bg-[var(--bf-input,var(--color-gray-200))] text-[var(--bf-input-foreground,var(--color-foreground))]"
-                        : "focus-visible:bg-gray-100",
+                        ? "bg-(--bf-input,var(--color-gray-200)) text-(--bf-input-foreground,var(--color-foreground))"
+                        : "focus-visible:bg-accent",
                     )}
                   >
                     <span className="flex items-center gap-1.5">

@@ -5,6 +5,7 @@ export const PLAN_PRODUCT_IDS = {
 } as const;
 
 export const PRO_PRODUCT_IDS = [PLAN_PRODUCT_IDS.pro];
+
 export const BUSINESS_PRODUCT_IDS = [PLAN_PRODUCT_IDS.business];
 
 export type Plan = "free" | "pro" | "business";
@@ -13,8 +14,11 @@ export type Plan = "free" | "pro" | "business";
  * so the mapping can't drift. */
 export const planForProductId = (productId: string | null | undefined): Plan => {
   if (!productId) return "free";
+
   if ((BUSINESS_PRODUCT_IDS as readonly string[]).includes(productId)) return "business";
+
   if ((PRO_PRODUCT_IDS as readonly string[]).includes(productId)) return "pro";
+
   return "free";
 };
 

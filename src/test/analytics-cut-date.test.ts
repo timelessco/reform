@@ -4,6 +4,7 @@ import { PER_QUESTION_ANALYTICS_CUT_TS } from "@/lib/analytics/cut-date";
 import { filterByCutDate } from "@/lib/analytics/merge-dropoff";
 
 type DropoffDailyRow = typeof formDropoffDaily.$inferSelect;
+
 type QuestionProgressRow = typeof formQuestionProgress.$inferSelect;
 
 const baseTimestamp = new Date("2026-05-18T00:00:00Z");

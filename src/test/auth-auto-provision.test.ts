@@ -13,6 +13,7 @@ describe("auto-provision on user creation", () => {
     for (const id of createdUserIds) {
       await cleanupTestUser(id);
     }
+
     createdUserIds.length = 0;
   });
 

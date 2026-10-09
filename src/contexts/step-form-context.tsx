@@ -98,9 +98,11 @@ export const FormPreviewReadOnlyContext = React.createContext(false);
 
 export const useStepForm = () => {
   const context = React.use(StepFormContext);
+
   if (!context) {
     throw new Error("useStepForm must be used within a StepFormProvider.");
   }
+
   return context;
 };
 
@@ -143,6 +145,7 @@ export const StepFormProvider = ({
     isSubmitting: false,
     isSubmitted: false,
   }));
+
   const { history, direction, formData, isSubmitting, isSubmitted } = state;
   const currentStep = history[history.length - 1];
   const canGoBack = history.length > 1;
@@ -152,6 +155,7 @@ export const StepFormProvider = ({
   const goToStep = React.useCallback(
     (stepData: Record<string, unknown>, target: number) => {
       const next = { ...formDataRef.current, ...stepData };
+
       if (Object.keys(next).length > 0) saveData(next);
       dispatch({ type: "push-step", formData: next, target: Math.max(0, target) });
     },
@@ -174,10 +178,12 @@ export const StepFormProvider = ({
     async (finalStepData: Record<string, unknown>) => {
       const allData = { ...formDataRef.current, ...finalStepData };
       dispatch({ type: "submit-start" });
+
       try {
         if (onSubmit) {
           await onSubmit(allData);
         }
+
         clearSavedData();
         dispatch({ type: "submit-success" });
       } finally {

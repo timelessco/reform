@@ -16,12 +16,14 @@ import * as schema from "../src/db/schema";
 import { user } from "../src/db/schema";
 
 const DATABASE_URL: string = process.env.DATABASE_URL ?? "";
+
 if (!DATABASE_URL) {
   console.error("DATABASE_URL is not set");
   process.exit(1);
 }
 
 const ITERATIONS = 200;
+
 const WARMUP = 25;
 
 const makeDb = (jit: boolean) =>
@@ -40,6 +42,7 @@ const stats = (samples: Sample[]) => {
   const sum = sorted.reduce((a, b) => a + b, 0);
   const mean = sum / sorted.length;
   const p = (q: number) => sorted[Math.floor(sorted.length * q)];
+
   return {
     mean: mean / 1e6,
     p50: (p(0.5) ?? 0) / 1e6,
@@ -55,12 +58,15 @@ const fmt = (s: ReturnType<typeof stats>) =>
 const runWorkload = async (label: string, fn: () => Promise<unknown>): Promise<Sample[]> => {
   for (let i = 0; i < WARMUP; i++) await fn();
   const samples: Sample[] = [];
+
   for (let i = 0; i < ITERATIONS; i++) {
     const t0 = ns();
     await fn();
     samples.push(ns() - t0);
   }
+
   console.log(`${label.padEnd(45)} ${fmt(stats(samples))}`);
+
   return samples;
 };
 
@@ -84,60 +90,72 @@ const main = async () => {
   );
 
   console.log("== A: SELECT user (6 rows, 11 cols) ==");
+
   const aOff = await runWorkload("user (6 rows)              jit=off", () =>
     dbOff.select().from(user),
   );
+
   const aOn = await runWorkload("user (6 rows)              jit=on ", () =>
     dbOn.select().from(user),
   );
+
   compare("user (6 rows)              delta", aOff, aOn);
   console.log();
 
   console.log("== B: SELECT user × generate_series(1, 100) → 600 rows ==");
+
   const bOff = await runWorkload("user × 100 (600 rows)      jit=off", () =>
     dbOff
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 100) g`, sql`true`),
   );
+
   const bOn = await runWorkload("user × 100 (600 rows)      jit=on ", () =>
     dbOn
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 100) g`, sql`true`),
   );
+
   compare("user × 100 (600 rows)      delta", bOff, bOn);
   console.log();
 
   console.log("== C: SELECT user × generate_series(1, 1000) → 6 000 rows ==");
+
   const cOff = await runWorkload("user × 1000 (6 000 rows)   jit=off", () =>
     dbOff
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 1000) g`, sql`true`),
   );
+
   const cOn = await runWorkload("user × 1000 (6 000 rows)   jit=on ", () =>
     dbOn
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 1000) g`, sql`true`),
   );
+
   compare("user × 1000 (6 000 rows)   delta", cOff, cOn);
   console.log();
 
   console.log("== D: SELECT user × generate_series(1, 5000) → 30 000 rows ==");
+
   const dOff = await runWorkload("user × 5000 (30 000 rows)  jit=off", () =>
     dbOff
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 5000) g`, sql`true`),
   );
+
   const dOn = await runWorkload("user × 5000 (30 000 rows)  jit=on ", () =>
     dbOn
       .select()
       .from(user)
       .innerJoin(sql`generate_series(1, 5000) g`, sql`true`),
   );
+
   compare("user × 5000 (30 000 rows)  delta", dOff, dOn);
   console.log();
 

@@ -24,7 +24,9 @@ type ParsedErrorBody = {
 const parseErrorBody = (error: unknown): ParsedErrorBody | undefined => {
   if (!error || typeof error !== "object") return undefined;
   const body = (error as { body?: unknown }).body;
+
   if (typeof body !== "string" || body.length === 0) return undefined;
+
   try {
     return JSON.parse(body) as ParsedErrorBody;
   } catch {
@@ -34,13 +36,17 @@ const parseErrorBody = (error: unknown): ParsedErrorBody | undefined => {
 
 const extractVerificationFromError = (error: unknown): VercelDomainVerification[] | undefined => {
   const verification = parseErrorBody(error)?.error?.verification;
+
   return Array.isArray(verification) ? verification : undefined;
 };
 
 const errorMessage = (error: unknown, fallback: string): string => {
   const message = parseErrorBody(error)?.error?.message;
+
   if (message) return message;
+
   if (error instanceof Error) return error.message;
+
   return fallback;
 };
 
@@ -52,6 +58,7 @@ export const vercelDomains = {
         teamId: vercelTeamId(),
         requestBody: { name: domain },
       });
+
       return {
         domain: value.name ?? domain,
         verified: value.verified ?? false,
@@ -61,9 +68,11 @@ export const vercelDomains = {
       // When domain is already on another team, Vercel returns the challenge
       // inline — surface it (don't throw) so UI can show TXT _vercel steps.
       const verification = extractVerificationFromError(error);
+
       if (verification?.length) {
         return { domain, verified: false, verification };
       }
+
       throw createError({
         code: "vercel/domain-add-failed" satisfies ErrorCode,
         status: 502,
@@ -83,6 +92,7 @@ export const vercelDomains = {
         teamId: vercelTeamId(),
         domain,
       });
+
       return {
         verified: value.verified ?? false,
         verification: value.verification,
@@ -107,6 +117,7 @@ export const vercelDomains = {
         teamId: vercelTeamId(),
         domain,
       });
+
       // verify only reports `verified`; for the TXT challenge fall back to check().
       return { verified: value.verified ?? false };
     } catch (error) {
@@ -134,6 +145,7 @@ export const vercelDomains = {
     } catch (error) {
       // SDK exposes no status code on errors; tolerate "not found" by message.
       const message = errorMessage(error, "Failed to detach domain from project");
+
       if (NOT_FOUND_RE.test(message)) return;
       throw createError({
         code: "vercel/domain-detach-failed" satisfies ErrorCode,
@@ -150,6 +162,7 @@ export const vercelDomains = {
   /** Full removal: project-detach + account-level delete. For permanent offboarding. */
   async remove(domain: string): Promise<void> {
     await this.detach(domain);
+
     try {
       await vercel.domains.deleteDomain({
         domain,
@@ -157,6 +170,7 @@ export const vercelDomains = {
       });
     } catch (error) {
       const message = errorMessage(error, "Failed to delete domain from account");
+
       if (NOT_FOUND_RE.test(message)) return;
       throw createError({
         code: "vercel/domain-delete-failed" satisfies ErrorCode,

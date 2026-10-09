@@ -14,5 +14,6 @@ export type OgHashInput = {
 export const computeOgHash = ({ title, description }: OgHashInput): string => {
   const payload = `${TEMPLATE_VERSION}\n${title}\n${description}`;
   const buf = createHash("sha256").update(payload).digest();
+
   return buf.toString("base64url").slice(0, 10);
 };

@@ -1,21 +1,26 @@
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { isHotkey, KEYS, NodeApi, PathApi } from "platejs";
-import type { SlateEditor, TElement } from "platejs";
+import type { SlateEditor } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 
 import { AI_DIFF_KEY } from "@/components/editor/plugins/ai-diff-kit";
 
 const isEmptyParagraph = (editor: SlateEditor): boolean => {
   const block = editor.api.block();
+
   if (!block) return false;
   const [node, path] = block;
+
   if (node.type !== KEYS.p || NodeApi.string(node).length !== 0) return false;
   // Skip the trailing normalization paragraph that sits after a submit/next button.
   const blockIndex = path[0];
+
   if (blockIndex > 0) {
-    const prev = (editor.children as TElement[])[blockIndex - 1];
+    const prev = editor.children[blockIndex - 1];
+
     if (prev?.type === "formButton") return false;
   }
+
   return true;
 };
 
@@ -51,39 +56,48 @@ const captureContext = (editor: SlateEditor): CaptureResult => {
     .blockSelection.getNodes({ selectionFallback: false, sort: true });
 
   if (blockSelectionNodes && blockSelectionNodes.length > 0) {
-    selectedPaths = blockSelectionNodes.map((entry: [unknown, number[]]) => [...entry[1]]);
+    selectedPaths = blockSelectionNodes.map((entry) => [...entry[1]]);
     const lastPath = selectedPaths[selectedPaths.length - 1];
     anchorPath = lastPath;
     insertAt = PathApi.next(lastPath);
 
     const parts: string[] = [];
+
     for (const entry of blockSelectionNodes) {
       try {
-        const text = NodeApi.string(entry[0] as TElement).trim();
+        const text = NodeApi.string(entry[0]).trim();
+
         if (text) parts.push(text);
       } catch {
         // skip
       }
     }
+
     if (parts.length > 0) selectionContext = parts.join("\n");
+
     return { selectionContext, selectedPaths, insertAt, anchorPath };
   }
 
   const block = editor.api.block();
+
   if (editor.selection && editor.api.isExpanded()) {
     try {
       const text = editor.api.string(editor.selection).trim();
+
       if (text) selectionContext = text;
     } catch {
       // skip
     }
+
     anchorPath = block ? [...block[1]] : null;
     insertAt = block ? PathApi.next(block[1]) : [editor.children.length];
+
     return { selectionContext, selectedPaths, insertAt, anchorPath };
   }
 
   if (block) {
     anchorPath = [...block[1]];
+
     // Empty paragraph: let AI insert in its place (pushes the empty p down).
     if (isEmptyParagraph(editor)) {
       insertAt = [...block[1]];
@@ -99,11 +113,13 @@ const captureContext = (editor: SlateEditor): CaptureResult => {
 
 const resolveAnchor = (editor: SlateEditor, anchorPath: number[] | null): HTMLElement | null => {
   if (!anchorPath) return null;
+
   try {
     const entry = editor.api.node(anchorPath);
+
     if (!entry) return null;
-    const dom = editor.api.toDOMNode(entry[0]);
-    return (dom as HTMLElement) ?? null;
+
+    return editor.api.toDOMNode(entry[0]) ?? null;
   } catch {
     return null;
   }
@@ -120,9 +136,10 @@ export const hideAIInput = (editor: SlateEditor) => {
   const diffEntries = Array.from(
     editor.api.nodes({
       at: [],
-      match: (n) => Boolean((n as Record<string, unknown>)[AI_DIFF_KEY]),
+      match: (n) => AI_DIFF_KEY in n && Boolean(n[AI_DIFF_KEY]),
     }),
-  ) as Array<[unknown, number[]]>;
+  );
+
   if (diffEntries.length > 0) {
     editor.tf.withoutNormalizing(() => {
       for (const [, path] of diffEntries) {
@@ -130,6 +147,7 @@ export const hideAIInput = (editor: SlateEditor) => {
       }
     });
   }
+
   editor.setOption(AIInputPlugin, "ui", INITIAL_STATE);
   // Return focus to the editor so Escape doesn't leave focus on <body>.
   editor.tf.focus();
@@ -137,16 +155,20 @@ export const hideAIInput = (editor: SlateEditor) => {
 
 export const toggleAIInput = (editor: SlateEditor) => {
   const current = editor.getOption(AIInputPlugin, "ui");
+
   if (current.open) {
     hideAIInput(editor);
+
     return;
   }
+
   triggerAIInput(editor);
 };
 
 export const AIInputPlugin = createPlatePlugin({
   key: "ai_input",
   options: {
+    // SAFETY: "" matches the declared string option type; widened so get/setOption stay typed.
     formId: "" as string,
     ui: INITIAL_STATE,
   },
@@ -155,8 +177,10 @@ export const AIInputPlugin = createPlatePlugin({
       if (isHotkey("mod+j")(event)) {
         event.preventDefault();
         toggleAIInput(editor);
+
         return;
       }
+
       if (event.key === " " && isEmptyParagraph(editor)) {
         event.preventDefault();
         triggerAIInput(editor);

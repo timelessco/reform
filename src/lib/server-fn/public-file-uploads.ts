@@ -24,8 +24,11 @@ import {
  * (4) max size. */
 
 const WINDOW_MINUTES = 10;
+
 const MAX_PER_WINDOW = 20;
+
 const CLEANUP_PROBABILITY = 0.01;
+
 // Hard upper bound: refuse beyond this even if a field is configured higher.
 const HARD_MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -61,18 +64,23 @@ const isMimeAllowed = (contentType: string, accept: string): boolean => {
     .split(",")
     .map((t) => t.trim().toLowerCase())
     .filter((t) => t.length > 0);
+
   const mime = contentType.toLowerCase();
+
   for (const token of tokens) {
     if (token.endsWith("/*")) {
       const prefix = token.slice(0, -1); // "image/"
+
       if (mime.startsWith(prefix)) return true;
     } else if (token.startsWith(".")) {
       const ext = getExtensionForMime(mime);
+
       if (ext && `.${ext}` === token) return true;
     } else if (token === mime) {
       return true;
     }
   }
+
   return false;
 };
 
@@ -101,11 +109,13 @@ const assertFormFileField = async (
   }
 
   let content: Value | null = null;
+
   if (form.lastPublishedVersionId) {
     const [version] = await db
       .select({ content: formVersions.content })
       .from(formVersions)
       .where(eq(formVersions.id, form.lastPublishedVersionId));
+
     content = (version?.content ?? null) as Value | null;
   } else {
     content = (form.draftContent ?? null) as Value | null;
@@ -125,6 +135,7 @@ const assertFormFileField = async (
   const elements = transformPlateStateToFormElements(content);
   const editable = getEditableFields(elements);
   const field = editable.find((f) => f.fieldType === "FileUpload" && f.name === fieldName);
+
   if (!field) {
     throw createError({
       code: "uploads/field-not-found" satisfies ErrorCode,
@@ -135,19 +146,24 @@ const assertFormFileField = async (
       internal: { formId, fieldName },
     });
   }
+
   // Prefer granular allowedFileTypes/Extensions (block menu); else legacy accept; else default
   // for forms predating the type picker.
   const allowedFileTypes = "allowedFileTypes" in field ? field.allowedFileTypes : undefined;
+
   const allowedFileExtensions =
     "allowedFileExtensions" in field ? field.allowedFileExtensions : undefined;
+
   const legacyAccept =
     "accept" in field && typeof field.accept === "string" && field.accept.length > 0
       ? field.accept
       : null;
+
   const allowedExtensions = resolveAllowedExtensions(allowedFileTypes, allowedFileExtensions);
   // Explicit picker config drives the accept; else fall back to a stored accept string from
   // forms predating the type picker, then the resolver's image-only default.
   const hasGranularConfig = allowedFileTypes !== undefined || allowedFileExtensions !== undefined;
+
   const accept =
     hasGranularConfig || !legacyAccept
       ? buildAcceptFromExtensions(allowedExtensions)
@@ -157,6 +173,7 @@ const assertFormFileField = async (
     "maxFileSize" in field && typeof field.maxFileSize === "number" && field.maxFileSize > 0
       ? field.maxFileSize
       : DEFAULT_MAX_FILE_SIZE_MB;
+
   const maxFileBytes = Math.min(fieldMaxFileSize * 1024 * 1024, HARD_MAX_FILE_BYTES);
 
   return { accept, maxFileBytes };
@@ -164,6 +181,7 @@ const assertFormFileField = async (
 
 const decodeBase64 = (dataUrl: string): Buffer => {
   const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+
   return Buffer.from(base64, "base64");
 };
 
@@ -196,6 +214,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     }
 
     const buffer = decodeBase64(data.base64);
+
     if (buffer.length === 0) {
       throw createError({
         code: "uploads/empty-file" satisfies ErrorCode,
@@ -205,6 +224,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
         fix: "Choose a non-empty file and try again",
       });
     }
+
     if (buffer.length > maxFileBytes) {
       throw createError({
         code: "uploads/too-large" satisfies ErrorCode,

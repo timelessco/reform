@@ -9,15 +9,17 @@ export type AIDiffMark = "insert" | "remove";
 export const AI_DIFF_KEY = "aiDiff" as const;
 
 const renderDiffWrapper: RenderNodeWrapper = ({ element }) => {
-  const mark = (element as { aiDiff?: AIDiffMark }).aiDiff;
-  if (!mark) return;
+  const mark = element.aiDiff;
+
+  if (mark !== "insert" && mark !== "remove") return;
+
   return ({ children }) => (
     <div
       data-ai-diff={mark}
       className={cn(
         "rounded-sm",
-        mark === "insert" && "bg-emerald-100/70 ring-1 ring-emerald-200/80",
-        mark === "remove" && "bg-red-100/70 opacity-80 ring-1 ring-red-200/80",
+        mark === "insert" && "bg-(--color-success-soft)/70 ring-1 ring-(--color-success)/80",
+        mark === "remove" && "bg-destructive/10 opacity-80 ring-1 ring-destructive/20",
       )}
     >
       {children}

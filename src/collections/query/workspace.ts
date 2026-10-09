@@ -2,6 +2,7 @@ import { createCollection } from "@tanstack/db";
 import type { InsertMutationFn, UpdateMutationFn, DeleteMutationFn } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { queryKeys } from "@/lib/query-keys";
 
 export type FormSummary = {
   id: string;
@@ -35,9 +36,10 @@ export const createWorkspaceSummaryCollection = (config: WorkspaceSummaryCollect
 
   return createCollection(
     queryCollectionOptions<WorkspaceSummary, unknown, string[]>({
-      queryKey: ["workspaces-with-forms"],
+      queryKey: queryKeys.workspacesWithForms(),
       queryFn: async () => {
         const result = await queryFn();
+
         return result.workspaces;
       },
       queryClient,

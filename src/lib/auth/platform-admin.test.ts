@@ -2,9 +2,11 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { isPlatformAdminEmail } from "./platform-admin";
 
 const ORIGINAL = process.env.PLATFORM_ADMIN_EMAILS;
+
 beforeEach(() => {
   process.env.PLATFORM_ADMIN_EMAILS = "Admin@Timeless.co, ops@timeless.co";
 });
+
 afterEach(() => {
   process.env.PLATFORM_ADMIN_EMAILS = ORIGINAL;
 });

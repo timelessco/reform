@@ -3,6 +3,7 @@ import type { FieldRendererProps } from "./shared";
 
 const TextareaField = ({ element, form, name }: FieldRendererProps<"Textarea">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   return (
     <form.AppField name={fieldName}>
       {(f) => (
@@ -16,7 +17,7 @@ const TextareaField = ({ element, form, name }: FieldRendererProps<"Textarea">) 
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledBy}
             // Figma multi-line answer: 22px line-height (local; ! beats the field-list line-height pin)
-            className="min-h-24 form-input pr-[8px] pl-[10px] leading-[22px]!"
+            className="min-h-24 form-input pr-2 pl-2.5 leading-5.5!"
           />
           <f.FieldError />
         </>

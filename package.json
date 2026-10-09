@@ -146,6 +146,8 @@
     "web-vitals": "5.2.0"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.82.0",
+    "@shadcn/lint": "^0.1.0",
     "@tanstack/devtools-vite": "^0.5.5",
     "@tanstack/eslint-plugin-query": "^5.100.9",
     "@tanstack/router-devtools-core": "^1.167.3",
@@ -167,7 +169,7 @@
     "knip": "^6.24.0",
     "lefthook": "^2.1.6",
     "oxfmt": "^0.48.0",
-    "oxlint": "^1.63.0",
+    "oxlint": "^1.82.0",
     "oxlint-tsgolint": "^0.21.1",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",

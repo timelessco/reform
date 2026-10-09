@@ -42,6 +42,7 @@ it("each action factory stamps its fixed action name", () => {
       actor: { type: "user", id: "usr_1" },
       target: { id: "res_1" },
     });
+
     expect(built.action).toBe(action);
   }
 });
@@ -52,6 +53,7 @@ it("each action factory stamps its fixed target type", () => {
       actor: { type: "user", id: "usr_1" },
       target: { id: "res_1" },
     });
+
     expect(built.target?.type).toBe(target);
   }
 });
@@ -62,6 +64,7 @@ it("passes actor, target id, and outcome through untouched", () => {
     target: { id: "frm_99", tenantId: "org_7" },
     outcome: "success",
   });
+
   expect(built.actor).toEqual({ type: "user", id: "usr_42", email: "a@b.co" });
   expect(built.target).toEqual({ type: "form", id: "frm_99", tenantId: "org_7" });
   expect(built.outcome).toBe("success");
@@ -74,6 +77,7 @@ it("preserves a denied outcome + reason for AuthZ-denial actions", () => {
     outcome: "denied",
     reason: "cross-org access",
   });
+
   expect(built.action).toBe("workspace.access");
   expect(built.outcome).toBe("denied");
   expect(built.reason).toBe("cross-org access");

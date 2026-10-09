@@ -20,6 +20,7 @@ import {
 /** Fetch form listings directly from DB (bypasses auth middleware) */
 const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [form] = await db.select().from(forms).where(eq(forms.id, formId));
+
   return form ? [toFormListing(form)] : [];
 };
 

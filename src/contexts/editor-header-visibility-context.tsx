@@ -70,10 +70,13 @@ export const EditorHeaderVisibilityProvider = ({
 
   useEffect(() => {
     if (!enabled || visible) return;
+
     const onMouseMove = () => {
       onMouseMoveEvent();
     };
+
     window.addEventListener("mousemove", onMouseMove, { passive: true });
+
     return () => window.removeEventListener("mousemove", onMouseMove);
   }, [enabled, visible]);
 
@@ -101,11 +104,13 @@ export const EditorHeaderVisibilityProvider = ({
 
 export const useEditorHeaderVisibility = () => {
   const context = use(EditorHeaderVisibilityContext);
+
   if (!context) {
     throw new Error(
       "useEditorHeaderVisibility must be used within a EditorHeaderVisibilityProvider",
     );
   }
+
   return context;
 };
 

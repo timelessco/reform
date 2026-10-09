@@ -12,17 +12,21 @@ import { PLAN_RANK } from "@/lib/config/plan-gates";
 import type { Plan } from "@/lib/config/plan-config";
 
 type TierAction = "Current" | "Upgrade" | "Downgrade";
+
 type ButtonVariant = "default" | "outline" | "ghost";
 
 const tierActionLabel = (currentPlan: Plan, tier: Plan): TierAction => {
   if (currentPlan === tier) return "Current";
+
   return PLAN_RANK[tier] > PLAN_RANK[currentPlan] ? "Upgrade" : "Downgrade";
 };
 
 // Weight by action: Upgrade=CTA (filled), Downgrade=ghost, Current=disabled outline.
 const tierActionVariant = (action: TierAction): ButtonVariant => {
   if (action === "Upgrade") return "default";
+
   if (action === "Current") return "outline";
+
   return "ghost";
 };
 
@@ -108,8 +112,10 @@ export const BillingContent = () => {
   const handleOpenPortal = useCallback(async () => {
     if (!activeOrg) {
       toast.error("Please select an organization first");
+
       return;
     }
+
     try {
       const { url } = await openOrgBillingPortal({ data: { orgId: activeOrg.id } });
       window.location.href = url;
@@ -122,13 +128,17 @@ export const BillingContent = () => {
     async (planSlug: string) => {
       if (!activeOrg) {
         toast.error("Please select an organization first");
+
         return;
       }
+
       // Polar checkout creates a *new* sub, rejects active customers. Route paid users to portal (plan switch with proration).
       if (!isFreePlan) {
         await handleOpenPortal();
+
         return;
       }
+
       try {
         const { data, error } = (await authClient.checkout({
           slug: planSlug,
@@ -173,6 +183,7 @@ export const BillingContent = () => {
       <div className="grid gap-4 md:grid-cols-3">
         {TIERS.map((tier) => {
           const label = tierActionLabel(currentPlan, tier.plan);
+
           return (
             <TierCard
               key={tier.plan}

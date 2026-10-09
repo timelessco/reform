@@ -31,10 +31,12 @@ afterEach(() => {
  */
 const wireState = async (opts: { backing: FormListing[]; createForm: ServerFns["createForm"] }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
   const formListings = createFormListingCollection({
     queryClient,
     queryFn: async () => [...opts.backing],
   });
+
   await formListings.stateWhenReady();
 
   state.queryClient = queryClient;
@@ -82,12 +84,16 @@ describe("createFormLocal", () => {
 
   it("resolves `persisted` once the server fn succeeds", async () => {
     const backing: FormListing[] = [];
+
     // On success, server "writes" the form so a refetch keeps the row.
     const createForm = vi.fn(async (data: { data?: { id?: string } } | unknown) => {
       const id = (data as { id?: string }).id;
+
       if (id) backing.push({ id } as FormListing);
+
       return undefined;
     }) as unknown as ServerFns["createForm"];
+
     const { formListings } = await wireState({ backing, createForm });
 
     const { form, persisted } = createFormLocal(WORKSPACE_ID, "Persisted");
@@ -99,9 +105,11 @@ describe("createFormLocal", () => {
 
   it("rolls back the optimistic row when the server fn rejects", async () => {
     const backing: FormListing[] = []; // server never has the form
+
     const createForm = vi.fn(async () => {
       throw new Error("server boom");
     }) as unknown as ServerFns["createForm"];
+
     const { formListings } = await wireState({ backing, createForm });
 
     const { form, persisted } = createFormLocal(WORKSPACE_ID, "Doomed");

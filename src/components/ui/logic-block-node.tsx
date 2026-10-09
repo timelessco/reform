@@ -8,6 +8,7 @@ import {
   useFocused,
   useSelected,
 } from "platejs/react";
+import * as v from "valibot";
 
 import {
   ChevronDownIcon,
@@ -41,13 +42,7 @@ import {
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import { operatorNeedsOperand, operatorsForFieldType, OPERATOR_LABELS } from "@/lib/logic/labels";
 import { THANK_YOU_STEP } from "@/lib/logic/types";
-import type {
-  Action,
-  Condition,
-  ConditionGroup,
-  LogicBlockNode,
-  OperatorId,
-} from "@/lib/logic/types";
+import type { Action, Condition, ConditionGroup, LogicBlockNode } from "@/lib/logic/types";
 import { cn } from "@/lib/utils";
 
 export const createLogicBlockNode = (): LogicBlockNode => ({
@@ -58,8 +53,8 @@ export const createLogicBlockNode = (): LogicBlockNode => ({
   children: [{ text: "" }],
 });
 
-interface Option {
-  value: string;
+interface Option<T extends string = string> {
+  value: T;
   label: string;
 }
 
@@ -77,6 +72,7 @@ const FIRST_STEP_ID = "step-0";
 const collectFields = (editor: ReturnType<typeof useEditorRef>): FieldInfo[] => {
   const out: FieldInfo[] = [];
   const { steps } = transformPlateForPreview(editor.children);
+
   for (const segments of steps) {
     for (const seg of segments) {
       if (seg.type !== "field" || seg.field.fieldType === "Button") continue;
@@ -84,43 +80,54 @@ const collectFields = (editor: ReturnType<typeof useEditorRef>): FieldInfo[] => 
         name: seg.field.name,
         label: seg.field.label ?? seg.field.name,
         fieldType: seg.field.fieldType,
-        isFieldArray: (seg.field as { isFieldArray?: boolean }).isFieldArray === true,
-        options: (seg.field as { options?: Option[] }).options,
+        isFieldArray: "isFieldArray" in seg.field && seg.field.isFieldArray === true,
+        options: "options" in seg.field ? seg.field.options : undefined,
       });
     }
   }
+
   return out;
 };
 
 const collectStepOptions = (editor: ReturnType<typeof useEditorRef>): Option[] => {
   const options: Option[] = [{ value: FIRST_STEP_ID, label: "Step 1" }];
   let stepNumber = 2;
-  for (const node of editor.children as Array<Record<string, unknown>>) {
-    if (node.type !== "pageBreak") continue;
+
+  for (const node of editor.children) {
+    if (!("type" in node) || node.type !== "pageBreak") continue;
+
     if (node.isThankYouPage === true) continue;
-    const value = typeof node.id === "string" ? node.id : `${FIRST_STEP_ID}-${stepNumber}`;
+
+    const value = v.is(v.string(), node.id) ? node.id : `${FIRST_STEP_ID}-${stepNumber}`;
     options.push({ value, label: `Step ${stepNumber}` });
     stepNumber++;
   }
+
   options.push({ value: THANK_YOU_STEP, label: "Thank You page" });
+
   return options;
 };
 
 // ── Token primitives (Figma: white pill, elevation-sm, 8px radius, 32px tall) ──
 
 /** Pill-shaped dropdown built on the shared Select component, sized to its content. */
-const TokenSelect = ({
+const TokenSelect = <T extends string>({
   value,
   onChange,
   ariaLabel,
   options,
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  value: T;
+  onChange: (value: T) => void;
   ariaLabel: string;
-  options: Option[];
+  options: Option<T>[];
 }) => (
-  <Select value={value} onValueChange={(next) => onChange(String(next))}>
+  <Select
+    value={value}
+    onValueChange={(next) => {
+      if (next !== null) onChange(next);
+    }}
+  >
     <SelectTrigger
       aria-label={ariaLabel}
       size="sm"
@@ -128,7 +135,7 @@ const TokenSelect = ({
       className="gap-1 rounded-lg! border-0 bg-[var(--form-input-bg,var(--color-gray-50))] ps-2.5 pe-2 text-foreground elevation-sm"
     >
       <SelectValue className="font-normal">
-        {(selected: string) => options.find((o) => o.value === selected)?.label ?? ""}
+        {(selected: T) => options.find((o) => o.value === selected)?.label ?? ""}
       </SelectValue>
     </SelectTrigger>
     {/* drop below the trigger (Figma) — default alignItemWithTrigger overlays/shoves the popup off-anchor */}
@@ -186,6 +193,7 @@ const TokenStepper = ({
 }) => {
   const parsed = Number(value);
   const current = Number.isFinite(parsed) ? parsed : 0;
+
   return (
     <span className="flex h-7 items-center gap-1.5 rounded-lg bg-[var(--form-input-bg,var(--color-gray-50))] px-1.5 elevation-sm">
       <button
@@ -234,6 +242,7 @@ const SCALAR_FIELD_TYPES = new Set([
 
 /** Single-choice (radio / single-select): answer is one option `value` string. */
 const SINGLE_CHOICE_TYPES = new Set(["MultiChoice"]);
+
 /** Multi-choice (checkbox / multi-select): answer is a `string[]` of option `value`s. */
 const MULTI_CHOICE_TYPES = new Set(["Checkbox"]);
 
@@ -266,12 +275,15 @@ const MultiTokenSelect = ({
 }) => {
   const selected = new Set(value);
   const labels = options.filter((o) => selected.has(o.value)).map((o) => o.label);
+
   const toggle = (v: string) => {
     const next = new Set(selected);
+
     if (next.has(v)) next.delete(v);
     else next.add(v);
     onChange(options.filter((o) => next.has(o.value)).map((o) => o.value));
   };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -314,9 +326,11 @@ const ValueControl = ({
   onChange: (value: string | string[]) => void;
   ariaLabel: string;
 }) => {
-  const str = typeof value === "string" ? value : "";
+  const str = Array.isArray(value) ? "" : value;
+
   if (fieldType === "Number")
     return <TokenStepper value={str} onChange={onChange} ariaLabel={ariaLabel} />;
+
   if (fieldType === "Date")
     return (
       <TokenInput
@@ -327,6 +341,7 @@ const ValueControl = ({
         ariaLabel={ariaLabel}
       />
     );
+
   if (fieldType === "Time")
     return (
       <TokenInput
@@ -337,8 +352,10 @@ const ValueControl = ({
         ariaLabel={ariaLabel}
       />
     );
+
   if (fieldType && SINGLE_CHOICE_TYPES.has(fieldType))
     return <TokenSelect ariaLabel={ariaLabel} value={str} options={options} onChange={onChange} />;
+
   if (fieldType && MULTI_CHOICE_TYPES.has(fieldType))
     return (
       <MultiTokenSelect
@@ -348,6 +365,7 @@ const ValueControl = ({
         onChange={onChange}
       />
     );
+
   return <TokenInput placeholder="value" value={str} onChange={onChange} ariaLabel={ariaLabel} />;
 };
 
@@ -447,6 +465,7 @@ const CombinatorLead = ({
 );
 
 type CondNode = Condition | ConditionGroup;
+
 const isGroup = (node: CondNode): node is ConditionGroup => "combinator" in node;
 
 /** Flatten a condition tree to its leaf conditions (for validation / warnings). */
@@ -455,7 +474,7 @@ const flattenConditions = (group: ConditionGroup): Condition[] =>
 
 // Opposite pairs (show/hide, require/optional, set/clear) so the inverse condition drives the
 // inverse action — no Else branch needed.
-const ACTION_KIND_OPTIONS: Option[] = [
+const ACTION_KIND_OPTIONS: Option<Action["kind"]>[] = [
   { value: "show", label: "Show field" },
   { value: "hide", label: "Hide field" },
   { value: "require", label: "Require field" },
@@ -492,12 +511,17 @@ const defaultActionForKind = (
   stepOptions: Option[],
 ): Action => {
   if (kind === "hideSubmit") return { kind };
+
   if (kind === "jump") return { kind, toStep: stepOptions[0]?.value ?? THANK_YOU_STEP };
+
   if (kind === "redirect") return { kind, url: "" };
+
   if (kind === "setValue") {
     const target = fields.find(isSetTarget);
+
     return { kind, target: target?.name ?? "", value: blankValueForType(target?.fieldType) };
   }
+
   return { kind, target: fields[0]?.name ?? "" };
 };
 
@@ -511,6 +535,7 @@ const mapGroupAt = (
 ): ConditionGroup => {
   if (path.length === 0) return fn(group);
   const [head, ...rest] = path;
+
   return {
     ...group,
     children: group.children.map((child, i) =>
@@ -527,12 +552,15 @@ const mapGroupAt = (
  * Result: nesting only persists when combinators differ (a real `A AND (B OR C)` scope). */
 const normalizeGroup = (group: ConditionGroup): ConditionGroup => {
   const children: CondNode[] = [];
+
   for (const child of group.children) {
     if (!isGroup(child)) {
       children.push(child);
       continue;
     }
+
     const norm = normalizeGroup(child);
+
     if (norm.children.length === 0)
       continue; // drop empty
     else if (norm.children.length === 1)
@@ -541,6 +569,7 @@ const normalizeGroup = (group: ConditionGroup): ConditionGroup => {
       children.push(...norm.children); // flatten same-combinator
     else children.push(norm);
   }
+
   return { ...group, children };
 };
 
@@ -569,8 +598,10 @@ const ConditionRow = ({
       label: OPERATOR_LABELS[op],
     }),
   );
+
   const choices = fieldChoicesByName.get(condition.source);
   const prefix = `Condition ${rowIndex}`;
+
   return (
     <TokenRow menu={<RowMenu ariaLabel={`${prefix} options`} items={menuItems} />}>
       <TokenSelect
@@ -590,7 +621,7 @@ const ConditionRow = ({
         ariaLabel={`${prefix} operator`}
         value={condition.operator}
         options={operatorOptions}
-        onChange={(op) => onChange({ ...condition, operator: op as OperatorId })}
+        onChange={(op) => onChange({ ...condition, operator: op })}
       />
       {operatorNeedsOperand(condition.operator) &&
         (choices && choices.length > 0 ? (
@@ -607,7 +638,7 @@ const ConditionRow = ({
             options={[]}
             value={condition.value ?? ""}
             onChange={(value) =>
-              onChange({ ...condition, value: typeof value === "string" ? value : "" })
+              onChange({ ...condition, value: Array.isArray(value) ? "" : value })
             }
           />
         ))}
@@ -640,15 +671,14 @@ const ActionRow = ({
   menuItems: RowMenuItem[];
 }) => {
   const prefix = `Then action ${rowIndex}`;
+
   return (
     <TokenRow menu={<RowMenu ariaLabel={`${prefix} options`} items={menuItems} />}>
       <TokenSelect
         ariaLabel={`${prefix} type`}
         value={action.kind}
         options={ACTION_KIND_OPTIONS}
-        onChange={(kind) =>
-          onChange(defaultActionForKind(kind as Action["kind"], fields, stepOptions))
-        }
+        onChange={(kind) => onChange(defaultActionForKind(kind, fields, stepOptions))}
       />
       {FIELD_TARGET_KINDS.has(action.kind) && "target" in action && (
         <TokenSelect
@@ -702,9 +732,41 @@ const ActionRow = ({
 // the block and lands focus on the first control when the block is navigated into.
 const BLOCK_CONTROL_SELECTOR =
   'button, input, select, [role="combobox"], [tabindex]:not([tabindex="-1"])';
+
 const getBlockControls = (container: HTMLElement): HTMLElement[] =>
   Array.from(container.querySelectorAll<HTMLElement>(BLOCK_CONTROL_SELECTOR)).filter(
     (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1,
+  );
+
+/** `LogicBlockNode` is an interface, so `element.when` reads back as `unknown` through the
+ * TElement index signature. Guard on the fields the block actually branches on before use. */
+const isConditionGroup = (value: unknown): value is ConditionGroup =>
+  v.is(
+    v.object({
+      combinator: v.picklist(["all", "any"]),
+      children: v.array(v.unknown()),
+    }),
+    value,
+  );
+
+const isActionList = (value: unknown): value is Action[] =>
+  v.is(
+    v.array(
+      v.object({
+        kind: v.picklist([
+          "show",
+          "hide",
+          "require",
+          "optional",
+          "setValue",
+          "clearValue",
+          "jump",
+          "hideSubmit",
+          "redirect",
+        ]),
+      }),
+    ),
+    value,
   );
 
 export const LogicBlockElement = (props: PlateElementProps) => {
@@ -728,22 +790,29 @@ export const LogicBlockElement = (props: PlateElementProps) => {
   React.useLayoutEffect(() => {
     const justEntered = selected && !wasSelected.current;
     wasSelected.current = selected;
+
     if (!(justEntered && focused)) return;
     const container = blockRef.current;
+
     if (!container || container.contains(document.activeElement)) return;
     getBlockControls(container)[0]?.focus();
   }, [selected, focused]);
 
-  const when = (element.when as ConditionGroup | undefined) ?? { combinator: "all", children: [] };
-  const actions = (element.actions as Action[] | undefined) ?? [];
+  const when: ConditionGroup = isConditionGroup(element.when)
+    ? element.when
+    : { combinator: "all", children: [] };
+
+  const actions = isActionList(element.actions) ? element.actions : [];
 
   const fields = collectFields(editor);
   const sources = fields.filter((f) => !f.isFieldArray); // Wave 1: repeatable can't be a source
   const sourceOptions = sources.map((f) => ({ value: f.name, label: f.label }));
   const fieldOptions = fields.map((f) => ({ value: f.name, label: f.label }));
+
   const setTargetOptions = fields
     .filter(isSetTarget)
     .map((f) => ({ value: f.name, label: f.label }));
+
   const stepOptions = collectStepOptions(editor);
   const fieldTypeByName = new Map(fields.map((f) => [f.name, f.fieldType]));
   const fieldChoicesByName = new Map(fields.map((f) => [f.name, f.options ?? []]));
@@ -754,31 +823,37 @@ export const LogicBlockElement = (props: PlateElementProps) => {
   const conditions = flattenConditions(when);
   const conditionSources = new Set(conditions.map((c) => c.source));
   const warnings: string[] = [];
+
   for (const c of conditions) {
     if (c.source && !knownNames.has(c.source)) {
       warnings.push("A condition refers to a field that was deleted.");
     } else {
       const choices = fieldChoicesByName.get(c.source);
+
       if (choices && choices.length > 0 && c.value && !choices.some((o) => o.value === c.value)) {
         warnings.push("A condition uses an option that no longer exists.");
       }
     }
   }
+
   for (const a of actions) {
     if ("target" in a && a.target && !knownNames.has(a.target)) {
       warnings.push("An action targets a field that was deleted.");
     }
+
     if ("target" in a && conditionSources.has(a.target) && SELF_REF_VERB[a.kind]) {
       warnings.push(
         `This rule ${SELF_REF_VERB[a.kind]} the same field it checks — it may fight itself.`,
       );
     }
   }
+
   const uniqueWarnings = [...new Set(warnings)];
 
   const patch = React.useCallback(
     (updates: Partial<Pick<LogicBlockNode, "when" | "actions">>) => {
       const path = editor.api.findPath(element);
+
       if (path) editor.tf.setNodes(updates, { at: path });
     },
     [editor, element],
@@ -797,37 +872,48 @@ export const LogicBlockElement = (props: PlateElementProps) => {
     (event: React.KeyboardEvent) => {
       const isTab = event.key === "Tab";
       const isVerticalArrow = event.key === "ArrowDown" || event.key === "ArrowUp";
+
       if (!isTab && !isVerticalArrow) return;
+
       // Arrow keys have native meaning inside the block's own controls: date/time/number
       // input segments and opening a Select menu. Leave those to the focused control; only
       // Tab is a deliberate block-level jump regardless of which control holds focus.
       if (
         isVerticalArrow &&
-        (event.target as HTMLElement).closest("input, textarea, [role='combobox']")
+        event.target instanceof Element &&
+        event.target.closest("input, textarea, [role='combobox']")
       ) {
         return;
       }
+
       // Tab cycles the block's own controls first; only Tab off the last control (or
       // Shift+Tab off the first) escapes to the adjacent editor block.
       if (isTab && blockRef.current) {
         const controls = getBlockControls(blockRef.current);
-        const index = controls.indexOf(document.activeElement as HTMLElement);
+        const index = controls.findIndex((control) => control === document.activeElement);
         const atBoundary = event.shiftKey ? index <= 0 : index === controls.length - 1;
+
         if (index !== -1 && !atBoundary) return; // let the browser move focus within the block
       }
+
       const path = editor.api.findPath(element);
+
       if (!path) return;
       event.preventDefault();
       event.stopPropagation();
       const goPrev = event.key === "ArrowUp" || (isTab && event.shiftKey);
+
       // Focus targets include the page's buttons (editable label) now.
       const target = goPrev
         ? findPrevFocusTarget(editor, path[0])
         : findNextFocusTarget(editor, path[0]);
+
       if (target) {
         goToFocusTarget(editor, target, goPrev);
+
         return;
       }
+
       // No block below (logic block is last before the submit button) - create an
       // empty paragraph after it and drop the caret there so the author isn't stuck.
       if (!goPrev) {
@@ -846,24 +932,31 @@ export const LogicBlockElement = (props: PlateElementProps) => {
   // ── Condition tree edits (operate on `when`, keyed by parent-group path + index) ──
   const freshCondition = (): Condition => {
     const source = sources[0]?.name ?? "";
+
     return { source, operator: operatorsForFieldType(fieldTypeByName.get(source))[0], value: "" };
   };
+
   // Every write normalizes the tree (drop empties, unwrap single-child groups), so a
   // redundant group can never linger around a lone condition.
   const setWhen = (next: ConditionGroup) => patch({ when: normalizeGroup(next) });
+
   const editParent = (parentPath: number[], fn: (children: CondNode[]) => CondNode[]) =>
     setWhen(mapGroupAt(when, parentPath, (g) => ({ ...g, children: fn(g.children) })));
 
   const updateCondition = (parentPath: number[], index: number, next: Condition) =>
     editParent(parentPath, (kids) => kids.map((c, i) => (i === index ? next : c)));
+
   const removeNode = (parentPath: number[], index: number) =>
     editParent(parentPath, (kids) => kids.filter((_, i) => i !== index));
+
   const insertAfter = (parentPath: number[], index: number, node: CondNode) =>
     editParent(parentPath, (kids) => [...kids.slice(0, index + 1), node, ...kids.slice(index + 1)]);
+
   const setCombinatorAt = (path: number[], combinator: string) =>
     setWhen(
       mapGroupAt(when, path, (g) => ({ ...g, combinator: combinator === "any" ? "any" : "all" })),
     );
+
   // Append a top-level condition (empty-state "Add condition" affordance).
   const addRootCondition = () =>
     setWhen({ ...when, children: [...when.children, freshCondition()] });
@@ -888,9 +981,11 @@ export const LogicBlockElement = (props: PlateElementProps) => {
               <CombinatorLead value={group.combinator} onChange={(c) => setCombinatorAt(path, c)} />
             </>
           );
+
         const railCell = (
           <div className={cn(LEAD_W, "flex h-7 shrink-0 items-center gap-2")}>{lead}</div>
         );
+
         if (isGroup(child)) {
           return (
             // eslint-disable-next-line @eslint-react/no-array-index-key
@@ -902,8 +997,10 @@ export const LogicBlockElement = (props: PlateElementProps) => {
             </div>
           );
         }
+
         // Hard cap: a section holds at most 2 rows, so adding/duplicating is gated.
         const canAdd = group.children.length < 2;
+
         return (
           // eslint-disable-next-line @eslint-react/no-array-index-key
           <div key={i} className="flex w-full items-start gap-2">
@@ -954,6 +1051,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
     const setList = (next: Action[]) => patch({ [key]: next });
     // Hard cap: at most 2 actions per Then/Else, so adding/duplicating is gated.
     const canAdd = list.length < 2;
+
     return [
       ...(canAdd
         ? [
@@ -989,6 +1087,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
 
   const renderActionRows = (list: Action[], key: "actions") => {
     const setList = (next: Action[]) => patch({ [key]: next });
+
     if (list.length === 0)
       return (
         <AddToken
@@ -996,6 +1095,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
           label="Add action"
         />
       );
+
     return (
       <>
         {list.map((action, i) => (
@@ -1031,6 +1131,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
       <span className="text-[13px] text-muted-foreground">When</span>
     </>
   );
+
   const whenRail = (
     <div className={cn(LEAD_W, "flex h-7 shrink-0 items-center gap-2")}>{whenLead}</div>
   );
@@ -1054,6 +1155,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
         {uniqueWarnings.length > 0 && (
           <div
             role="alert"
+            // oxlint-disable-next-line shadcn/no-raw-colors -- no amber/warning token; needs design decision
             className="mx-2 mt-1 mb-0.5 flex flex-col gap-0.5 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[12px] text-amber-700 dark:text-amber-400"
           >
             {uniqueWarnings.map((w) => (
@@ -1093,6 +1195,7 @@ export const LogicBlockElement = (props: PlateElementProps) => {
 
         {/* THEN — actions when conditions pass. No Else: use the inverse action (Hide/Make
             optional/Clear value) with the inverse condition instead. */}
+        {/* oxlint-disable-next-line shadcn/no-raw-colors -- no amber token; needs design decision */}
         <RowShell icon={<Zap className="size-4 text-amber-500" />} label="Then">
           {renderActionRows(actions, "actions")}
         </RowShell>

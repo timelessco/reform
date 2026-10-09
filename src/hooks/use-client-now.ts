@@ -3,11 +3,14 @@ import { useSyncExternalStore } from "react";
 const REFRESH_MS = 60_000;
 
 const listeners = new Set<() => void>();
+
 let cachedNow = 0;
+
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
 const tick = () => {
   cachedNow = Date.now();
+
   for (const listener of listeners) listener();
 };
 
@@ -15,9 +18,12 @@ const subscribe = (listener: () => void) => {
   // Refresh on first subscriber — remount after all unmounted would show stale time until next 60s tick.
   if (listeners.size === 0) cachedNow = Date.now();
   listeners.add(listener);
+
   if (intervalId === null) intervalId = setInterval(tick, REFRESH_MS);
+
   return () => {
     listeners.delete(listener);
+
     if (listeners.size === 0 && intervalId !== null) {
       clearInterval(intervalId);
       intervalId = null;
@@ -27,6 +33,7 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => {
   if (cachedNow === 0) cachedNow = Date.now();
+
   return cachedNow;
 };
 
@@ -39,5 +46,6 @@ export const useClientNow = (): number =>
 /** Date-typed view of {@link useClientNow}; returns `null` on the SSR pass. */
 export const useClientToday = (): Date | null => {
   const nowMs = useClientNow();
+
   return nowMs ? new Date(nowMs) : null;
 };

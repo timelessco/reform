@@ -22,8 +22,11 @@ import { RankDragHandleIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { shuffleOptions } from "./shared";
 import type { FieldRendererProps } from "./shared";
+import "./RankingField.css";
 
 type RankingOption = { label: string; value: string; image?: string };
+
+type RankDragStyleVars = React.CSSProperties & Record<`--rank-${string}`, string | undefined>;
 
 const SortableRankRow = ({
   option,
@@ -38,20 +41,30 @@ const SortableRankRow = ({
     id: option.value,
   });
 
+  const dragStyle: RankDragStyleVars = {
+    "--rank-transform": CSS.Translate.toString(transform),
+    "--rank-transition": transition,
+  };
+
   return (
     <button
       ref={setNodeRef}
       type="button"
       aria-invalid={hasErrors}
       onClick={() => onRankClick(option.value)}
-      // Inline sortable transition overrides the colors-only class while items animate.
+      // Sortable transform/transition ride CSS custom properties (dnd-kit's values are dynamic);
+      // [transform:...] applies the transform, and the [data-rank-transition] rule in
+      // RankingField.css lets the sortable transition override the colors-only class while
+      // items animate (unlayered rule beats utilities, like the old inline style did).
       // Translate-only (no CSS.Transform): with mixed-height rows (image options) the sortable
       // scale stretches text rows into the image row's slot — giant distorted labels mid-drag.
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      style={dragStyle}
+      data-rank-transition={transition || undefined}
       className={cn(
         // Figma ranking item (26153:13884): 14px / gray-900 / 450 / 0.14px. Follow --bf-font-size
         // directly (14px default, customizable) so it's 14px in both field-list and form-container preview.
-        "flex cursor-pointer touch-manipulation gap-2 py-1 text-left [font-size:var(--bf-font-size,0.875rem)] transition-colors",
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- dynamic --bf-font-size var with fallback has no utility equivalent
+        "flex [transform:var(--rank-transform)] cursor-pointer touch-manipulation gap-2 py-1 text-left [font-size:var(--bf-font-size,0.875rem)] transition-colors",
         // image rows top-align so the handle/badge stays on the label line
         option.image ? "items-start" : "items-center",
         isDragging && "relative z-10 cursor-grabbing opacity-80",
@@ -64,7 +77,7 @@ const SortableRankRow = ({
           NOT --bf-input — that's the input BG, so the handle vanished on dark-themed forms. */}
       <span
         className={cn(
-          "flex size-4 shrink-0 items-center justify-center text-[var(--bf-muted-foreground,var(--color-gray-500))]",
+          "flex size-4 shrink-0 items-center justify-center text-(--bf-muted-foreground,var(--color-gray-500))",
           option.image && "mt-0.5",
           // Invalid → only the drag glyph reddens (like the checkbox/radio control), not the row.
           hasErrors && "text-destructive",
@@ -80,7 +93,7 @@ const SortableRankRow = ({
             src={option.image}
             alt=""
             draggable={false}
-            className="mt-1.5 aspect-[4/3] w-[200px] rounded-lg bg-gray-100 object-cover"
+            className="mt-1.5 aspect-[4/3] w-[200px] rounded-lg bg-muted object-cover"
           />
         )}
       </span>
@@ -90,6 +103,7 @@ const SortableRankRow = ({
 
 const RankingField = ({ element, form }: FieldRendererProps<"Ranking">) => {
   const dndId = useId();
+
   // Distance/delay gates keep plain clicks (and touch scrolling) as tap-to-rank;
   // moving past the threshold or press-and-hold starts a drag instead.
   const sensors = useSensors(
@@ -111,13 +125,14 @@ const RankingField = ({ element, form }: FieldRendererProps<"Ranking">) => {
     <form.AppField name={element.name}>
       {(f) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-        const rankedValues = (f.state.value as string[] | undefined) ?? [];
+        const rankedValues = Array.isArray(f.state.value) ? f.state.value : [];
         const rankedCount = rankedValues.length;
 
         // Once every option but one is ranked, the last rank is forced — fill it in.
         const completeIfOneLeft = (ranked: string[]) => {
           if (ranked.length !== options.length - 1) return ranked;
           const remaining = options.find((o) => !ranked.includes(o.value));
+
           return remaining ? [...ranked, remaining.value] : ranked;
         };
 
@@ -134,6 +149,7 @@ const RankingField = ({ element, form }: FieldRendererProps<"Ranking">) => {
         const displayed = [
           ...rankedValues.flatMap((v) => {
             const opt = options.find((o) => o.value === v);
+
             return opt ? [opt] : [];
           }),
           ...options.filter((o) => !rankedValues.includes(o.value)),
@@ -142,23 +158,30 @@ const RankingField = ({ element, form }: FieldRendererProps<"Ranking">) => {
         const handleDragEnd = ({ active, over }: DragEndEvent) => {
           // Re-enable layout animation only after the drop's reorder render has committed.
           requestAnimationFrame(() => setDragActive(false));
+
           if (!over || active.id === over.id) return;
           const from = displayed.findIndex((o) => o.value === active.id);
           const to = displayed.findIndex((o) => o.value === over.id);
+
           if (from === -1 || to === -1) return;
           const wasRanked = from < rankedCount;
+
           if (wasRanked && to >= rankedCount) {
             // Dragged out of the ranked region ⇒ unrank it, keep the others' order.
             f.handleChange(rankedValues.filter((v) => v !== active.id));
+
             return;
           }
+
           // Dropping at the boundary slot (index === rankedCount) ranks the item as the next
           // rank — with nothing ranked yet, dragging to the FIRST position ranks it #1, so
           // drag alone can build the ranking. Only drops deeper in the pool stay meaningless.
           if (!wasRanked && to > rankedCount) return;
+
           const next = arrayMove(displayed, from, to)
             .slice(0, wasRanked ? rankedCount : rankedCount + 1)
             .map((o) => o.value);
+
           f.handleChange(wasRanked ? next : completeIfOneLeft(next));
         };
 

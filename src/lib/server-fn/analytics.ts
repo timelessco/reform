@@ -44,6 +44,7 @@ export const recordFormVisit = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ visitId: string | null }> => recordFormVisitImpl(data));
 
 const MAX_VITAL_MS = 3_600_000; // 1h — generous spam guard for client-reported vitals
+
 const MAX_CLS = 100;
 
 const updateVisitInputSchema = v.object({

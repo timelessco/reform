@@ -39,6 +39,7 @@ export const PreviewDrawer = ({ open, onClose, children }: PreviewDrawerProps) =
         });
       });
     };
+
     // Scoped: only "preview-content" cross-fades; surrounding chrome stays static.
     startScopedViewTransition(update);
   };
@@ -54,7 +55,8 @@ export const PreviewDrawer = ({ open, onClose, children }: PreviewDrawerProps) =
     >
       <DrawerPortal>
         <DrawerOverlay />
-        <DrawerPrimitive.Content className="preview-zoom-drawer fixed inset-2 z-50 flex flex-col overflow-hidden rounded-[10px] bg-background shadow-[0px_0px_4px_0px_rgba(0,0,0,0.08)] outline-none">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no shadow token for Figma 0/0/4 soft shadow; needs design decision */}
+        <DrawerPrimitive.Content className="preview-zoom-drawer fixed inset-2 z-50 flex flex-col overflow-hidden rounded-xl bg-background shadow-[0px_0px_4px_0px_rgba(0,0,0,0.08)] outline-none">
           <DrawerTitle className="sr-only">Form preview</DrawerTitle>
           <div className="min-h-0 flex-1">
             <Suspense fallback={null}>{children}</Suspense>
@@ -66,8 +68,8 @@ export const PreviewDrawer = ({ open, onClose, children }: PreviewDrawerProps) =
               variant="ghost"
               size="sm"
               // same pill as TabsList (bg-secondary/rounded-md/h-7) so both chrome pieces match over any cover
-              className="pointer-events-auto h-7 gap-1.5 rounded-md bg-secondary px-2 text-[14px] font-medium text-foreground shadow-[0px_0px_4px_0px_rgba(0,0,0,0.08)] hover:bg-secondary"
-              style={{ viewTransitionName: "preview-drawer-back" }}
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- no shadow token for Figma 0/0/4 soft shadow; needs design decision
+              className="pointer-events-auto h-7 gap-1.5 rounded-md bg-secondary px-2 text-base font-medium text-foreground shadow-[0px_0px_4px_0px_rgba(0,0,0,0.08)] [view-transition-name:preview-drawer-back] hover:bg-secondary"
               onClick={onClose}
             >
               <LeftChevronIcon className="size-4" />
@@ -76,14 +78,14 @@ export const PreviewDrawer = ({ open, onClose, children }: PreviewDrawerProps) =
             <Tabs
               value={embedType}
               onValueChange={handleEmbedTypeChange}
-              className="pointer-events-auto w-60"
-              style={{ viewTransitionName: "preview-drawer-tabs" }}
+              className="pointer-events-auto w-60 [view-transition-name:preview-drawer-tabs]"
             >
               <TabsList className="w-full">
                 {tabs.map((tab) => (
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- no tracking token for 0.21px; needs design decision
                     className="text-base font-medium tracking-[0.21px]"
                   >
                     {tab.label}

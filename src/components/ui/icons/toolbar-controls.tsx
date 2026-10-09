@@ -150,7 +150,7 @@ export const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path
       opacity="0.12"
       d="M8.92 16.5C13.06 16.54 16.46 13.22 16.5 9.08C16.54 4.94 13.22 1.54 9.08 1.5C4.94 1.46 1.54 4.78 1.5 8.92C1.46 13.06 4.78 16.46 8.92 16.5Z"
-      fill="#212121"
+      fill="var(--color-gray-900)"
     />
     <path
       d="M6 9L9 12M9 12L12 9M9 12V6M16.5 9C16.5 13.14 13.14 16.5 9 16.5C4.86 16.5 1.5 13.14 1.5 9C1.5 4.86 4.86 1.5 9 1.5C13.14 1.5 16.5 4.86 16.5 9Z"
@@ -166,7 +166,7 @@ export const MailIcon = (_props: React.SVGProps<SVGSVGElement>) => (
     <path
       opacity="0.12"
       d="M12.68 11.66C12.08 12.08 11.77 12.29 11.44 12.37C11.15 12.45 10.85 12.45 10.56 12.37C10.23 12.29 9.92 12.08 9.32 11.66L1.83 6.42C1.83 4.9 3.06 3.67 4.58 3.67H17.42C18.94 3.67 20.17 4.9 20.17 6.42L12.68 11.66Z"
-      fill="#212121"
+      fill="var(--color-gray-900)"
       stroke="var(--sidebar-icon-stroke)"
       strokeLinecap="round"
       strokeLinejoin="round"

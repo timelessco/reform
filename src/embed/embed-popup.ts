@@ -26,6 +26,7 @@ const activePopups = new Map<string, PopupInstance>();
 
 const fireOnOpen = (options: PopupOptions): void => {
   if (!options.onOpen) return;
+
   try {
     options.onOpen();
   } catch (e) {
@@ -40,6 +41,7 @@ export const preMountPopup = (formId: string, options: PopupOptions = {}): void 
   const elements = createOverlay(formId, options, () => closePopup(formId), {
     startHidden: true,
   });
+
   const iframe = createIframe(formId, options, elements.iframeContainer);
 
   const instance: PopupInstance = {
@@ -51,6 +53,7 @@ export const preMountPopup = (formId: string, options: PopupOptions = {}): void 
     loadingEl: elements.loadingEl,
     hidden: true,
   };
+
   activePopups.set(formId, instance);
 
   iframe.addEventListener("load", () => {
@@ -65,16 +68,20 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
   if (existing) {
     if (!existing.hidden) {
       console.warn(`[Reform] Popup for form ${formId} is already open`);
+
       return;
     }
 
     // Promote hidden instance; caller options now authoritative (pre-mount lacked these callbacks).
     existing.options = options;
     existing.hidden = false;
+
     if (existing.overlay) {
       revealOverlay(existing.overlay, options);
     }
+
     fireOnOpen(options);
+
     return;
   }
 
@@ -89,6 +96,7 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
     overlay: elements.overlay,
     loadingEl: elements.loadingEl,
   };
+
   activePopups.set(formId, instance);
 
   iframe.addEventListener("load", () => {
@@ -100,6 +108,7 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
 
 export const closePopup = (formId: string): void => {
   const instance = activePopups.get(formId);
+
   if (!instance || instance.hidden) {
     return;
   }
@@ -108,6 +117,7 @@ export const closePopup = (formId: string): void => {
   if (instance.overlay) {
     hideOverlay(instance.overlay);
   }
+
   instance.hidden = true;
 
   if (instance.options.onClose) {
@@ -122,19 +132,23 @@ export const closePopup = (formId: string): void => {
 /** Tear down popup — removes iframe + drops from registry. For long-lived SPAs reclaiming memory; normal flows use closePopup. */
 export const destroyPopup = (formId: string): void => {
   const instance = activePopups.get(formId);
+
   if (!instance) {
     return;
   }
 
   destroyIframe(instance.iframe);
+
   if (instance.overlay) {
     destroyOverlay(instance.overlay);
   }
+
   activePopups.delete(formId);
 };
 
 const handleMessage = (event: MessageEvent): void => {
   let data: IframeEvent;
+
   try {
     data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
   } catch {
@@ -146,6 +160,7 @@ const handleMessage = (event: MessageEvent): void => {
   }
 
   let instance: PopupInstance | undefined;
+
   for (const popup of activePopups.values()) {
     if (popup.iframe.contentWindow === event.source) {
       instance = popup;
@@ -163,13 +178,16 @@ const handleMessage = (event: MessageEvent): void => {
       if (instance.loadingEl) {
         hideLoading(instance.loadingEl);
       }
+
       // Match the popup frame radius to the form's cover radius (else the fixed 12px frame corners
       // clip a larger cover radius, leaving a sliver).
       if (data.frameRadius) {
         instance.container.style.borderRadius = data.frameRadius;
         const iframeContainer = instance.iframe.parentElement;
+
         if (iframeContainer) iframeContainer.style.borderRadius = data.frameRadius;
       }
+
       break;
 
     case "Reform.Resize":
@@ -179,6 +197,7 @@ const handleMessage = (event: MessageEvent): void => {
         updateIframeHeight(instance.iframe, next);
         updatePopupHeight(instance.container, next);
       }
+
       break;
 
     case "Reform.FormSubmitted":
@@ -211,13 +230,16 @@ const handleMessage = (event: MessageEvent): void => {
 
       if ("page" in data && data.page > 1) {
         const overlayEl = instance.overlay;
+
         if (overlayEl) {
           const emojiEl = overlayEl.querySelector(".bf-emoji") as HTMLElement | null;
+
           if (emojiEl) {
             hideEmoji(emojiEl);
           }
         }
       }
+
       break;
 
     case "Reform.Close":

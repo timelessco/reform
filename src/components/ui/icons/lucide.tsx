@@ -103,20 +103,32 @@ const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) => {
   const ConsistentLucideIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <Icon strokeWidth={1.5} absoluteStrokeWidth {...props} />
   );
+
   ConsistentLucideIcon.displayName = Icon.displayName || Icon.name || "ConsistentLucideIcon";
+
   return ConsistentLucideIcon;
 };
 
 export const BanIcon = createConsistentLucideIcon(LucideBan);
+
 export const BluetoothIcon = createConsistentLucideIcon(LucideBluetooth);
+
 export const CheckIcon = createConsistentLucideIcon(LucideCheck);
+
 export const CheckCircle2Icon = createConsistentLucideIcon(LucideCheckCircle2);
+
 export const ChevronLeftIcon = createConsistentLucideIcon(LucideChevronLeft);
+
 export const ChevronRightIcon = createConsistentLucideIcon(LucideChevronRight);
+
 export const ChevronUpIcon = createConsistentLucideIcon(LucideChevronUp);
+
 export const ChevronsRightIcon = createConsistentLucideIcon(LucideChevronsRight);
+
 export const CircleCheckIcon = createConsistentLucideIcon(LucideCircleCheck);
+
 export const CirclePlusIcon = createConsistentLucideIcon(LucideCirclePlus);
+
 export const CircleUserRoundIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -140,8 +152,11 @@ export const CircleUserRoundIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const CircleXIcon = createConsistentLucideIcon(LucideCircleX);
+
 export const ClockIcon = createConsistentLucideIcon(LucideClock);
+
 export const CreditCardIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -164,8 +179,11 @@ export const CreditCardIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const EyeIcon = createConsistentLucideIcon(LucideEye);
+
 export const EyeOffLucideIcon = createConsistentLucideIcon(LucideEyeOff);
+
 export const FileCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -188,14 +206,23 @@ export const FileCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const FileIcon = createConsistentLucideIcon(LucideFile);
+
 export const FileQuestionIcon = createConsistentLucideIcon(LucideFileQuestion);
+
 export const FileTextIcon = createConsistentLucideIcon(LucideFileText);
+
 export const FilterIcon = createConsistentLucideIcon(LucideFilter);
+
 export const FolderIcon = createConsistentLucideIcon(LucideFolder);
+
 export const FolderOpenIcon = createConsistentLucideIcon(LucideFolderOpen);
+
 export const FolderSearchIcon = createConsistentLucideIcon(LucideFolderSearch);
+
 export const HelpCircleIcon = createConsistentLucideIcon(LucideHelpCircle);
+
 export const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="16"
@@ -224,6 +251,7 @@ export const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 // Figma icon/line/image (node I25424:12047): filled "Union" photo-frame glyph (rounded rect + sun +
 // mountain), 14×13 path inset in a 16px box. Used for the Cover upload row. currentColor = gray/700.
 export const ImageLineIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -242,12 +270,19 @@ export const ImageLineIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const InfoIcon = createConsistentLucideIcon(LucideInfo);
+
 export const KeyboardIcon = createConsistentLucideIcon(LucideKeyboard);
+
 export const LanguagesIcon = createConsistentLucideIcon(LucideLanguages);
+
 export const LayoutIcon = createConsistentLucideIcon(LucideLayout);
+
 export const Loader2Icon = createConsistentLucideIcon(LucideLoader2);
+
 export const LockIcon = createConsistentLucideIcon(LucideLock);
+
 export const LogOutIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -271,8 +306,11 @@ export const LogOutIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const MinusIcon = createConsistentLucideIcon(LucideMinus);
+
 export const MonitorIcon = createConsistentLucideIcon(LucideMonitor);
+
 export const MoonIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -296,8 +334,11 @@ export const MoonIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const MoreVerticalIcon = createConsistentLucideIcon(LucideMoreVertical);
+
 export const OctagonXIcon = createConsistentLucideIcon(LucideOctagonX);
+
 export const PaletteIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="18"
@@ -328,15 +369,25 @@ export const PaletteIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </g>
   </svg>
 );
+
 export const PanelLeftIcon = createConsistentLucideIcon(LucidePanelLeft);
+
 export const PencilIcon = createConsistentLucideIcon(LucidePencil);
+
 export const RefreshCwIcon = createConsistentLucideIcon(LucideRefreshCw);
+
 export const RepeatIcon = createConsistentLucideIcon(LucideRepeat);
+
 export const RocketIcon = createConsistentLucideIcon(LucideRocket);
+
 export const RotateCcwIcon = createConsistentLucideIcon(LucideRotateCcw);
+
 export const SaveIcon = createConsistentLucideIcon(LucideSave);
+
 export const ShieldIcon = createConsistentLucideIcon(LucideShield);
+
 export const ShuffleIcon = createConsistentLucideIcon(LucideShuffle);
+
 export const SmileIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="24"
@@ -360,6 +411,7 @@ export const SmileIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const SunIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="22"
@@ -378,57 +430,107 @@ export const SunIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const TagIcon = createConsistentLucideIcon(LucideTag);
+
 export const Trash2Icon = createConsistentLucideIcon(LucideTrash2);
+
 export const TriangleAlertIcon = createConsistentLucideIcon(LucideTriangleAlert);
+
 export const UploadIcon = createConsistentLucideIcon(LucideUpload);
+
 export const UserIcon = createConsistentLucideIcon(LucideUser);
+
 export const XIcon = createConsistentLucideIcon(LucideX);
 
 export const AlignCenterIcon = createConsistentLucideIcon(LucideAlignCenter);
+
 export const AlignLeftIcon = createConsistentLucideIcon(LucideAlignLeft);
+
 export const AlignRightIcon = createConsistentLucideIcon(LucideAlignRight);
+
 export const ArrowDownToLineIcon = createConsistentLucideIcon(LucideArrowDownToLine);
+
 export const ArrowLeftIcon = createConsistentLucideIcon(LucideArrowLeft);
+
 export const ArrowRightIcon = createConsistentLucideIcon(LucideArrowRight);
+
 export const ArrowUpToLineIcon = createConsistentLucideIcon(LucideArrowUpToLine);
+
 export const AudioLinesIcon = createConsistentLucideIcon(LucideAudioLines);
+
 export const BoldIcon = createConsistentLucideIcon(LucideBold);
+
 export const BracesIcon = createConsistentLucideIcon(LucideBraces);
+
 export const CodeXmlIcon = createConsistentLucideIcon(LucideCodeXml);
+
 export const CornerDownLeftIcon = createConsistentLucideIcon(LucideCornerDownLeft);
+
 export const CropIcon = createConsistentLucideIcon(LucideCrop);
+
 export const EraserIcon = createConsistentLucideIcon(LucideEraser);
+
 export const ExternalLinkIcon = createConsistentLucideIcon(LucideExternalLink);
+
 export const FileUpIcon = createConsistentLucideIcon(LucideFileUp);
+
 export const FilmIcon = createConsistentLucideIcon(LucideFilm);
+
 export const GlobeIcon = createConsistentLucideIcon(LucideGlobe);
+
 export const GripHorizontalIcon = createConsistentLucideIcon(LucideGripHorizontal);
+
 export const GripVerticalIcon = createConsistentLucideIcon(LucideGripVertical);
+
 export const IndentIcon = createConsistentLucideIcon(LucideIndent);
+
 export const ItalicIcon = createConsistentLucideIcon(LucideItalic);
+
 export const LinkIcon = createConsistentLucideIcon(LucideLink);
+
 export const ListIcon = createConsistentLucideIcon(LucideList);
+
 export const ListCollapseIcon = createConsistentLucideIcon(LucideListCollapse);
+
 export const ListOrderedIcon = createConsistentLucideIcon(LucideListOrdered);
+
 export const ListTodoIcon = createConsistentLucideIcon(LucideListTodo);
+
 export const MessageSquareTextIcon = createConsistentLucideIcon(LucideMessageSquareText);
+
 export const OutdentIcon = createConsistentLucideIcon(LucideOutdent);
+
 export const PencilLineIcon = createConsistentLucideIcon(LucidePencilLine);
+
 export const PenIcon = createConsistentLucideIcon(LucidePen);
+
 export const RadicalIcon = createConsistentLucideIcon(LucideRadical);
+
 export const Redo2Icon = createConsistentLucideIcon(LucideRedo2);
+
 export const StrikethroughIcon = createConsistentLucideIcon(LucideStrikethrough);
+
 export const TextIcon = createConsistentLucideIcon(LucideText);
+
 export const UnderlineIcon = createConsistentLucideIcon(LucideUnderline);
+
 export const Undo2Icon = createConsistentLucideIcon(LucideUndo2);
+
 export const UnlinkIcon = createConsistentLucideIcon(LucideUnlink);
+
 export const WrapTextIcon = createConsistentLucideIcon(LucideWrapText);
+
 export const AlertCircleIcon = createConsistentLucideIcon(LucideAlertCircle);
+
 export const AtSignIcon = createConsistentLucideIcon(LucideAtSign);
+
 export const HashIcon = createConsistentLucideIcon(LucideHash);
+
 export const DecimalsArrowRightIcon = createConsistentLucideIcon(LucideDecimalsArrowRight);
+
 export const PhoneIcon = createConsistentLucideIcon(LucidePhone);
+
 export const LeftChevronIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="16"
@@ -446,6 +548,7 @@ export const LeftChevronIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="18"
@@ -470,6 +573,9 @@ export const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 export const SquareCheckIcon = createConsistentLucideIcon(LucideSquareCheck);
+
 export const CheckCheckIcon = createConsistentLucideIcon(LucideCheckCheck);
+
 export const ChevronsUpDownIcon = createConsistentLucideIcon(LucideChevronsUpDown);
