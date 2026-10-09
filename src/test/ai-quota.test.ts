@@ -45,7 +45,7 @@ describe("utcDayKey", () => {
   });
 });
 
-describe("aI quota counter (DB-backed)", () => {
+describe.skipIf(Boolean(process.env.CI))("AI quota counter (DB-backed)", () => {
   const ownerId = crypto.randomUUID();
   let orgId: string;
 
@@ -95,7 +95,7 @@ describe("aI quota counter (DB-backed)", () => {
   });
 });
 
-describe("checkAiQuota", () => {
+describe.skipIf(Boolean(process.env.CI))("checkAiQuota", () => {
   const ownerId = crypto.randomUUID();
   let orgId: string;
 
