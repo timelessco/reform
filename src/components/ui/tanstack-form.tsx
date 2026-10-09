@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-form";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
+import * as v from "valibot";
 import { Button } from "@/components/ui/button";
 import type { buttonVariants } from "@/components/ui/button";
 import {
@@ -49,10 +50,12 @@ const SHAKE_CLEANUP_MS = 320;
 const shakeInvalidFields = (formEl: HTMLFormElement) => {
   requestAnimationFrame(() => {
     const invalid = Array.from(formEl.querySelectorAll<HTMLElement>('[aria-invalid="true"]'));
+
     // <f.Field> and its inner control can both report invalid — shake outermost only.
     const outermost = invalid.filter(
       (el) => !invalid.some((other) => other !== el && other.contains(el)),
     );
+
     for (const fieldEl of outermost) {
       fieldEl.classList.remove("t-shake");
       void fieldEl.offsetWidth; // force reflow so the keyframe restarts
@@ -72,6 +75,7 @@ const Form = ({
   ref?: React.Ref<HTMLFormElement>;
 }) => {
   const form = useFormContext();
+
   const handleSubmit = React.useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -84,6 +88,7 @@ const Form = ({
     },
     [form],
   );
+
   return (
     <form
       ref={ref}
@@ -101,7 +106,7 @@ type FormItemContextValue = {
   id: string;
 };
 
-const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormItemContext = React.createContext<FormItemContextValue | null>(null);
 
 const FieldSet = ({ className, children, ...props }: React.ComponentProps<"fieldset">) => {
   const id = React.useId();
@@ -125,29 +130,39 @@ const fieldStateSelector = (state: any) => ({
 });
 
 // eslint-disable-next-line typescript-eslint/no-explicit-any
-const fieldValueSelector = (state: any) => state?.value as unknown;
+const fieldValueSelector = (state: any) => state?.value;
+
+type FieldStore = ReturnType<typeof _useFieldContext>["store"];
 
 const useFieldContext = () => {
-  const { id } = React.use(FormItemContext);
+  const itemContext = React.use(FormItemContext);
+
+  if (!itemContext) {
+    throw new Error("useFieldContext should be used within <FormItem>");
+  }
+
+  const { id } = itemContext;
 
   // Call unconditionally — it's a hook (may call hooks internally).
   const innerFieldContext = _useFieldContext();
 
   // Stable store ref across renders for consistent useStore typing.
-  const storeRef = React.useRef<unknown>(null);
+  const storeRef = React.useRef<FieldStore | null>(null);
 
   // Update ref but always read from it, so hook order stays stable as innerFieldContext changes.
-  if (innerFieldContext?.store !== undefined) {
-    storeRef.current = innerFieldContext.store ?? null;
+  if (innerFieldContext.store !== undefined) {
+    storeRef.current = innerFieldContext.store;
   }
 
-  // Call useStore unconditionally for stable hook order; handles null store by not subscribing.
-  // eslint-disable-next-line typescript-eslint/no-explicit-any
-  const fieldState = useStore(storeRef.current as any, fieldStateSelector);
+  const store = storeRef.current;
 
-  if (!innerFieldContext) {
+  if (!store) {
     throw new Error("useFieldContext should be used within <FormItem>");
   }
+
+  // Call useStore unconditionally for stable hook order; the guard above only
+  // throws when the field context is missing, so committed renders subscribe.
+  const fieldState = useStore(store, fieldStateSelector);
 
   return {
     id,
@@ -163,12 +178,21 @@ const useFieldContext = () => {
 
 const useFieldValue = () => {
   const innerFieldContext = _useFieldContext();
-  const storeRef = React.useRef<unknown>(null);
-  if (innerFieldContext?.store !== undefined) {
-    storeRef.current = innerFieldContext.store ?? null;
+  const storeRef = React.useRef<FieldStore | null>(null);
+
+  if (innerFieldContext.store !== undefined) {
+    storeRef.current = innerFieldContext.store;
   }
-  // eslint-disable-next-line typescript-eslint/no-explicit-any
-  return useStore(storeRef.current as any, fieldValueSelector);
+
+  const store = storeRef.current;
+
+  if (!store) {
+    throw new Error("useFieldValue should be used within <FormItem>");
+  }
+
+  const raw = useStore(store, fieldValueSelector);
+
+  return v.is(v.string(), raw) ? raw : undefined;
 };
 
 const Field = ({
@@ -183,6 +207,7 @@ const Field = ({
     formMessageId,
     handleBlur: markFieldTouched,
   } = useFieldContext();
+
   const hasVisibleErrors = !!errors.length && isTouched;
 
   return (
@@ -211,11 +236,12 @@ const Input = ({
   const field = useFieldContext();
   const value = useFieldValue();
   const hasErrors = field.errors.length > 0 && field.isTouched;
+
   return (
     <InputBase
       name={field.name}
-      value={(value as string | undefined) ?? ""}
-      onChange={(e) => field.handleChange(e.target.value as never)}
+      value={value ?? ""}
+      onChange={(e) => field.handleChange(e.target.value)}
       onBlur={field.handleBlur}
       aria-invalid={hasErrors}
       className={cn("aria-invalid:form-input-error", className)}
@@ -238,17 +264,20 @@ const NumberFormatInput = ({
   const value = useFieldValue();
   const hasErrors = field.errors.length > 0 && field.isTouched;
   const [focused, setFocused] = React.useState(false);
+
   const cfg = React.useMemo<NumberFormatConfig>(
     () => ({ format, decimalSeparator, thousandsSeparator }),
     [format, decimalSeparator, thousandsSeparator],
   );
-  const raw = (value as string | undefined) ?? "";
+
+  const raw = value ?? "";
   const display = focused ? raw : formatNumberValue(raw, cfg);
+
   return (
     <InputBase
       name={field.name}
       value={display}
-      onChange={(e) => field.handleChange(parseNumberValue(e.target.value, cfg) as never)}
+      onChange={(e) => field.handleChange(parseNumberValue(e.target.value, cfg))}
       onFocus={() => setFocused(true)}
       onBlur={() => {
         setFocused(false);
@@ -268,11 +297,12 @@ const Textarea = ({
   const field = useFieldContext();
   const value = useFieldValue();
   const hasErrors = field.errors.length > 0 && field.isTouched;
+
   return (
     <TextareaBase
       name={field.name}
-      value={(value as string | undefined) ?? ""}
-      onChange={(e) => field.handleChange(e.target.value as never)}
+      value={value ?? ""}
+      onChange={(e) => field.handleChange(e.target.value)}
       onBlur={field.handleBlur}
       aria-invalid={hasErrors}
       className={cn("aria-invalid:form-input-error", className)}
@@ -288,10 +318,11 @@ const PhoneInput = ({
   const field = useFieldContext();
   const value = useFieldValue();
   const hasErrors = field.errors.length > 0 && field.isTouched;
+
   return (
     <PhoneInputBase
-      value={(value as string | undefined) ?? ""}
-      onChange={(next) => field.handleChange(next as never)}
+      value={value ?? ""}
+      onChange={(next) => field.handleChange(next)}
       onBlur={field.handleBlur}
       aria-invalid={hasErrors}
       className={className}
@@ -307,11 +338,12 @@ const TimePicker = ({
   const field = useFieldContext();
   const value = useFieldValue();
   const hasErrors = field.errors.length > 0 && field.isTouched;
+
   return (
     <TimePickerBase
       name={field.name}
-      value={(value as string | undefined) ?? ""}
-      onChange={(next) => field.handleChange(next as never)}
+      value={value ?? ""}
+      onChange={(next) => field.handleChange(next)}
       onBlur={field.handleBlur}
       aria-invalid={hasErrors}
       className={className}
@@ -323,7 +355,9 @@ const TimePicker = ({
 const FieldError = ({ className, ...props }: React.ComponentProps<"p">) => {
   const { errors, isTouched, formMessageId } = useFieldContext();
   const body = errors.length ? String(errors.at(0)?.message ?? "") : "";
+
   if (!body || !isTouched) return null;
+
   return (
     <DefaultFieldError
       data-slot="form-message"
@@ -345,6 +379,7 @@ const SubmitButton = ({
     label: string;
   }) => {
   const form = useFormContext();
+
   return (
     <form.Subscribe selector={(state) => state.isSubmitting}>
       {(isSubmitting) => (

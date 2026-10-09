@@ -8,9 +8,10 @@ import type { Form } from "./local/form";
 import type { updateForm } from "@/lib/server-fn/forms";
 import { getInit, state, stripNulls } from "./_state";
 import type { ServerFnInput } from "./_state";
+import { queryKeys } from "@/lib/query-keys";
 
 /** Map a local `Form` onto a `FormListing`. `Form` lacks the listing-only `shortId`/`submissionCount`; supply them (optimistic rows use `""`/`0`, replaced on refetch). */
-const formToListing = (
+export const formToListing = (
   form: Form,
   extras: { shortId: string; submissionCount: number; sortIndex?: string | null },
 ): FormListing => ({
@@ -33,39 +34,49 @@ const formToListing = (
   content: form.content,
   schemaName: form.schemaName,
   cover: form.cover,
+  previewImageUrl: form.previewImageUrl ?? null,
   createdByUserId: form.createdByUserId ?? null,
 });
 
 export const getWorkspaces = () => getInit().workspaces;
+
 export const getFormListings = () => getInit().formListings;
+
 export const getFavorites = () => getInit().favorites;
+
 export const getQueryClient = () => getInit().queryClient;
+
+/** Merge full `Form` detail onto an existing listing row, preserving listing-only fields (shortId/submissionCount/sortIndex). */
+export const mergeFormDetailIntoListing = (detail: Form, existing?: FormListing): FormListing => ({
+  ...existing,
+  ...formToListing(detail, {
+    shortId: existing?.shortId ?? "",
+    submissionCount: existing?.submissionCount ?? 0,
+    sortIndex: existing?.sortIndex ?? null,
+  }),
+  // `_getFormById` doesn't join `form_settings`, so detail carries no `liveSettings`; keep the listing's value (drives the publish settings dirty-flag).
+  liveSettings: detail.liveSettings ?? existing?.liveSettings,
+  id: detail.id,
+});
 
 export const enrichFormDetail = async (formId: string) => {
   const { serverFns, formListings } = getInit();
+
   if (state.enrichedFormIds.has(formId)) return null;
   const detail = await serverFns.getFormDetail(formId);
+
   if (detail) {
-    const existing = formListings.get(formId);
-    // Listing-only fields (shortId/submissionCount/sortIndex) aren't on the `Form` detail; keep the existing row's values.
-    const merged = formToListing(detail, {
-      shortId: existing?.shortId ?? "",
-      submissionCount: existing?.submissionCount ?? 0,
-      sortIndex: existing?.sortIndex ?? null,
-    });
-    formListings.utils.writeUpdate({
-      ...existing,
-      ...merged,
-      id: formId,
-    });
+    formListings.utils.writeUpdate(mergeFormDetailIntoListing(detail, formListings.get(formId)));
     state.enrichedFormIds.add(formId);
   }
+
   return null;
 };
 
 export const getVersionList = (formId: string) => {
   const { queryClient, serverFns } = getInit();
   let collection = state.versionListCache.get(formId);
+
   if (!collection) {
     collection = createVersionListCollection({
       queryClient,
@@ -74,12 +85,14 @@ export const getVersionList = (formId: string) => {
     });
     state.versionListCache.set(formId, collection);
   }
+
   return collection;
 };
 
 export const getVersionContent = (versionId: string) => {
   const { queryClient, serverFns } = getInit();
   let collection = state.versionContentCache.get(versionId);
+
   if (!collection) {
     collection = createVersionContentCollection({
       queryClient,
@@ -88,22 +101,29 @@ export const getVersionContent = (versionId: string) => {
     });
     state.versionContentCache.set(versionId, collection);
   }
+
   return collection;
 };
 
 export const createFormLocal = (
   workspaceId: string,
-  title = "Untitled",
+  options: { title?: string; content?: unknown[] } | string = "Untitled",
 ): { form: Form; persisted: Promise<void> } => {
+  const title = typeof options === "string" ? options : (options.title ?? "Untitled");
+
+  const content =
+    typeof options === "object" && options.content ? options.content : DEFAULT_FORM_CONTENT;
+
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+
   const newForm: Form = {
     id,
     workspaceId,
     title,
     formName: "draft",
     schemaName: "draftFormSchema",
-    content: DEFAULT_FORM_CONTENT,
+    content,
     icon: null,
     cover: null,
     status: "draft",
@@ -115,12 +135,14 @@ export const createFormLocal = (
   };
 
   const { serverFns, formListings } = getInit();
+
   const tx = createTransaction({
     mutationFn: async () => {
       await serverFns.createForm(newForm);
       await formListings.utils.refetch();
     },
   });
+
   tx.mutate(() => {
     formListings.insert(formToListing(newForm, { shortId: "", submissionCount: 0 }));
   });
@@ -131,6 +153,7 @@ export const createFormLocal = (
 export const duplicateFormById = (formId: string): { form: Form; persisted: Promise<void> } => {
   const { serverFns, formListings } = getInit();
   const sourceForm = formListings.get(formId);
+
   if (!sourceForm) throw new Error(`Form not found: ${formId}`);
 
   const id = crypto.randomUUID();
@@ -164,6 +187,7 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
       await formListings.utils.refetch();
     },
   });
+
   tx.mutate(() => {
     formListings.insert(
       formToListing(newForm, {
@@ -183,6 +207,7 @@ export const updateFormStatus = async (id: string, status: "draft" | "published"
   // Archived rows live outside `formListings` (server filters them). Optimistically remove, persist, then prime the trash query.
   if (status === "archived") {
     const existing = formListings.get(id);
+
     if (!existing) return;
 
     const tx = createTransaction({
@@ -190,16 +215,18 @@ export const updateFormStatus = async (id: string, status: "draft" | "published"
         await serverFns.updateForm(
           stripNulls({ ...existing, status: "archived" }) as ServerFnInput<typeof updateForm>,
         );
-        // Refetch so the archived row is gone from the server snapshot before TanStack DB drops the optimistic delete — else it falls back to the pre-archive snapshot and the form reappears.
+        // Refetch must finish before TanStack DB drops the optimistic delete, else it falls back to the pre-archive snapshot and the form reappears.
         await Promise.all([
           formListings.utils.refetch(),
-          queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.archivedFormListings() }),
         ]);
       },
     });
+
     tx.mutate(() => {
       formListings.delete(id);
     });
+
     return;
   }
 
@@ -209,11 +236,12 @@ export const updateFormStatus = async (id: string, status: "draft" | "published"
   });
 };
 
-// Restore: form is in the archived Query cache, not `formListings`. Persist flip, refetch live collection (shows in sidebar), invalidate trash.
+// Form lives in the archived Query cache, not `formListings`. Persist flip, refetch live collection (shows in sidebar), invalidate trash.
 export const restoreFormLocal = async (id: string) => {
   const { formListings, queryClient, serverFns } = getInit();
-  const archived = queryClient.getQueryData<FormListing[]>(["form-listings-archived"]);
+  const archived = queryClient.getQueryData<FormListing[]>(queryKeys.archivedFormListings());
   const existing = archived?.find((f) => f.id === id);
+
   if (!existing) return;
 
   await serverFns.updateForm(
@@ -221,50 +249,24 @@ export const restoreFormLocal = async (id: string) => {
   );
   await Promise.all([
     formListings.utils.refetch(),
-    queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.archivedFormListings() }),
   ]);
 };
 
-// Hard-delete from trash: form lives in the archived cache, never in `formListings` this session. Hit server directly, refresh trash.
+// Form lives in the archived cache, never `formListings` this session. Hit server directly, refresh trash.
 export const permanentDeleteFormLocal = async (id: string) => {
   const { queryClient, serverFns } = getInit();
   await serverFns.deleteForm({ id });
-  await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+  await queryClient.invalidateQueries({ queryKey: queryKeys.archivedFormListings() });
 };
 
-// Optimistically remove rows from `formListings` (instant sidebar update), persist flip, invalidate trash query.
-export const bulkArchiveFormsLocal = async (ids: string[]) => {
-  if (ids.length === 0) return { archived: 0 };
-  const { formListings, queryClient, serverFns } = getInit();
-
-  let archived = 0;
-  const tx = createTransaction({
-    mutationFn: async () => {
-      const result = await serverFns.bulkArchiveForms({ ids });
-      archived = result.archived;
-      // Refetch so archived rows are gone from the server snapshot before TanStack DB drops the optimistic deletes (same pattern as updateFormStatus).
-      await Promise.all([
-        formListings.utils.refetch(),
-        queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] }),
-      ]);
-      return result;
-    },
-  });
-  tx.mutate(() => {
-    for (const id of ids) {
-      if (formListings.get(id)) formListings.delete(id);
-    }
-  });
-  await tx.isPersisted.promise;
-  return { archived };
-};
-
-// Rows aren't in `formListings` (server filters archived) — hit server, invalidate trash.
+// Rows aren't in `formListings` (server filters archived). Hit server, invalidate trash.
 export const bulkPermanentDeleteFormsLocal = async (ids: string[]) => {
   if (ids.length === 0) return { deleted: 0 };
   const { queryClient, serverFns } = getInit();
   const result = await serverFns.bulkDeleteForms({ ids });
-  await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+  await queryClient.invalidateQueries({ queryKey: queryKeys.archivedFormListings() });
+
   return result;
 };
 
@@ -276,6 +278,7 @@ export const createWorkspaceLocal = async (
   const { workspaces } = getInit();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+
   const ws: WorkspaceSummary = {
     id,
     organizationId,
@@ -286,7 +289,9 @@ export const createWorkspaceLocal = async (
     sortIndex,
     forms: [],
   };
+
   workspaces.insert(ws);
+
   return ws;
 };
 
@@ -351,5 +356,7 @@ export const moveFormToWorkspaceLocal = async (formId: string, workspaceId: stri
 };
 
 export type { Form } from "./local/form";
+
 export type { WorkspaceSummary } from "./query/workspace";
+
 export type { FormListing, FormFavorite } from "./query/form-listing";

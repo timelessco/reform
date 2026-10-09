@@ -22,13 +22,14 @@ export const DropdownMenuContent = ({
   side = "bottom",
   sideOffset = 4,
   anchor,
+  collisionAvoidance,
   className,
   positionerClassName,
   ...props
 }: MenuPrimitive.Popup.Props &
   Pick<
     MenuPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "anchor" | "side" | "sideOffset"
+    "align" | "alignOffset" | "anchor" | "collisionAvoidance" | "side" | "sideOffset"
   > & {
     positionerClassName?: string;
   }) => (
@@ -38,6 +39,7 @@ export const DropdownMenuContent = ({
       align={align}
       alignOffset={alignOffset}
       anchor={anchor}
+      collisionAvoidance={collisionAvoidance}
       side={side}
       sideOffset={sideOffset}
     >
@@ -86,7 +88,7 @@ export const DropdownMenuItem = ({
     data-inset={inset}
     data-variant={variant}
     className={cn(
-      "group/dropdown-menu-item relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg px-2 py-[5.5px] text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
+      "group/dropdown-menu-item relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg px-2 py-[5.5px] text-sm outline-hidden select-none focus:bg-secondary focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
       className,
     )}
     {...props}
@@ -109,28 +111,31 @@ export const DropdownMenuSubTrigger = ({
     data-slot="dropdown-menu-sub-trigger"
     data-inset={inset}
     className={cn(
-      "flex h-[26px] cursor-default items-center gap-1.5 rounded-lg px-2 py-[5.5px] text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "flex h-[26px] cursor-default items-center gap-1.5 rounded-lg px-2 py-[5.5px] text-sm outline-hidden select-none focus:bg-secondary focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-popup-open:bg-secondary data-popup-open:text-accent-foreground data-open:bg-secondary data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
       className,
     )}
     {...props}
   >
     {children}
-    <ChevronRightIcon className="ms-auto rtl:rotate-180" />
+    {/* strokeWidth 2: match trigger/select chevrons (1.5 wrapper reads too thin at 16px) */}
+    <ChevronRightIcon strokeWidth={2} className="ms-auto rtl:rotate-180" />
   </MenuPrimitive.SubmenuTrigger>
 );
 
 export const DropdownMenuSubContent = ({
   align = "start",
-  alignOffset = -3,
+  alignOffset = 0,
   side = "inline-end",
-  sideOffset = 0,
+  sideOffset = 4,
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuContent>) => (
   <DropdownMenuContent
     data-slot="dropdown-menu-sub-content"
     className={cn(
-      "w-auto min-w-[96px] rounded-lg bg-popover p-1 text-popover-foreground elevation-lg duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+      // Match parent DropdownMenuContent chrome (rounded-xl / p-1 / elevation) + Figma nested
+      // popover min width 151px so short labels (e.g. "Personal") don't collapse into a pill.
+      "flex w-auto min-w-[151px] translate-x-1 flex-col gap-1 rounded-xl bg-popover p-1 font-case text-popover-foreground elevation-lg duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
       className,
     )}
     align={align}
@@ -154,7 +159,7 @@ export const DropdownMenuCheckboxItem = ({
     data-slot="dropdown-menu-checkbox-item"
     data-inset={inset}
     className={cn(
-      "relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg py-[5.5px] ps-2 pe-8 text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:ps-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg py-[5.5px] ps-2 pe-8 text-base outline-hidden select-none focus:bg-secondary focus:text-accent-foreground focus:**:text-accent-foreground data-inset:ps-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
       className,
     )}
     checked={checked}
@@ -188,7 +193,7 @@ export const DropdownMenuRadioItem = ({
     data-slot="dropdown-menu-radio-item"
     data-inset={inset}
     className={cn(
-      "relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg py-[5.5px] ps-2 pe-8 text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:ps-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "relative flex h-[26px] cursor-default items-center gap-1.5 rounded-lg py-[5.5px] ps-2 pe-8 text-base outline-hidden select-none focus:bg-secondary focus:text-accent-foreground focus:**:text-accent-foreground data-inset:ps-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
       className,
     )}
     {...props}

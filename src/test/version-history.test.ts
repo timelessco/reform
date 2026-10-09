@@ -21,6 +21,7 @@ import {
 const createTestVersion = async (formId: string, publishedByUserId: string, version: number) => {
   const id = crypto.randomUUID();
   const now = new Date();
+
   const [v] = await db
     .insert(formVersions)
     .values({
@@ -36,6 +37,7 @@ const createTestVersion = async (formId: string, publishedByUserId: string, vers
       createdAt: now,
     })
     .returning();
+
   return v;
 };
 
@@ -68,7 +70,9 @@ const fetchVersionList = async (formId: string): Promise<VersionListItem[]> => {
 /** Fetch version content from DB (bypasses auth) */
 const fetchVersionContent = async (versionId: string): Promise<VersionContent | null> => {
   const [v] = await db.select().from(formVersions).where(eq(formVersions.id, versionId));
+
   if (!v) return null;
+
   return {
     id: v.id,
     formId: v.formId,

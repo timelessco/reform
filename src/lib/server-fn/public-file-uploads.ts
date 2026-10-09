@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { putBlob } from "@/integrations/blob";
-import { getRequestIP } from "@tanstack/react-start/server";
 import { and, eq, sql } from "drizzle-orm";
 import { createError } from "@/lib/errors/create";
+import { getClientIp, slidingWindowRateLimit } from "@/lib/server-fn/rate-limit.server";
 import type { Value } from "platejs";
 import * as v from "valibot";
 import { forms, formVersions, uploadRateLimits } from "@/db/schema";
@@ -24,46 +24,29 @@ import {
  * (4) max size. */
 
 const WINDOW_MINUTES = 10;
+
 const MAX_PER_WINDOW = 20;
+
 const CLEANUP_PROBABILITY = 0.01;
+
 // Hard upper bound: refuse beyond this even if a field is configured higher.
 const HARD_MAX_FILE_BYTES = 50 * 1024 * 1024;
-const DEFAULT_ACCEPT = "image/*,.pdf,.doc,.docx";
-
-const getClientIp = (): string => getRequestIP({ xForwardedFor: true }) ?? "unknown";
 
 // SQL literal: Postgres can't concat a parameterized int with text in an interval cast. Build-time constant, safe.
 const WINDOW_INTERVAL_SQL = sql.raw(`interval '${WINDOW_MINUTES} minutes'`);
 
 const checkUploadRateLimit = async (ip: string): Promise<void> => {
-  if (Math.random() < CLEANUP_PROBABILITY) {
-    await db.execute(
-      sql`DELETE FROM upload_rate_limits WHERE window_start < now() - interval '1 hour'`,
-    );
-  }
+  const newCount = await slidingWindowRateLimit({
+    table: uploadRateLimits,
+    keyColumn: uploadRateLimits.ip,
+    windowStartColumn: uploadRateLimits.windowStart,
+    countColumn: uploadRateLimits.count,
+    values: { ip, count: 1 },
+    windowIntervalSql: WINDOW_INTERVAL_SQL,
+    cleanupSql: sql`DELETE FROM upload_rate_limits WHERE window_start < now() - interval '1 hour'`,
+    cleanupProbability: CLEANUP_PROBABILITY,
+  });
 
-  // Atomic upsert: insert count=1, or on conflict reset (window expired) or increment.
-  const result = await db
-    .insert(uploadRateLimits)
-    .values({ ip, count: 1 })
-    .onConflictDoUpdate({
-      target: uploadRateLimits.ip,
-      set: {
-        count: sql`CASE
-          WHEN ${uploadRateLimits.windowStart} < now() - ${WINDOW_INTERVAL_SQL}
-            THEN 1
-          ELSE ${uploadRateLimits.count} + 1
-        END`,
-        windowStart: sql`CASE
-          WHEN ${uploadRateLimits.windowStart} < now() - ${WINDOW_INTERVAL_SQL}
-            THEN now()
-          ELSE ${uploadRateLimits.windowStart}
-        END`,
-      },
-    })
-    .returning({ count: uploadRateLimits.count });
-
-  const newCount = result[0]?.count ?? 0;
   if (newCount > MAX_PER_WINDOW) {
     throw createError({
       code: "uploads/rate-limited" satisfies ErrorCode,
@@ -81,18 +64,23 @@ const isMimeAllowed = (contentType: string, accept: string): boolean => {
     .split(",")
     .map((t) => t.trim().toLowerCase())
     .filter((t) => t.length > 0);
+
   const mime = contentType.toLowerCase();
+
   for (const token of tokens) {
     if (token.endsWith("/*")) {
       const prefix = token.slice(0, -1); // "image/"
+
       if (mime.startsWith(prefix)) return true;
     } else if (token.startsWith(".")) {
       const ext = getExtensionForMime(mime);
+
       if (ext && `.${ext}` === token) return true;
     } else if (token === mime) {
       return true;
     }
   }
+
   return false;
 };
 
@@ -121,11 +109,13 @@ const assertFormFileField = async (
   }
 
   let content: Value | null = null;
+
   if (form.lastPublishedVersionId) {
     const [version] = await db
       .select({ content: formVersions.content })
       .from(formVersions)
       .where(eq(formVersions.id, form.lastPublishedVersionId));
+
     content = (version?.content ?? null) as Value | null;
   } else {
     content = (form.draftContent ?? null) as Value | null;
@@ -145,6 +135,7 @@ const assertFormFileField = async (
   const elements = transformPlateStateToFormElements(content);
   const editable = getEditableFields(elements);
   const field = editable.find((f) => f.fieldType === "FileUpload" && f.name === fieldName);
+
   if (!field) {
     throw createError({
       code: "uploads/field-not-found" satisfies ErrorCode,
@@ -155,30 +146,34 @@ const assertFormFileField = async (
       internal: { formId, fieldName },
     });
   }
+
   // Prefer granular allowedFileTypes/Extensions (block menu); else legacy accept; else default
   // for forms predating the type picker.
   const allowedFileTypes = "allowedFileTypes" in field ? field.allowedFileTypes : undefined;
+
   const allowedFileExtensions =
     "allowedFileExtensions" in field ? field.allowedFileExtensions : undefined;
+
   const legacyAccept =
     "accept" in field && typeof field.accept === "string" && field.accept.length > 0
       ? field.accept
       : null;
+
   const allowedExtensions = resolveAllowedExtensions(allowedFileTypes, allowedFileExtensions);
-  // Flat extensions (or legacy category) drive the accept; else fall back to a stored accept
-  // string from forms predating the type picker, then the broad default.
-  const hasGranularConfig =
-    allowedExtensions.length > 0 ||
-    allowedFileTypes !== undefined ||
-    allowedFileExtensions !== undefined;
-  const accept = hasGranularConfig
-    ? buildAcceptFromExtensions(allowedExtensions)
-    : (legacyAccept ?? DEFAULT_ACCEPT);
+  // Explicit picker config drives the accept; else fall back to a stored accept string from
+  // forms predating the type picker, then the resolver's image-only default.
+  const hasGranularConfig = allowedFileTypes !== undefined || allowedFileExtensions !== undefined;
+
+  const accept =
+    hasGranularConfig || !legacyAccept
+      ? buildAcceptFromExtensions(allowedExtensions)
+      : legacyAccept;
 
   const fieldMaxFileSize =
     "maxFileSize" in field && typeof field.maxFileSize === "number" && field.maxFileSize > 0
       ? field.maxFileSize
       : DEFAULT_MAX_FILE_SIZE_MB;
+
   const maxFileBytes = Math.min(fieldMaxFileSize * 1024 * 1024, HARD_MAX_FILE_BYTES);
 
   return { accept, maxFileBytes };
@@ -186,11 +181,12 @@ const assertFormFileField = async (
 
 const decodeBase64 = (dataUrl: string): Buffer => {
   const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+
   return Buffer.from(base64, "base64");
 };
 
 export const uploadFormFile = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       draftId: v.pipe(v.string(), v.uuid()),
@@ -201,7 +197,8 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    await checkUploadRateLimit(getClientIp());
+    // Fall back to a fixed key off-platform (no request IP); the published-form gate still applies.
+    await checkUploadRateLimit(getClientIp() ?? "unknown");
 
     const { accept, maxFileBytes } = await assertFormFileField(data.formId, data.fieldName);
 
@@ -217,6 +214,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     }
 
     const buffer = decodeBase64(data.base64);
+
     if (buffer.length === 0) {
       throw createError({
         code: "uploads/empty-file" satisfies ErrorCode,
@@ -226,6 +224,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
         fix: "Choose a non-empty file and try again",
       });
     }
+
     if (buffer.length > maxFileBytes) {
       throw createError({
         code: "uploads/too-large" satisfies ErrorCode,

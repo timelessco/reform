@@ -12,19 +12,22 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorPlugin, withHOC } from "platejs/react";
 import * as React from "react";
 import { useFilePicker } from "use-file-picker";
+import * as v from "valibot";
+
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { useUploadFile } from "@/hooks/use-upload-file";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const CONTENT: Record<
-  string,
-  {
-    accept: string[];
-    content: React.ReactNode;
-    icon: React.ReactNode;
-  }
-> = {
+type MediaContent = {
+  accept: string[];
+  content: React.ReactNode;
+  icon: React.ReactNode;
+};
+
+type MediaContentKey = typeof KEYS.audio | typeof KEYS.file | typeof KEYS.img | typeof KEYS.video;
+
+const CONTENT = {
   [KEYS.audio]: {
     accept: ["audio/*"],
     content: "Add an audio file",
@@ -45,7 +48,14 @@ const CONTENT: Record<
     content: "Add a video",
     icon: <FilmIcon />,
   },
-};
+} satisfies Record<MediaContentKey, MediaContent>;
+
+const isMediaContentKey = (value: string): value is MediaContentKey => value in CONTENT;
+
+const readMediaContent = (mediaType: string): MediaContent | undefined =>
+  isMediaContentKey(mediaType) ? CONTENT[mediaType] : undefined;
+
+const isString = (value: unknown): value is string => v.is(v.string(), value);
 
 export const PlaceholderElement = withHOC(
   PlaceholderProvider,
@@ -58,14 +68,17 @@ export const PlaceholderElement = withHOC(
 
     const loading = isUploading && uploadingFile;
 
-    const currentContent = CONTENT[element.mediaType];
+    const currentContent = readMediaContent(element.mediaType);
 
     const isImage = element.mediaType === KEYS.img;
+
+    // Every node in this editor carries a string id (the IdsPlugin assigns one on insert).
+    const nodeId = isString(element.id) ? element.id : "";
 
     const imageRef = React.useRef<HTMLImageElement>(null);
 
     const { openFilePicker } = useFilePicker({
-      accept: currentContent.accept,
+      accept: currentContent?.accept,
       multiple: true,
       onFilesSelected: ({ plainFiles: updatedFiles }) => {
         const firstFile = updatedFiles[0];
@@ -82,9 +95,9 @@ export const PlaceholderElement = withHOC(
     const replaceCurrentPlaceholder = React.useCallback(
       (file: File) => {
         void uploadFile(file);
-        api.placeholder.addUploadingFile(element.id as string, file);
+        api.placeholder.addUploadingFile(nodeId, file);
       },
-      [api.placeholder, element.id, uploadFile],
+      [api.placeholder, nodeId, uploadFile],
     );
 
     React.useEffect(() => {
@@ -101,7 +114,7 @@ export const PlaceholderElement = withHOC(
           initialWidth: imageRef.current?.width,
           isUpload: true,
           name: element.mediaType === KEYS.file ? uploadedFile.name : "",
-          placeholderId: element.id as string,
+          placeholderId: nodeId,
           type: element.mediaType ?? KEYS.img,
           url: uploadedFile.url,
         };
@@ -111,9 +124,9 @@ export const PlaceholderElement = withHOC(
         updateUploadHistory(editor, node);
       });
 
-      api.placeholder.removeUploadingFile(element.id as string);
+      api.placeholder.removeUploadingFile(nodeId);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uploadedFile, element.id, api.placeholder.removeUploadingFile, editor, element]);
+    }, [uploadedFile, nodeId, api.placeholder.removeUploadingFile, editor, element]);
 
     // React dev mode will call React.useEffect twice
     const isReplaced = React.useRef(false);
@@ -123,7 +136,7 @@ export const PlaceholderElement = withHOC(
       if (isReplaced.current) return;
 
       isReplaced.current = true;
-      const currentFiles = api.placeholder.getUploadingFile(element.id as string);
+      const currentFiles = api.placeholder.getUploadingFile(nodeId);
 
       if (!currentFiles) return;
 
@@ -142,10 +155,10 @@ export const PlaceholderElement = withHOC(
             contentEditable={false}
           >
             <div className="relative mr-3 flex text-muted-foreground/80 [&_svg]:size-6">
-              {currentContent.icon}
+              {currentContent?.icon}
             </div>
             <div className="text-left text-sm whitespace-nowrap text-muted-foreground">
-              <div>{loading ? uploadingFile?.name : currentContent.content}</div>
+              <div>{loading ? uploadingFile?.name : currentContent?.content}</div>
 
               {loading && !isImage && (
                 <div className="mt-1 flex items-center gap-1.5">

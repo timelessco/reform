@@ -19,8 +19,7 @@ import { and, count, eq, inArray } from "drizzle-orm";
 import { createError } from "@/lib/errors/create";
 import * as v from "valibot";
 import type { ErrorCode } from "@/lib/errors/codes";
-import { getActiveOrgId } from "./auth-helpers";
-import { authWorkspace } from "./auth-helpers.server";
+import { requireScopedWorkspace } from "./auth-helpers.server";
 
 const workspaceSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
@@ -32,7 +31,7 @@ const workspaceSchema = v.object({
 
 export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       organizationId: v.pipe(v.string(), v.uuid()),
       name: v.optional(v.pipe(v.string(), v.maxLength(100)), "Workspace"),
@@ -85,11 +84,10 @@ export const createWorkspace = createServerFn({ method: "POST" })
 
 export const updateWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.partial(v.pick(workspaceSchema, ["id", "name"]), ["name"]))
+  .validator(v.partial(v.pick(workspaceSchema, ["id", "name"]), ["name"]))
   .handler(async ({ data, context }) => {
     const { id, ...updateData } = data;
-    const orgId = getActiveOrgId(context.session);
-    await authWorkspace(id, context.session.user.id, orgId);
+    await requireScopedWorkspace(context.session, id);
 
     const [workspace] = await db
       .update(workspaces)
@@ -122,15 +120,15 @@ export const updateWorkspace = createServerFn({ method: "POST" })
 
 export const deleteWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.pick(workspaceSchema, ["id"]))
+  .validator(v.pick(workspaceSchema, ["id"]))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authWorkspace(data.id, context.session.user.id, orgId);
+    const { orgId } = await requireScopedWorkspace(context.session, data.id);
 
     const [{ total }] = await db
       .select({ total: count() })
       .from(workspaces)
       .where(eq(workspaces.organizationId, orgId));
+
     if (total <= 1) {
       throw createError({
         code: "workspaces/cannot-delete-last" satisfies ErrorCode,
@@ -148,6 +146,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
         .select({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId })
         .from(forms)
         .where(eq(forms.workspaceId, data.id));
+
       const formIds = workspaceForms.map((f) => f.id);
       const everPublished = workspaceForms.filter((f) => f.lastPublishedVersionId).map((f) => f.id);
 
@@ -197,6 +196,7 @@ export const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const userId = context.session.user.id;
+
     const workspaceList = await db
       .select({
         id: workspaces.id,
@@ -230,7 +230,7 @@ export const getWorkspaces = createServerFn({ method: "GET" })
 
 export const reorderWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       workspaceId: v.pipe(v.string(), v.uuid()),
       sortIndex: v.string(),
@@ -238,8 +238,7 @@ export const reorderWorkspace = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
-    const orgId = getActiveOrgId(context.session);
-    await authWorkspace(data.workspaceId, userId, orgId);
+    await requireScopedWorkspace(context.session, data.workspaceId);
 
     const id = `${userId}:${data.workspaceId}`;
     const now = new Date();

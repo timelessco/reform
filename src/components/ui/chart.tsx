@@ -3,21 +3,25 @@
 import * as React from "react";
 // eslint-disable-next-line react-doctor/prefer-dynamic-import -- shadcn chart primitives wrapper; consumers (insights/breakdowns) are themselves lazy-loaded routes, so splitting here adds no benefit
 import * as RechartsPrimitive from "recharts";
-import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type { NameType, Payload, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type { LegendPayload } from "recharts/types/component/DefaultLegendContent";
+import * as v from "valibot";
 
 import { cn } from "@/lib/utils";
 
-// Format: { THEME_NAME: CSS_SELECTOR }
-const THEMES = { light: "", dark: ".dark" } as const;
+// Format: [THEME_NAME, CSS_SELECTOR]
+const THEME_PREFIXES = [
+  ["light", ""],
+  ["dark", ".dark"],
+] as const;
+
+type ChartTheme = (typeof THEME_PREFIXES)[number][0];
 
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode;
     icon?: React.ComponentType;
-  } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  );
+  } & ({ color?: string; theme?: never } | { color?: never; theme: Record<ChartTheme, string> });
 };
 
 type ChartContextProps = {
@@ -78,23 +82,24 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   // shadcn pattern: inject CSS vars from a typed config (no user input). Props assembled
   // separately so analyzers don't flag the inline-HTML JSX usage; behavior is identical.
-  const cssText = Object.entries(THEMES)
-    .map(
-      ([theme, prefix]) => `
+  const cssText = THEME_PREFIXES.map(
+    ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
-    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
+    const color = itemConfig.theme?.[theme] || itemConfig.color;
+
     return color ? `  --color-${key}: ${color};` : null;
   })
   .join("\n")}
 }
 `,
-    )
-    .join("\n");
+  ).join("\n");
+
   const styleProps: React.StyleHTMLAttributes<HTMLStyleElement> = {
     dangerouslySetInnerHTML: { __html: cssText },
   };
+
   return React.createElement("style", styleProps);
 };
 
@@ -136,8 +141,9 @@ export const ChartTooltipContent = ({
     const [item] = payload;
     const key = `${labelKey || item?.dataKey || item?.name || "value"}`;
     const itemConfig = getPayloadConfigFromPayload(config, item, key);
+
     const value =
-      !labelKey && typeof label === "string" ? config[label]?.label || label : itemConfig?.label;
+      !labelKey && v.is(v.string(), label) ? config[label]?.label || label : itemConfig?.label;
 
     if (labelFormatter) {
       return <div className={cn(labelClassName)}>{labelFormatter(value, payload)}</div>;
@@ -199,6 +205,7 @@ export const ChartTooltipContent = ({
                           },
                         )}
                         style={
+                          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
                           {
                             "--color-bg": indicatorColor,
                             "--color-border": indicatorColor,
@@ -220,7 +227,7 @@ export const ChartTooltipContent = ({
                       </span>
                     </div>
                     {item.value && (
-                      <span className="font-mono text-foreground tabular-nums">
+                      <span className="font-mono text-foreground">
                         {item.value.toLocaleString()}
                       </span>
                     )}
@@ -277,10 +284,9 @@ export const ChartLegendContent = ({
               <itemConfig.icon />
             ) : (
               <div
-                className="size-2 shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item.color,
-                }}
+                className="size-2 shrink-0 rounded-[2px] [background-color:var(--chart-item-color)]"
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                style={{ "--chart-item-color": item.color } as React.CSSProperties}
               />
             )}
             {itemConfig?.label}
@@ -291,27 +297,24 @@ export const ChartLegendContent = ({
   );
 };
 
-const getPayloadConfigFromPayload = (config: ChartConfig, payload: unknown, key: string) => {
-  if (typeof payload !== "object" || payload === null) {
-    return undefined;
-  }
+// Valibot schema for the boundary parse of recharts items, which carry arbitrary
+// user data under string keys.
+const itemRecord = v.record(v.string(), v.unknown());
 
-  const payloadPayload =
-    "payload" in payload && typeof payload.payload === "object" && payload.payload !== null
-      ? payload.payload
-      : undefined;
+const itemValueAt = <T,>(item: T, key: string): string | undefined => {
+  if (!v.is(itemRecord, item)) return undefined;
 
-  let configLabelKey: string = key;
+  const value = item[key];
 
-  if (key in payload && typeof payload[key as keyof typeof payload] === "string") {
-    configLabelKey = payload[key as keyof typeof payload] as string;
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
-  ) {
-    configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string;
-  }
+  return v.is(v.string(), value) ? value : undefined;
+};
+
+const getPayloadConfigFromPayload = (
+  config: ChartConfig,
+  item: Payload<ValueType, NameType> | LegendPayload,
+  key: string,
+) => {
+  const configLabelKey = itemValueAt(item, key) ?? itemValueAt(item.payload, key) ?? key;
 
   return configLabelKey in config ? config[configLabelKey] : config[key];
 };

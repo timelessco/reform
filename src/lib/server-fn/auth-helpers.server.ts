@@ -3,6 +3,9 @@ import { createError } from "@/lib/errors/create";
 import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/db";
 import type { ErrorCode } from "@/lib/errors/codes";
+import { getActiveOrgId } from "./auth-helpers";
+
+type SessionWithActiveOrg = Parameters<typeof getActiveOrgId>[0];
 
 /** Authorize workspace access: workspace in user's active org AND user is a member. */
 export const authWorkspace = async (
@@ -37,6 +40,7 @@ export const authWorkspace = async (
       internal: { workspaceId, userId, organizationId },
     });
   }
+
   return { workspace: workspace[0] };
 };
 
@@ -70,6 +74,7 @@ export const authForm = async (formId: string, userId: string, organizationId: s
       internal: { formId, userId, organizationId },
     });
   }
+
   return { form: form[0] };
 };
 
@@ -106,5 +111,30 @@ export const authFormsBulk = async (formIds: string[], userId: string, organizat
       internal: { formIds, userId, organizationId, allowedCount: allowed.length },
     });
   }
+
   return { formIds: allowed.map((r) => r.id) };
+};
+
+export const requireScopedWorkspace = async (
+  session: SessionWithActiveOrg,
+  workspaceId: string,
+) => {
+  const orgId = getActiveOrgId(session);
+  const { workspace } = await authWorkspace(workspaceId, session.user.id, orgId);
+
+  return { orgId, workspace };
+};
+
+export const requireScopedForm = async (session: SessionWithActiveOrg, formId: string) => {
+  const orgId = getActiveOrgId(session);
+  const { form } = await authForm(formId, session.user.id, orgId);
+
+  return { orgId, form };
+};
+
+export const requireScopedFormsBulk = async (session: SessionWithActiveOrg, formIds: string[]) => {
+  const orgId = getActiveOrgId(session);
+  const { formIds: authorizedFormIds } = await authFormsBulk(formIds, session.user.id, orgId);
+
+  return { orgId, formIds: authorizedFormIds };
 };

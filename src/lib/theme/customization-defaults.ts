@@ -1,9 +1,9 @@
 export const CUSTOMIZATION_AUTO_DEFAULTS = {
   pageWidth: "700px",
-  coverHeight: "200px",
+  coverHeight: "243px",
   logoWidth: "100px",
   inputWidth: "none",
-  baseFontSize: "1rem",
+  baseFontSize: "0.875rem",
   letterSpacing: "0.01em",
   titleFontSize: "clamp(2.25rem, 6vw, 48px)",
   titleLetterSpacing: "-0.03em",

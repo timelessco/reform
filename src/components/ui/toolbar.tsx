@@ -3,6 +3,7 @@ import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
+import * as v from "valibot";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,9 @@ export const ToolbarSeparator = ({
 
 // From toggleVariants
 const toolbarButtonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-muted hover:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-accent aria-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  // Minimal, theme-matched states: bg-secondary hover (like the app's other controls, no text muting)
+  // and a subtle 2px ring-ring/50 focus (matches app buttons) instead of the heavy 3px+border halo.
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-md text-sm whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-accent aria-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     defaultVariants: {
       size: "default",
@@ -117,6 +120,7 @@ const withTooltip = <T extends React.ElementType>(Component: T) =>
 
     useMountEffect(() => setMounted(true));
 
+    // SAFETY: TooltipProps adds exactly the four destructured tooltip keys onto the wrapped props, so the rest is the wrapped props
     const component = <Component {...(props as React.ComponentProps<T>)} />;
 
     if (tooltip && mounted) {
@@ -147,7 +151,7 @@ export const ToolbarButton = withTooltip(function ToolbarButton({
   variant,
   ...props
 }: ToolbarButtonProps) {
-  return typeof pressed === "boolean" ? (
+  return v.is(v.boolean(), pressed) ? (
     <ToolbarToggleGroup disabled={props.disabled}>
       <ToolbarToggleItem
         className={cn(
@@ -204,7 +208,7 @@ export const ToolbarSplitButton = ({
   />
 );
 
-type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<typeof ToolbarToggleItem> &
+type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<typeof Button> &
   VariantProps<typeof toolbarButtonVariants>;
 
 export const ToolbarSplitButtonPrimary = ({
@@ -225,7 +229,7 @@ export const ToolbarSplitButtonPrimary = ({
       "group-data-[pressed=true]:bg-accent group-data-[pressed=true]:text-accent-foreground",
       className,
     )}
-    {...(props as React.ComponentPropsWithoutRef<typeof Button>)}
+    {...props}
   >
     {children}
   </Button>

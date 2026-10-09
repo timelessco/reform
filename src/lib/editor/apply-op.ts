@@ -72,6 +72,7 @@ export type ApplyContext = {
 const pathNext = (path: number[]): number[] => {
   const next = [...path];
   next[next.length - 1] = (next[next.length - 1] ?? 0) + 1;
+
   return next;
 };
 
@@ -81,18 +82,24 @@ const computeInsertPath = (ctx: ApplyContext): number[] => {
   if (ctx.firstOpRef.current) {
     ctx.firstOpRef.current = false;
     ctx.nextInsertPathRef.current = [...ctx.initialPathRef.current];
+
     return [...ctx.initialPathRef.current];
   }
+
   if (ctx.editMode) {
     return [...ctx.nextInsertPathRef.current];
   }
-  const children = ctx.editor.children as Array<Record<string, unknown>>;
+
+  const children = ctx.editor.children;
+
   for (let i = children.length - 1; i >= 0; i--) {
     const node = children[i];
+
     if (node?.type === "formButton" && node.buttonRole === "submit") {
       return [i];
     }
   }
+
   return [children.length];
 };
 
@@ -111,13 +118,18 @@ const insertContentNodes = <K extends "add-field" | "add-section">(
 ): AppliedOp => {
   const startPath = computeInsertPath(ctx);
   let at = [...startPath];
+
   for (const node of nodes) {
     ctx.editor.tf.insertNodes(node, { at });
     at = pathNext(at);
     ctx.insertedCountRef.current++;
   }
+
   advanceNextInsert(ctx, nodes.length);
   ctx.firstContentSeenRef.current = true;
+
+  // SAFETY: kind and op enter as a matched pair from applyAddField/applyAddSection,
+  // so the literal always matches one AppliedOp member.
   return { kind, path: startPath, nodeCount: nodes.length, snapshot: op } as AppliedOp;
 };
 
@@ -135,15 +147,20 @@ const applyAddSection = (op: AddSectionOp, ctx: ApplyContext): AppliedOp =>
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 const applySetHeader = (op: SetHeaderOp, ctx: ApplyContext): AppliedOp | null => {
-  const header = ctx.editor.children[0] as TElement | undefined;
+  const header = ctx.editor.children.at(0);
+
   if (header?.type !== "formHeader") return null;
 
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<TElement> = {};
+
   if (op.title) updates.title = op.title;
+
   if (op.iconKeyword) {
     const iconName = matchIcon(op.iconKeyword);
+
     if (iconName) updates.icon = iconName;
   }
+
   if (op.coverColor && HEX_COLOR_PATTERN.test(op.coverColor)) {
     updates.cover = op.coverColor;
   }
@@ -163,22 +180,28 @@ const applySetTheme = (op: SetThemeOp, ctx: ApplyContext): AppliedOp | null => {
   void (async () => {
     const collectionsModule = await import("@/collections");
     const localModule = await import("@/collections/local/form");
-    const { mergeSetThemeOpIntoCustomization } = await import("@/lib/editor/merge-theme");
+
+    const { mergeSetThemeOpIntoCustomization, isCustomizationRecord } =
+      await import("@/lib/editor/merge-theme");
 
     const updateDraft = (draft: { customization?: unknown; updatedAt?: string }) => {
-      const current = (draft.customization ?? {}) as Record<string, string>;
+      const raw = draft.customization;
+      const current = isCustomizationRecord(raw) ? raw : {};
       draft.customization = mergeSetThemeOpIntoCustomization(current, op);
       draft.updatedAt = new Date().toISOString();
     };
 
     // Try cloud form listings first, fall back to local drafts.
     const cloud = collectionsModule.getFormListings();
+
     if (cloud.get(ctx.formId)) {
-      cloud.update(ctx.formId, updateDraft as never);
+      cloud.update(ctx.formId, (draft) => updateDraft(draft));
+
       return;
     }
+
     if (localModule.localFormCollection.get(ctx.formId)) {
-      localModule.localFormCollection.update(ctx.formId, updateDraft as never);
+      localModule.localFormCollection.update(ctx.formId, (draft) => updateDraft(draft));
     }
   })();
 
@@ -187,17 +210,21 @@ const applySetTheme = (op: SetThemeOp, ctx: ApplyContext): AppliedOp | null => {
 
 const applyAddPageBreak = (op: AddPageBreakOp, ctx: ApplyContext): AppliedOp => {
   const startPath = computeInsertPath(ctx);
-  const node = {
+
+  const node: TElement = {
     type: "pageBreak",
     isThankYouPage: op.isThankYou ?? false,
     children: [{ text: "" }],
-  } as unknown as TElement;
+  };
+
   ctx.editor.tf.insertNodes(node, { at: startPath });
   ctx.insertedCountRef.current++;
   advanceNextInsert(ctx, 1);
+
   if (op.isThankYou) {
     ctx.thankYouEmittedRef.current = true;
   }
+
   return {
     kind: "add-page-break",
     path: startPath,
@@ -208,9 +235,11 @@ const applyAddPageBreak = (op: AddPageBreakOp, ctx: ApplyContext): AppliedOp => 
 
 const applyReplaceField = (op: ReplaceFieldOp, ctx: ApplyContext): AppliedOp | null => {
   const path = ctx.initialPathRef.current;
+
   if (path.length === 0) return null;
 
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<TElement> = {};
+
   if (op.placeholder) updates.placeholder = op.placeholder;
   // label/fieldType/options need structural edits beyond setNodes; only placeholder
   // is live-patchable, caller handles structural replace.
@@ -254,10 +283,11 @@ export const applyOp = (op: Op, ctx: ApplyContext): AppliedOp | null => {
 
 /** Node at path, or null if out of bounds. Validates a stored path still points to
  * the expected node before mutating (normalization may have shifted nodes). */
-const nodeAt = (editor: PlateEditor, path: number[]): Record<string, unknown> | null => {
+const nodeAt = (editor: PlateEditor, path: number[]): TElement | null => {
   if (path.length !== 1) return null;
   const idx = path[0];
-  const children = editor.children as Array<Record<string, unknown>>;
+  const children = editor.children;
+
   return children[idx] ?? null;
 };
 
@@ -266,6 +296,7 @@ export const liveUpdateOp = (op: Op, prev: AppliedOp, editor: PlateEditor): Appl
     if (op.label && op.label !== prev.snapshot.label) {
       const labelPath = prev.path;
       const stored = nodeAt(editor, labelPath);
+
       // Mutate only if path still points to our formLabel; if shifted, skip silently
       // (snapshot still updates, so we don't loop).
       if (stored?.type === "formLabel") {
@@ -277,6 +308,7 @@ export const liveUpdateOp = (op: Op, prev: AppliedOp, editor: PlateEditor): Appl
         editor.tf.insertNodes({ text: op.label }, { at: [...labelPath, 0] });
       }
     }
+
     return { ...prev, snapshot: { ...prev.snapshot, ...op } };
   }
 
@@ -284,25 +316,32 @@ export const liveUpdateOp = (op: Op, prev: AppliedOp, editor: PlateEditor): Appl
     if (op.title && op.title !== prev.snapshot.title) {
       const path = prev.path;
       const stored = nodeAt(editor, path);
-      if (stored && typeof stored.type === "string" && /^h[1-3]$/.test(stored.type)) {
+
+      if (stored && /^h[1-3]$/.test(stored.type)) {
         editor.tf.removeNodes({ at: [...path, 0] });
         editor.tf.insertNodes({ text: op.title }, { at: [...path, 0] });
       }
     }
+
     return { ...prev, snapshot: { ...prev.snapshot, ...op } };
   }
 
   if (op.type === "set-header" && prev.kind === "set-header") {
-    const header = editor.children[0] as TElement | undefined;
+    const header = editor.children.at(0);
+
     if (header?.type === "formHeader") {
-      const updates: Record<string, unknown> = {};
+      const updates: Partial<TElement> = {};
+
       if (op.title && op.title !== prev.snapshot.title) {
         updates.title = op.title;
       }
+
       if (op.iconKeyword && op.iconKeyword !== prev.snapshot.iconKeyword) {
         const iconName = matchIcon(op.iconKeyword);
+
         if (iconName) updates.icon = iconName;
       }
+
       if (
         op.coverColor &&
         HEX_COLOR_PATTERN.test(op.coverColor) &&
@@ -310,10 +349,12 @@ export const liveUpdateOp = (op: Op, prev: AppliedOp, editor: PlateEditor): Appl
       ) {
         updates.cover = op.coverColor;
       }
+
       if (Object.keys(updates).length > 0) {
         editor.tf.setNodes(updates, { at: [0] });
       }
     }
+
     return { ...prev, snapshot: { ...prev.snapshot, ...op } };
   }
 
@@ -325,9 +366,11 @@ export const canLiveUpdate = (op: Op, prev: AppliedOp): boolean => {
   if (op.type === "add-field" && prev.kind === "add-field") {
     return op.label !== prev.snapshot.label || op.required !== prev.snapshot.required;
   }
+
   if (op.type === "add-section" && prev.kind === "add-section") {
     return op.title !== prev.snapshot.title;
   }
+
   if (op.type === "set-header" && prev.kind === "set-header") {
     return (
       op.title !== prev.snapshot.title ||
@@ -335,5 +378,6 @@ export const canLiveUpdate = (op: Op, prev: AppliedOp): boolean => {
       op.coverColor !== prev.snapshot.coverColor
     );
   }
+
   return false;
 };

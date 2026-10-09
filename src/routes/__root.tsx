@@ -1,3 +1,4 @@
+import { InterceptLinks } from "@/components/glimm-intercept-links";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
@@ -7,6 +8,7 @@ import type { Session } from "@/lib/auth/auth";
 import { seo } from "@/lib/seo";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { GlimmProvider } from "glimm/react";
 import { lazy, Suspense } from "react";
 // `?inline` = build-time CSS string, injected via single <style> in RootDocument so HeadContent emits no render-blocking <link>. (Side-effect import + inlineCss emitted both; Lighthouse −70ms.)
 import styles from "../styles/styles.css?inline";
@@ -36,6 +38,7 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
       {/* App CSS from `styles.css?inline` (build-time, no user input). Single source — HeadContent emits no render-blocking <link>. */}
       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: build-time CSS string, identical security posture to the theme init script below */}
       {/* eslint-disable-next-line react/no-danger -- build-time CSS bundle, no user input */}
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- Intentional <style> injection: build CSS bundle / generated per-form theme CSS */}
       <style dangerouslySetInnerHTML={APP_STYLE_PROP} />
       {/* Theme init script - static trusted content, not user input */}
       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Needed for theme initialization */}
@@ -57,7 +60,10 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
     >
       <ThemeProvider defaultTheme="system">
         <TooltipProvider>
-          {children}
+          <GlimmProvider palette="prism">
+            <InterceptLinks />
+            {children}
+          </GlimmProvider>
           <Suspense fallback={null}>
             <Toaster richColors />
           </Suspense>

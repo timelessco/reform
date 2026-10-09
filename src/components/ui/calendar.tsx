@@ -134,6 +134,8 @@ export const Calendar = ({
           if (orientation === "left") {
             return (
               <ChevronLeftIcon
+                // strokeWidth 2: match caption-dropdown chevron weight
+                strokeWidth={2}
                 className={cn("size-4 rtl:rotate-180", chevronClassName)}
                 {...chevronProps}
               />
@@ -143,6 +145,7 @@ export const Calendar = ({
           if (orientation === "right") {
             return (
               <ChevronRightIcon
+                strokeWidth={2}
                 className={cn("size-4 rtl:rotate-180", chevronClassName)}
                 {...chevronProps}
               />
@@ -175,14 +178,18 @@ export const Calendar = ({
  */
 const CalendarDropdown = ({ value, onChange, options }: DropdownProps) => {
   const themeReanchor = useReanchorThemeProps();
+
   return (
     <Select
       value={String(value)}
       onValueChange={(next) => {
         if (!onChange || next == null) return;
+
+        // SAFETY: RDP reads only target.value from this event; value comes from the selected option
         const synthetic = {
           target: { value: String(next) },
-        } as unknown as React.ChangeEvent<HTMLSelectElement>;
+        } as React.ChangeEvent<HTMLSelectElement>;
+
         onChange(synthetic);
       }}
     >
@@ -198,6 +205,7 @@ const CalendarDropdown = ({ value, onChange, options }: DropdownProps) => {
         align="start"
         alignItemWithTrigger={false}
         className={cn("max-h-60", themeReanchor.className)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
       >
         {options?.map((option) => (
@@ -239,7 +247,7 @@ export const CalendarDayButton = ({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground [&>span]:text-xs [&>span]:opacity-70",
+        "relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 font-normal data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground [&>span]:text-xs [&>span]:opacity-70",
         defaultClassNames.day,
         className,
       )}

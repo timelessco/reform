@@ -1,3 +1,4 @@
+import { log } from "evlog";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, sql } from "drizzle-orm";
 import { createError } from "@/lib/errors/create";
@@ -20,8 +21,10 @@ import {
 } from "@/lib/editor/transform-plate-to-form";
 import type { ErrorCode } from "@/lib/errors/codes";
 import { buildVisibleSchema, sanitizeSubmission } from "@/lib/logic/sanitize-submission";
+import { isEmailVerifiedToken } from "./email-otp.server";
 import { isServerPlan } from "./plan-helpers";
 import { recordOwnerSubmissionNotification } from "./notifications-helpers.server";
+import { upsertSubmissionByDraft } from "./public-submissions-upsert.server";
 import { sendFormSubmissionNotification, sendRespondentConfirmation } from "@/integrations/email";
 
 // Gate-relevant subset of forms.settings actually read server-side. looseObject so
@@ -38,48 +41,61 @@ const versionSettingsSchema = v.looseObject({
   respondentEmailSubject: v.optional(v.nullable(v.string())),
   respondentEmailBody: v.optional(v.nullable(v.string())),
 });
+
 type VersionSettings = v.InferOutput<typeof versionSettingsSchema>;
 
 // Inlined waitUntil: @vercel/functions re-exports ./cache → @vercel/oidc CJS, which
 // Vite 7's dev module runner can't eval (crashes dev). Read Vercel's Symbol-keyed
 // request-context global directly; non-Vercel: symbol unset, promise runs unattached.
 const VERCEL_REQUEST_CONTEXT = Symbol.for("@vercel/request-context");
+
 const waitUntil = (promise: Promise<unknown>) => {
   const ctx = (
     globalThis as {
       [k: symbol]: { get?: () => { waitUntil?: (p: Promise<unknown>) => void } } | undefined;
     }
   )[VERCEL_REQUEST_CONTEXT];
+
   ctx?.get?.()?.waitUntil?.(promise);
 };
 
 // Draft-save payload cap: stops malicious clients stuffing blobs into anon public rows.
 const MAX_DRAFT_PAYLOAD_BYTES = 100_000;
+
 // Min interval between draft upserts per draftId; defends against runaway/malicious client.
 const DRAFT_RATE_LIMIT_MS = 900;
 
 // In-memory per-process rate-limit map (single-node only; swap for Redis/KV if scaling
 // horizontally). Bounded via opportunistic eviction in handler.
 const draftLastWriteAt = new Map<string, number>();
+
 const DRAFT_RATE_LIMIT_TTL_MS = DRAFT_RATE_LIMIT_MS * 20;
+
 const DRAFT_RATE_LIMIT_MAX_ENTRIES = 10_000;
 
 // Per-version allowed-field-name cache: version content is immutable per id, transform once.
 const ALLOWED_FIELDS_CACHE_MAX = 500;
+
 const allowedFieldsByVersion = new Map<string, Set<string>>();
 
 const getAllowedFieldNames = (versionId: string | null, content: Value): Set<string> | null => {
   if (!versionId) return null;
   const cached = allowedFieldsByVersion.get(versionId);
+
   if (cached) return cached;
+
   try {
     const fields = getEditableFields(transformPlateStateToFormElements(content));
     const set = new Set(fields.map((f) => f.name));
+
     if (allowedFieldsByVersion.size >= ALLOWED_FIELDS_CACHE_MAX) {
       const firstKey = allowedFieldsByVersion.keys().next().value;
+
       if (firstKey) allowedFieldsByVersion.delete(firstKey);
     }
+
     allowedFieldsByVersion.set(versionId, set);
+
     return set;
   } catch {
     return null;
@@ -96,7 +112,7 @@ const getAllowedFieldNames = (versionId: string | null, content: Value): Set<str
  * don't take effect until republish.
  */
 export const createPublicSubmission = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       data: v.record(v.string(), v.any()),
@@ -104,12 +120,15 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       draftId: v.optional(v.pipe(v.string(), v.uuid())),
       lastStepReached: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
       visitId: v.nullish(v.pipe(v.string(), v.uuid())),
+      /** fieldName → verified token from verifyEmailOtp, for "Verify email" fields. */
+      emailVerification: v.optional(v.record(v.string(), v.pipe(v.string(), v.maxLength(2048)))),
     }),
   )
   .handler(async ({ data }) => {
     // Payload guard for incomplete only; completed submits trust published schema's validators.
     if (!data.isCompleted) {
       const payloadSize = JSON.stringify(data.data).length;
+
       if (payloadSize > MAX_DRAFT_PAYLOAD_BYTES) {
         throw createError({
           code: "submissions/draft-too-large" satisfies ErrorCode,
@@ -120,6 +139,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
           internal: { byteSize: payloadSize, maxBytes: MAX_DRAFT_PAYLOAD_BYTES },
         });
       }
+
       if (!data.draftId) {
         throw createError({
           code: "submissions/missing-draft-id" satisfies ErrorCode,
@@ -129,12 +149,16 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
           fix: "Generate and persist a draftId before saving partial responses",
         });
       }
+
       const now = Date.now();
       const lastAt = draftLastWriteAt.get(data.draftId) ?? 0;
+
       if (now - lastAt < DRAFT_RATE_LIMIT_MS) {
         return { submissionId: null, success: true, throttled: true };
       }
+
       draftLastWriteAt.set(data.draftId, now);
+
       if (draftLastWriteAt.size > DRAFT_RATE_LIMIT_MAX_ENTRIES) {
         for (const [key, ts] of draftLastWriteAt) {
           if (now - ts > DRAFT_RATE_LIMIT_TTL_MS) draftLastWriteAt.delete(key);
@@ -199,6 +223,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         internal: { formId: data.formId },
       });
     }
+
     if (
       vSettings.closeOnDate &&
       vSettings.closeDate &&
@@ -213,12 +238,14 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         internal: { formId: data.formId, closeDate: vSettings.closeDate },
       });
     }
+
     if (vSettings.limitSubmissions && vSettings.maxSubmissions) {
       // Count only completed rows toward the cap; incomplete drafts mustn't exhaust quota.
       const [{ value: submissionCount }] = await db
         .select({ value: count() })
         .from(submissions)
         .where(and(eq(submissions.formId, data.formId), eq(submissions.isCompleted, true)));
+
       if (submissionCount >= vSettings.maxSubmissions) {
         throw createError({
           code: "forms/closed" satisfies ErrorCode,
@@ -237,8 +264,10 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 
     // Shape-only sanitize for drafts: strip keys not on published form.
     let sanitizedData = data.data;
+
     if (!data.isCompleted && version?.content) {
       const allowed = getAllowedFieldNames(form.lastPublishedVersionId, version.content as Value);
+
       if (allowed && allowed.size > 0) {
         sanitizedData = Object.fromEntries(
           Object.entries(data.data).filter(([k]) => allowed.has(k)),
@@ -253,6 +282,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       const publishedContent = version.content as Value;
       const { data: cleaned } = sanitizeSubmission(publishedContent, data.data);
       const result = v.safeParse(buildVisibleSchema(publishedContent, data.data), cleaned);
+
       if (!result.success) {
         throw createError({
           code: "submissions/invalid" satisfies ErrorCode,
@@ -263,41 +293,53 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
           internal: { issueCount: result.issues.length },
         });
       }
+
+      // Verify-email gate: every visible "Verify email" field with a value must carry a
+      // verified token matching that exact email + form. Don't trust the client UI.
+      const verifyFields = getEditableFields(
+        transformPlateStateToFormElements(publishedContent),
+      ).filter((f) => f.fieldType === "Email" && f.verifyEmail === true);
+
+      for (const field of verifyFields) {
+        const value = cleaned[field.name];
+
+        if (typeof value !== "string" || value.trim() === "") continue; // hidden/empty → skip
+        const token = data.emailVerification?.[field.name];
+
+        if (!token || !isEmailVerifiedToken(token, value, data.formId)) {
+          throw createError({
+            code: "submissions/email-not-verified" satisfies ErrorCode,
+            status: 400,
+            message: "Email address has not been verified",
+            why: "A Verify-email field was submitted without a valid verification token",
+            fix: "Complete the email verification step before submitting",
+            internal: { fieldName: field.name },
+          });
+        }
+      }
+
       sanitizedData = cleaned;
-    }
-
-    const existing = data.draftId
-      ? await db
-          .select({
-            id: submissions.id,
-            isCompleted: submissions.isCompleted,
-          })
-          .from(submissions)
-          .where(and(eq(submissions.formId, data.formId), eq(submissions.draftId, data.draftId)))
-          .limit(1)
-      : [];
-    const existingRow = existing[0];
-
-    // Defense in depth: never downgrade completed → incomplete on out-of-order debounced save.
-    if (existingRow?.isCompleted && !data.isCompleted) {
-      return { submissionId: existingRow.id, success: true, noop: true };
     }
 
     const now = new Date();
     let submissionId: string;
+    // Prior completed state of the (formId, draftId) row, if it already existed. Drives the
+    // no-downgrade noop and the once-only finalize/notification logic below.
+    let wasCompleted = false;
 
-    if (existingRow) {
-      submissionId = existingRow.id;
-      await db
-        .update(submissions)
-        .set({
-          data: sanitizedData,
-          isCompleted: data.isCompleted,
-          lastStepReached: data.lastStepReached ?? null,
-          updatedAt: now,
-          formVersionId: form.lastPublishedVersionId,
-        })
-        .where(eq(submissions.id, existingRow.id));
+    if (data.draftId) {
+      const result = await upsertSubmissionByDraft({
+        formId: data.formId,
+        draftId: data.draftId,
+        formVersionId: form.lastPublishedVersionId,
+        data: sanitizedData,
+        isCompleted: data.isCompleted,
+        lastStepReached: data.lastStepReached ?? null,
+        now,
+      });
+
+      submissionId = result.submissionId;
+      wasCompleted = result.wasCompleted;
     } else {
       submissionId = crypto.randomUUID();
       await db.insert(submissions).values({
@@ -306,15 +348,22 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         formVersionId: form.lastPublishedVersionId,
         data: sanitizedData,
         isCompleted: data.isCompleted,
-        draftId: data.draftId ?? null,
+        draftId: null,
         lastStepReached: data.lastStepReached ?? null,
         createdAt: now,
         updatedAt: now,
       });
     }
 
+    // Defense in depth: never downgrade completed → incomplete on out-of-order debounced save.
+    // The upsert's CASE guard already left the stored row untouched; just short-circuit here.
+    if (wasCompleted && !data.isCompleted) {
+      return { submissionId, success: true, noop: true };
+    }
+
     // Notifications + emails only fire on final submit, not on each draft save.
-    const isFinalizing = data.isCompleted && (!existingRow || !existingRow.isCompleted);
+    const isFinalizing = data.isCompleted && !wasCompleted;
+
     if (isFinalizing) {
       // creator may be NULL after user delete (FK SET NULL).
       if (form.createdByUserId) {
@@ -344,7 +393,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
             data.formId,
             submissionId,
             sanitizedData,
-          ).catch((err) => console.error("[Email] Notification error:", err)),
+          ).catch((err) => log.error({ tag: "Email", msg: "Notification error", error: err })),
         );
       }
 
@@ -382,11 +431,13 @@ const findRespondentEmail = (data: Record<string, unknown>): string | null => {
       return value;
     }
   }
+
   for (const value of Object.values(data)) {
     if (typeof value === "string" && EMAIL_REGEX.test(value)) {
       return value;
     }
   }
+
   return null;
 };
 
@@ -417,6 +468,7 @@ const sendEmailNotifications = async (
         .select({ email: user.email })
         .from(user)
         .where(eq(user.id, createdByUserId));
+
       toEmail = owner?.email ?? null;
     }
 
@@ -425,24 +477,28 @@ const sendEmailNotifications = async (
         .select({ title: forms.title })
         .from(forms)
         .where(eq(forms.id, formId));
+
       sendFormSubmissionNotification(
         toEmail,
         formRow?.title ?? "Untitled Form",
         submissionId,
         submissionData,
-      ).catch((err) => console.error("[Email] Self notification error:", err));
+      ).catch((err) => log.error({ tag: "Email", msg: "Self notification error", error: err }));
     }
   }
 
   if (settings.respondentEmailNotifications) {
     const respondentEmail = findRespondentEmail(submissionData);
+
     if (respondentEmail) {
       const subject = settings.respondentEmailSubject || "Thank you for your submission";
+
       const body =
         settings.respondentEmailBody ||
         "Thank you for filling out our form. We have received your response.";
+
       sendRespondentConfirmation(respondentEmail, subject, body).catch((err) =>
-        console.error("[Email] Respondent notification error:", err),
+        log.error({ tag: "Email", msg: "Respondent notification error", error: err }),
       );
     }
   }

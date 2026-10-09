@@ -2,12 +2,19 @@ import { StaticContentBlock } from "@/components/form-components/static-content-
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
-import type { PublicFormTracking, TrackingBase } from "@/contexts/step-form-context";
+import { Image } from "@/components/ui/image";
+import { COVER_SRCSET_WIDTHS } from "@/lib/vercel-image";
+import { EmailVerificationContext } from "@/components/form-components/email-verification-context";
+import type { EmailVerificationStore } from "@/components/form-components/email-verification-context";
+import {
+  FormPreviewReadOnlyContext,
+  StepFormProvider,
+  useStepForm,
+} from "@/contexts/step-form-context";
+import type { TrackingBase } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
-import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { extractFormHeader } from "@/lib/editor/transform-plate-to-form";
+import { DEFAULT_COVER_POSITION } from "@/lib/form-schema/form-header-factory";
 import {
   chunkSegmentsForFieldByField,
   transformPlateForPreview,
@@ -21,32 +28,16 @@ import { DEFAULT_ICON } from "@/lib/config/app-config";
 import { cn, DEFAULT_ICON_NAME, isHexColor, isValidUrl } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { IconPickerPreview } from "@/components/icon-picker";
-import { SuccessCheck } from "@/components/transitions/success-check";
-import { AnimatePresence, domAnimation, LazyMotion, m } from "motion/react";
+import { AnimatePresence, domAnimation, LazyMotion, m, useReducedMotion } from "motion/react";
 import type { Value } from "platejs";
-import { useEffect, useMemo, useRef, useState } from "react";
-
-const NoContentPlaceholderIcon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="48"
-    height="48"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="mx-auto mb-4 opacity-50"
-  >
-    <title>No content placeholder</title>
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" x2="8" y1="13" y2="13" />
-    <line x1="16" x2="8" y1="17" y2="17" />
-    <line x1="10" x2="8" y1="9" y2="9" />
-  </svg>
-);
+import { use, useMemo, useRef, useState } from "react";
+import { useRedirectCompletion } from "@/hooks/use-redirect-completion";
+import {
+  buildTracking,
+  DefaultThankYou,
+  NoContentPlaceholder,
+  ShareWithOthers,
+} from "./preview-shared";
 
 interface FormPreviewFromPlateProps {
   /** Plate editor content array */
@@ -79,12 +70,15 @@ interface FormPreviewFromPlateProps {
   boundToParent?: boolean;
   /** Analytics base ({ visitId, visitorHash }). Public route only; undefined in builder previews disables tracking. */
   trackingBase?: TrackingBase;
+  /** "Verify email" runtime store. Live public route passes mode:"live" (real OTP emails +
+   * tokens sent on submit); undefined ⇒ mock (toast shows the code, nothing emailed). */
+  emailVerification?: EmailVerificationStore;
+  /** Read-only record view (submission single-view): stacks all steps, hides nav +
+   * repeatable add/remove. Pair with an `inert` wrapper to fully disable interaction. */
+  readOnly?: boolean;
 }
 
-const PAGE_MAX_WIDTH = {
-  editor: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
-  public: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
-} as const;
+const PAGE_MAX_WIDTH_CLASS = "max-w-[var(--bf-page-width,700px)]";
 
 // Form header (icon + cover). Mirrors editor's form-header.tsx rendering.
 const PreviewFormHeader = ({
@@ -92,6 +86,7 @@ const PreviewFormHeader = ({
   icon,
   iconColor,
   cover,
+  coverPosition,
   hideTitle,
   layout,
   customization,
@@ -101,6 +96,7 @@ const PreviewFormHeader = ({
   icon?: string;
   iconColor?: string | null;
   cover?: string;
+  coverPosition?: number | null;
   hideTitle?: boolean;
   layout: "public" | "editor";
   customization?: Record<string, string> | null;
@@ -111,16 +107,20 @@ const PreviewFormHeader = ({
   const handleImageError = () => setImageError(true);
   const handleIconError = () => setIconError(true);
   const headerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const hasCustomization = !!(customization && Object.keys(customization).length > 0);
+
   const isLogoMinimal =
     hasCustomization && !!customization?.logoWidth && Number.parseInt(customization.logoWidth) <= 0;
+
   const logoCircleSize =
     hasCustomization && customization?.logoWidth
       ? String(Math.max(48, Number.parseInt(customization.logoWidth)))
       : "100";
 
-  // Check if we have valid cover (URL or hex color)
+  // Check if we have valid cover (URL or hex color). Shown as a flush banner in the popup too
+  // (Figma 26889); no cover → the uncovered title-only header (26883). Same for card + one-at-a-time.
   const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
   // Popup: icon already shown as bubble, hide inside body (space + no dup).
   const hasIcon = !!icon && !iconError && !isPopup;
@@ -130,32 +130,57 @@ const PreviewFormHeader = ({
     return null;
   }
 
-  // Full-bleed cover using viewport-width trick (matches editor's form-header-node.tsx)
+  // Full-bleed cover using container-width breakout (matches editor; cqw → nearest data-bf-cover-pane, viewport fallback)
   const coverClass =
-    "relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px]";
+    "relative w-[100cqw] left-[50%] right-[50%] -ml-[50cqw] -mr-[50cqw] h-[146px] sm:h-[243px]";
 
   const renderCover = () => {
     if (!cover) return null;
 
     if (isHexColor(cover)) {
-      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
+      return (
+        <div
+          className={cn(coverClass, "bg-(--bf-cover-bg)")}
+          data-bf-cover
+          style={{ "--bf-cover-bg": cover } as React.CSSProperties}
+        />
+      );
     }
 
     if (isValidUrl(cover) && !imageError) {
       return (
         <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
+          {/* Ambient glow: blurred copy behind the card (Fit-only, gated by --bf-cover-glow). */}
+          <Image
+            src={cover}
+            alt=""
+            width={640}
+            height={200}
+            aria-hidden
+            draggable={false}
+            data-bf-cover-glow
+          />
           {cover.includes("tint=true") && (
             <div className="pointer-events-none absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color" />
           )}
-          <img
+          <Image
             src={cover}
             alt="Form cover"
             width={1200}
             height={200}
+            priority
+            sizes="100vw"
+            srcSetWidths={[...COVER_SRCSET_WIDTHS]}
             className={cn(
-              "size-full object-cover",
+              "size-full object-cover [object-position:var(--bf-cover-position)]",
               cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
+            // Honor the reposition customization (coverPosition); default matches editor + Figma.
+            style={
+              {
+                "--bf-cover-position": `center ${coverPosition ?? DEFAULT_COVER_POSITION}%`,
+              } as React.CSSProperties
+            }
             onError={handleImageError}
           />
         </div>
@@ -189,7 +214,7 @@ const PreviewFormHeader = ({
     if (isValidUrl(icon) && !iconError) {
       return (
         <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
-          <img
+          <Image
             src={icon}
             alt="Form icon"
             width={120}
@@ -225,13 +250,10 @@ const PreviewFormHeader = ({
         {/* Cover sits in a page-width container so "fit" (calc(100% + 56px)) tracks the form
             width, not the full pane; "fill" still breaks out to 100vw via its var fallback. */}
         {hasCover && (
-          <div className="mx-auto w-full" style={{ maxWidth: PAGE_MAX_WIDTH.editor }}>
-            {renderCover()}
-          </div>
+          <div className={cn("mx-auto w-full", PAGE_MAX_WIDTH_CLASS)}>{renderCover()}</div>
         )}
         <div
-          className="mx-auto w-full px-8 md:px-0"
-          style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
+          className={cn("mx-auto w-full px-8 md:px-0", PAGE_MAX_WIDTH_CLASS)}
           data-bf-form-container
         >
           {hasIcon && renderIcon()}
@@ -242,22 +264,44 @@ const PreviewFormHeader = ({
           <div
             className={cn(
               "flex gap-1",
-              !hasCover && !hasIcon && "mt-8 sm:mt-12",
-              hasCover && !hasIcon && "mt-4",
+              // Popup has no editor toolbar row → no spacer/margin; title sits at the card top (Figma).
+              !isPopup && !hasCover && !hasIcon && "mt-8 sm:mt-12",
+              !isPopup && hasCover && !hasIcon && "mt-4",
               hasIcon && "mt-0",
             )}
           >
-            {(!hasCover || !hasIcon) && <div className="h-8" />}
+            {!isPopup && (!hasCover || !hasIcon) && <div className="h-8" />}
           </div>
-          {hasTitle && (
-            <h1
-              data-bf-title
-              style={{ textWrap: "pretty" }}
-              className="mt-4 font-serif text-4xl font-light -tracking-[0.03em] text-foreground sm:text-[48px]"
-            >
-              {title}
-            </h1>
-          )}
+          {/* Title collapse: hideTitle toggle in the Share panel unmounts the h1; AnimatePresence
+              animates the height/opacity/margin so the layout reflows smoothly instead of snapping.
+              initial={false} skips the entrance on first paint (only toggles animate). The exiting
+              clone keeps its last title text even though the prop is wiped to "" upstream. */}
+          <LazyMotion features={domAnimation} strict>
+            <AnimatePresence initial={false}>
+              {hasTitle && (
+                <m.h1
+                  key="bf-title"
+                  data-bf-title
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+                  }
+                  className={cn(
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- -0.03em sits between tracking-tight and tracking-tighter; nearest would shift title rendering
+                    "overflow-hidden font-serif font-light -tracking-[0.03em] text-pretty text-foreground",
+                    // Popup card (Figma 26883/26889): compact 24px title, not the 48px full-page size.
+                    isPopup ? "text-2xl" : "text-4xl sm:text-9xl",
+                  )}
+                >
+                  {title}
+                </m.h1>
+              )}
+            </AnimatePresence>
+          </LazyMotion>
         </div>
       </div>
     );
@@ -268,23 +312,22 @@ const PreviewFormHeader = ({
     <div ref={headerRef} className="mb-7 w-full">
       {/* Cover in a page-width container so "fit" tracks form width; "fill" still hits 100vw. */}
       {hasCover && (
-        <div className="mx-auto w-full" style={{ maxWidth: PAGE_MAX_WIDTH.public }}>
-          {renderCover()}
-        </div>
+        <div className={cn("mx-auto w-full", PAGE_MAX_WIDTH_CLASS)}>{renderCover()}</div>
       )}
 
-      <div
-        className="mx-auto px-4"
-        style={{ maxWidth: PAGE_MAX_WIDTH.public }}
-        data-bf-form-container
-      >
+      <div className={cn("mx-auto px-4", PAGE_MAX_WIDTH_CLASS)} data-bf-form-container>
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
               data-bf-title
-              style={{ textWrap: "pretty" }}
-              className={`font-serif text-4xl font-light -tracking-[0.03em] text-foreground sm:text-[48px] ${hasIcon ? "mt-3" : "mt-6 sm:mt-8"}`}
+              className={cn(
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- -0.03em sits between tracking-tight and tracking-tighter; nearest would shift title rendering
+                "font-serif font-light -tracking-[0.03em] text-pretty text-foreground",
+                isPopup ? "text-2xl" : "text-4xl sm:text-9xl",
+                // Popup header row (Figma 26883 py-12): 12px top so the title centers with the close.
+                isPopup ? "mt-3" : hasIcon ? "mt-3" : "mt-6 sm:mt-8",
+              )}
             >
               {title}
             </h1>
@@ -294,26 +337,6 @@ const PreviewFormHeader = ({
     </div>
   );
 };
-
-// "Share with others" row (link + copy) on thank-you page.
-const ShareWithOthers = ({ shareUrl }: { shareUrl: string }) => (
-  <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2 pt-4">
-    <p className="text-sm text-muted-foreground">Share with others</p>
-    <div className="flex h-[30px] w-full items-center gap-[6px] rounded-lg bg-muted/60 py-[3px] pr-[3px] pl-[10px]">
-      <span className="min-w-0 flex-1 truncate text-sm font-normal text-muted-foreground">
-        {shareUrl}
-      </span>
-      <CopyButton
-        text={shareUrl}
-        variant="ghost"
-        size="sm"
-        className="h-6 shrink-0 gap-1 rounded-[5px] border-none bg-background px-2 text-sm text-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] [&_svg]:size-[13px]"
-      >
-        Copy
-      </CopyButton>
-    </div>
-  </div>
-);
 
 // Thank-you page is static-only — rendered via PlateStatic.
 const RenderThankYouContent = ({
@@ -326,6 +349,7 @@ const RenderThankYouContent = ({
   shareUrl?: string;
 }) => {
   const { t } = useTranslation();
+
   return (
     <div data-bf-field-list>
       <StaticContentBlock nodes={nodes} />
@@ -341,25 +365,6 @@ const RenderThankYouContent = ({
             {t("submitAnother")}
           </Button>
         </div>
-      )}
-      {shareUrl && <ShareWithOthers shareUrl={shareUrl} />}
-    </div>
-  );
-};
-
-const DefaultThankYou = ({ onReset, shareUrl }: { onReset?: () => void; shareUrl?: string }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-        <SuccessCheck size={32} className="text-green-600" />
-      </div>
-      <h2 className="mb-2 text-2xl font-semibold">{t("thankYou")}</h2>
-      <p className="mb-6 text-muted-foreground">{t("responseSubmitted")}</p>
-      {onReset && (
-        <Button type="button" onClick={onReset} variant="outline" size="sm" className="rounded-lg">
-          {t("submitAnother")}
-        </Button>
       )}
       {shareUrl && <ShareWithOthers shareUrl={shareUrl} />}
     </div>
@@ -384,6 +389,8 @@ export const FormPreviewFromPlate = ({
   isPopup = false,
   boundToParent = false,
   trackingBase,
+  emailVerification,
+  readOnly = false,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -392,6 +399,7 @@ export const FormPreviewFromPlate = ({
   const icon = hasHeaderNode ? (headerFromContent.icon ?? undefined) : legacyIcon;
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
   const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
+  const coverPosition = hasHeaderNode ? headerFromContent.coverPosition : null;
 
   const { steps: rawSteps, thankYouNodes } = useMemo(
     () => transformPlateForPreview(content),
@@ -422,59 +430,45 @@ export const FormPreviewFromPlate = ({
   );
 
   if (steps.length === 0 || steps.flat().length === 0) {
-    return (
-      <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
-        <div className="mb-4 text-muted-foreground">{NoContentPlaceholderIcon}</div>
-        <h3 className="mb-2 text-lg">No Content Yet</h3>
-        <p className="max-w-md text-sm text-muted-foreground">
-          Add content to the editor to see the preview.
-        </p>
-      </div>
-    );
+    return <NoContentPlaceholder />;
   }
 
-  // Per ADR-0002 tracking always on — card forms still emit per-Question view/start/complete (Step mounts once, focus per Question, complete per Question on Submit).
-  const isFieldByField = settings?.presentationMode === "field-by-field";
-  const trackingMode: PublicFormTracking["mode"] = isFieldByField ? "field-by-field" : "card";
-  const tracking: PublicFormTracking | null =
-    trackingBase && formId
-      ? {
-          visitId: trackingBase.visitId,
-          visitorHash: trackingBase.visitorHash,
-          formId,
-          mode: trackingMode,
-        }
-      : null;
+  const tracking = buildTracking(trackingBase, formId, settings?.presentationMode ?? "card");
 
   return (
-    <StepFormProvider
-      totalSteps={steps.length}
-      onSubmit={onSubmit}
-      formId={formId}
-      saveAnswersForLater={settings?.saveAnswersForLater}
-      initialFormData={initialFormData}
-      initialCurrentStep={initialCurrentStep}
-      tracking={tracking}
-    >
-      <FormLogicProvider value={formLogic}>
-        <FormPreviewContent
-          shortId={shortId}
-          steps={steps}
-          stepQuestions={stepQuestions}
-          thankYouNodes={thankYouNodes}
-          title={title}
-          icon={icon}
-          iconColor={iconColor}
-          cover={cover}
-          hideTitle={hideTitle}
-          layout={layout}
-          settings={settings}
-          customization={customization}
-          isPopup={isPopup}
-          boundToParent={boundToParent}
-        />
-      </FormLogicProvider>
-    </StepFormProvider>
+    <FormPreviewReadOnlyContext.Provider value={readOnly}>
+      <EmailVerificationContext.Provider value={emailVerification ?? null}>
+        <StepFormProvider
+          totalSteps={steps.length}
+          onSubmit={onSubmit}
+          formId={formId}
+          saveAnswersForLater={settings?.saveAnswersForLater}
+          initialFormData={initialFormData}
+          initialCurrentStep={initialCurrentStep}
+          tracking={tracking}
+        >
+          <FormLogicProvider value={formLogic}>
+            <FormPreviewContent
+              shortId={shortId}
+              steps={steps}
+              stepQuestions={stepQuestions}
+              thankYouNodes={thankYouNodes}
+              title={title}
+              icon={icon}
+              iconColor={iconColor}
+              cover={cover}
+              coverPosition={coverPosition}
+              hideTitle={hideTitle}
+              layout={layout}
+              settings={settings}
+              customization={customization}
+              isPopup={isPopup}
+              boundToParent={boundToParent}
+            />
+          </FormLogicProvider>
+        </StepFormProvider>
+      </EmailVerificationContext.Provider>
+    </FormPreviewReadOnlyContext.Provider>
   );
 };
 
@@ -495,42 +489,6 @@ const stepVariants = {
   }),
 };
 
-const useRedirectCountdown = (isSubmitted: boolean, settings?: PublicFormSettings) => {
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
-
-  // eslint-disable-next-line react-doctor/no-cascading-set-state -- single state (redirectCountdown) updated via initial set + interval functional updater; not cascading independent state
-  useEffect(() => {
-    if (!isSubmitted) return;
-    if (!settings?.redirectOnCompletion || !settings?.redirectUrl) return;
-
-    const delay = settings.redirectDelay ?? 0;
-
-    if (delay === 0) {
-      window.location.href = settings.redirectUrl;
-      return;
-    }
-
-    setRedirectCountdown(delay);
-
-    const interval = setInterval(() => {
-      setRedirectCountdown((prev) => {
-        if (prev === null || prev <= 1) {
-          clearInterval(interval);
-          if (settings.redirectUrl) {
-            window.location.href = settings.redirectUrl;
-          }
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isSubmitted, settings?.redirectOnCompletion, settings?.redirectUrl, settings?.redirectDelay]);
-
-  return redirectCountdown;
-};
-
 interface ThankYouViewProps {
   thankYouNodes: Value | null;
   onReset?: () => void;
@@ -545,6 +503,7 @@ const ThankYouView = ({
   redirectCountdown,
 }: ThankYouViewProps) => {
   const { t } = useTranslation();
+
   return (
     <LazyMotion features={domAnimation} strict>
       <m.div
@@ -579,6 +538,7 @@ interface LayoutProps {
   icon?: string;
   iconColor?: string | null;
   cover?: string;
+  coverPosition?: number | null;
   hideTitle?: boolean;
   layout: "public" | "editor";
   settings?: PublicFormSettings;
@@ -589,77 +549,23 @@ interface LayoutProps {
   redirectCountdown: number | null;
 }
 
-const FieldByFieldHeaderIcon = ({
-  icon,
-  iconColor,
-  hasCustomization,
-}: {
-  icon: string;
-  iconColor?: string | null;
-  hasCustomization?: boolean;
-}) => {
-  if (icon === DEFAULT_ICON) {
-    return (
-      <span className="flex-shrink-0" data-bf-logo-icon>
-        <IconPickerPreview
-          icon={DEFAULT_ICON_NAME}
-          iconColor={undefined}
-          useThemeColor
-          iconSize="40"
-          size="80"
-        />
-      </span>
-    );
-  }
-
-  if (isValidUrl(icon)) {
-    return (
-      <img
-        src={icon}
-        alt=""
-        width={80}
-        height={80}
-        className="size-20 flex-shrink-0 rounded-md object-cover"
-        data-bf-logo
-      />
-    );
-  }
-
-  return (
-    <span className="flex-shrink-0" data-bf-logo-icon>
-      <IconPickerPreview
-        icon={icon}
-        // Mirror editor: theme color on themed forms, explicit iconColor only on unthemed. No `standaloneIcon` (same currentColor-through-<use> reason as card-mode header).
-        iconColor={hasCustomization ? undefined : iconColor || undefined}
-        useThemeColor={hasCustomization || !iconColor}
-        iconSize="40"
-        size="80"
-      />
-    </span>
-  );
-};
-
 const FieldByFieldLayout = ({
   steps,
   stepQuestions,
   thankYouNodes,
   title,
   icon,
-  iconColor,
   cover,
+  coverPosition,
   hideTitle,
   layout,
   settings,
   customization,
   isPopup,
-  boundToParent,
   shareUrl,
   redirectCountdown,
 }: LayoutProps) => {
-  const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
-  const hasCustomization = !!(customization && Object.keys(customization).length > 0);
-  const coverIsImage = cover && isValidUrl(cover);
-  const coverIsColor = cover && isHexColor(cover);
+  const { currentStep, isSubmitted, direction, reset } = useStepForm();
   const isLastStep = currentStep === steps.length - 1;
   const currentStepSegments = steps[currentStep] || [];
   const currentStepQuestions = stepQuestions[currentStep] || [];
@@ -671,125 +577,74 @@ const FieldByFieldLayout = ({
   // `currentStepSegments` (re-created via `|| []` each render).
   const segmentsKey = useMemo(() => JSON.stringify(steps[currentStep] || []), [steps, currentStep]);
 
-  // Popup: avatar already the bubble, hide inside (space + no dup).
-  const hasIcon = !!icon && !isPopup;
-  const showHeader = !hideTitle && (title || hasIcon);
-  const isPublic = layout === "public";
-  const hasTint = isPublic && coverIsImage && cover.includes("tint=true");
-
+  // One-at-a-time everywhere (full-page, popup AND embed): SAME header/container as card mode
+  // (PreviewFormHeader — title + optional cover, no full-bleed bg); only the below-header body
+  // changes to the Figma Back/Next footer (27112:20994 / 27015:16542 / 27112:20302). The popup
+  // gets its compact title + flush cover from POPUP_FORM_STYLE_VARS on the wrapper.
   return (
-    <div
-      className={cn(
-        "relative flex size-full flex-col overflow-hidden",
-        layout === "public"
-          ? isPopup || boundToParent
-            ? "max-h-full min-h-full"
-            : "min-h-screen"
-          : "min-h-[600px]",
-      )}
-      style={
-        isPublic
-          ? {
-              backgroundImage: coverIsImage ? `url("${cover}")` : undefined,
-              backgroundColor: coverIsColor ? cover : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }
-          : undefined
-      }
-      data-bf-cover
-    >
-      {hasTint && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 bg-primary opacity-50 mix-blend-color"
-        />
-      )}
+    <div className="w-full">
+      <PreviewFormHeader
+        title={title}
+        icon={icon}
+        cover={cover}
+        coverPosition={coverPosition}
+        hideTitle={hideTitle}
+        layout={layout}
+        customization={customization}
+        isPopup={isPopup}
+      />
 
-      {showHeader && (
-        <div
-          className={cn(
-            "relative z-10 flex items-center gap-4",
-            isPopup ? "px-4.5 pt-3" : "mx-auto w-full px-4 pt-6 sm:px-6 sm:pt-8",
-          )}
-          style={isPopup ? undefined : { maxWidth: PAGE_MAX_WIDTH[layout] }}
-        >
-          {hasIcon && icon && (
-            <FieldByFieldHeaderIcon
-              icon={icon}
-              iconColor={iconColor}
-              hasCustomization={hasCustomization}
-            />
-          )}
-          {title && (
-            <h1
-              data-bf-title
-              style={{ textWrap: "pretty" }}
-              className={cn(
-                "font-serif leading-none font-light -tracking-[0.03em] text-foreground",
-                isPopup ? "text-2xl sm:text-3xl" : "text-6xl sm:text-[48px]",
-              )}
-            >
-              {title}
-            </h1>
-          )}
-        </div>
-      )}
-
+      {/* No progress bar in one-at-a-time (removed by design). */}
       <div
-        className="relative z-10 mx-auto flex min-h-0 w-full flex-1 flex-col justify-center overflow-hidden px-4 pb-12 sm:px-6"
-        style={{
-          maxWidth: PAGE_MAX_WIDTH[layout],
-          ...(layout === "editor"
-            ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
-            : undefined),
-        }}
+        // Popup: 20px below the footer so it doesn't sit flush at the card edge (Figma 27015:16550 pb-20).
+        className={cn(
+          "mx-auto",
+          layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
+          PAGE_MAX_WIDTH_CLASS,
+          isPopup && "pb-5",
+        )}
+        style={
+          layout === "editor" ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties) : undefined
+        }
         data-bf-form-container
       >
-        {!isSubmitted && settings?.progressBar && totalSteps > 1 && (
-          <div className="mb-4 w-full">
-            <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
-          </div>
+        {isSubmitted ? (
+          <ThankYouView
+            thankYouNodes={thankYouNodes}
+            onReset={reset}
+            shareUrl={shareUrl}
+            redirectCountdown={redirectCountdown}
+          />
+        ) : (
+          <LazyMotion features={domAnimation} strict>
+            <AnimatePresence mode="wait" custom={direction}>
+              <m.div
+                key={currentStep}
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="w-full"
+              >
+                <StepForm
+                  key={`${currentStep}:${segmentsKey}`}
+                  stepIndex={currentStep}
+                  segments={currentStepSegments}
+                  questions={currentStepQuestions}
+                  isLastStep={isLastStep}
+                  autoActionButton
+                  navVariant="footer"
+                  branding={Boolean(settings?.branding)}
+                />
+              </m.div>
+            </AnimatePresence>
+          </LazyMotion>
         )}
-
-        <div className="w-full">
-          {isSubmitted ? (
-            <ThankYouView
-              thankYouNodes={thankYouNodes}
-              onReset={reset}
-              shareUrl={shareUrl}
-              redirectCountdown={redirectCountdown}
-            />
-          ) : (
-            <LazyMotion features={domAnimation} strict>
-              <AnimatePresence mode="wait" custom={direction}>
-                <m.div
-                  key={currentStep}
-                  custom={direction}
-                  variants={stepVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{
-                    x: { type: "spring", stiffness: 300, damping: 30 },
-                    opacity: { duration: 0.2 },
-                  }}
-                  className="w-full"
-                >
-                  <StepForm
-                    key={`${currentStep}:${segmentsKey}`}
-                    stepIndex={currentStep}
-                    segments={currentStepSegments}
-                    questions={currentStepQuestions}
-                    isLastStep={isLastStep}
-                    autoActionButton
-                  />
-                </m.div>
-              </AnimatePresence>
-            </LazyMotion>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -801,6 +656,7 @@ const LinearLayout = ({
   title,
   icon,
   cover,
+  coverPosition,
   hideTitle,
   layout,
   settings,
@@ -808,6 +664,9 @@ const LinearLayout = ({
   isPopup,
 }: LayoutProps) => {
   const { currentStep, totalSteps, direction } = useStepForm();
+  // Read-only record view (submission single-view): stack every step, drop the
+  // step animation + nav so all answers render in one scroll.
+  const readOnly = use(FormPreviewReadOnlyContext);
   const isLastStep = currentStep === steps.length - 1;
   const currentStepSegments = steps[currentStep] || [];
   const currentStepQuestions = stepQuestions[currentStep] || [];
@@ -825,6 +684,7 @@ const LinearLayout = ({
         title={title}
         icon={icon}
         cover={cover}
+        coverPosition={coverPosition}
         hideTitle={hideTitle}
         layout={layout}
         customization={customization}
@@ -833,8 +693,11 @@ const LinearLayout = ({
 
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className={cn("mx-auto mb-6", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
-          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
+          className={cn(
+            "mx-auto mb-6",
+            layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
+            PAGE_MAX_WIDTH_CLASS,
+          )}
           data-bf-form-container
         >
           <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
@@ -842,40 +705,58 @@ const LinearLayout = ({
       )}
 
       <div
-        className={cn("mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
-        style={{
-          maxWidth: PAGE_MAX_WIDTH[layout],
-          ...(layout === "editor"
-            ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
-            : undefined),
-        }}
+        className={cn(
+          "mx-auto",
+          layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
+          PAGE_MAX_WIDTH_CLASS,
+        )}
+        style={
+          layout === "editor" ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties) : undefined
+        }
         data-bf-form-container
       >
-        <LazyMotion features={domAnimation} strict>
-          <AnimatePresence mode="wait" custom={direction}>
-            <m.div
-              key={currentStep}
-              custom={direction}
-              variants={stepVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 },
-              }}
-              className="w-full"
-            >
+        {readOnly ? (
+          <div className="flex w-full flex-col gap-8">
+            {steps.map((segments, idx) => (
               <StepForm
-                key={`${currentStep}:${segmentsKey}`}
-                stepIndex={currentStep}
-                segments={currentStepSegments}
-                questions={currentStepQuestions}
-                isLastStep={isLastStep}
+                // eslint-disable-next-line @eslint-react/no-array-index-key
+                key={idx}
+                stepIndex={idx}
+                segments={segments}
+                questions={stepQuestions[idx] || []}
+                isLastStep={idx === steps.length - 1}
+                branding={false}
               />
-            </m.div>
-          </AnimatePresence>
-        </LazyMotion>
+            ))}
+          </div>
+        ) : (
+          <LazyMotion features={domAnimation} strict>
+            <AnimatePresence mode="wait" custom={direction}>
+              <m.div
+                key={currentStep}
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="w-full"
+              >
+                <StepForm
+                  key={`${currentStep}:${segmentsKey}`}
+                  stepIndex={currentStep}
+                  segments={currentStepSegments}
+                  questions={currentStepQuestions}
+                  isLastStep={isLastStep}
+                  branding={Boolean(settings?.branding)}
+                />
+              </m.div>
+            </AnimatePresence>
+          </LazyMotion>
+        )}
       </div>
     </div>
   );
@@ -889,6 +770,7 @@ const FormPreviewContent = (props: {
   icon?: string;
   iconColor?: string | null;
   cover?: string;
+  coverPosition?: number | null;
   hideTitle?: boolean;
   layout: "public" | "editor";
   settings?: PublicFormSettings;
@@ -898,15 +780,18 @@ const FormPreviewContent = (props: {
   shortId?: string;
 }) => {
   const { isSubmitted, reset } = useStepForm();
+
   const { shortId, settings, layout, isFieldByField, ...rest } = {
     ...props,
     isFieldByField: props.settings?.presentationMode === "field-by-field",
   };
-  const redirectCountdown = useRedirectCountdown(isSubmitted, settings);
+
+  const redirectCountdown = useRedirectCompletion(isSubmitted, settings);
 
   // Thank-you share URL. Built from shortId since editor preview's window.location is the editor route, not the public URL.
   const shareUrl = useMemo(() => {
     if (!shortId || typeof window === "undefined") return undefined;
+
     return `${window.location.origin}/forms/${shortId}`;
   }, [shortId]);
 
@@ -919,14 +804,18 @@ const FormPreviewContent = (props: {
           icon={rest.icon}
           iconColor={rest.iconColor}
           cover={rest.cover}
+          coverPosition={rest.coverPosition}
           hideTitle={rest.hideTitle}
           layout={layout}
           customization={rest.customization}
           isPopup={rest.isPopup}
         />
         <div
-          className={cn("mx-auto w-full", layout === "editor" ? "px-8 md:px-0" : "px-4")}
-          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
+          className={cn(
+            "mx-auto w-full",
+            layout === "editor" ? "px-8 md:px-0" : "px-4",
+            PAGE_MAX_WIDTH_CLASS,
+          )}
           data-bf-form-container
         >
           <ThankYouView

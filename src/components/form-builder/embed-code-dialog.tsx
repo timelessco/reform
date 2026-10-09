@@ -16,7 +16,9 @@ import { all, createLowlight } from "lowlight";
 import { toHtml } from "hast-util-to-html";
 
 const lowlight = createLowlight(all);
+
 const hljsClassName =
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- highlight.js syntax palette hexes have no identical theme tokens; token swap would recolor code output
   "py-1 **:[.hljs-addition]:bg-[#f0fff4] **:[.hljs-addition]:text-[#22863a] dark:**:[.hljs-addition]:bg-[#3c5743] dark:**:[.hljs-addition]:text-[#ceead5] **:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#005cc5] dark:**:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#6596cf] **:[.hljs-built\\\\_in,.hljs-symbol]:text-[#e36209] dark:**:[.hljs-built\\\\_in,.hljs-symbol]:text-[#c3854e] **:[.hljs-bullet]:text-[#735c0f] **:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] dark:**:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] **:[.hljs-deletion]:bg-[#ffeef0] **:[.hljs-deletion]:text-[#b31d28] dark:**:[.hljs-deletion]:bg-[#473235] dark:**:[.hljs-deletion]:text-[#e7c7cb] **:[.hljs-emphasis]:italic **:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#d73a49] dark:**:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#ee6960] **:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#22863a] dark:**:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#36a84f] **:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#032f62] dark:**:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#3593ff] **:[.hljs-section]:font-bold **:[.hljs-section]:text-[#005cc5] dark:**:[.hljs-section]:text-[#61a5f2] **:[.hljs-strong]:font-bold **:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#6f42c1] dark:**:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#a77bfa]";
 
 const escapeHtml = (value: string) =>
@@ -30,10 +32,12 @@ const escapeHtml = (value: string) =>
 const renderHighlighted = (code: string, language?: string) => {
   try {
     const tree = language ? lowlight.highlight(language, code) : lowlight.highlightAuto(code);
+
     return toHtml(tree);
   } catch {
     try {
       const tree = lowlight.highlightAuto(code);
+
       return toHtml(tree);
     } catch {
       return escapeHtml(code);
@@ -62,14 +66,21 @@ export const generateEmbedUrl = (
     customDomain && formSlug
       ? `https://${customDomain}/${formSlug}`
       : `${window.location.origin}/forms/${shortId}`;
+
   const params = new URLSearchParams();
+
   if (options.display.title === "hidden") params.append("hideTitle", "true");
+
   if (options.display.background === "transparent") params.append("transparent", "true");
+
   if (options.display.alignment === "left") params.append("align", "left");
+
   // "Made with Reform" branding is server-controlled Pro; not toggleable via URL/data-attrs. Source of truth: form's `settings.branding`.
   if (options.display.dynamicHeight) params.append("dynamicHeight", "true");
+
   if (options.display.dynamicWidth) params.append("dynamicWidth", "true");
   const queryString = params.toString();
+
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 };
 
@@ -85,9 +96,11 @@ const generateEmbedCode = (
 
   if (embedType === "standard") {
     const baseUrl = `${window.location.origin}/widgets/embed.js`;
+
     const dynamicHeightScript = options.display.dynamicHeight
       ? `window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="Reform.Resize"){var f=document.querySelector('iframe[data-reform-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});`
       : "";
+
     return `<iframe
   data-reform-src="${embedUrl}"
   loading="lazy"
@@ -103,6 +116,7 @@ const generateEmbedCode = (
 
   if (embedType === "popup") {
     const isDarkOverlay = options.popup.overlay === "dark";
+
     return `<!-- ${APP_NAME} Popup Embed -->
 <script>
   (function() {
@@ -155,7 +169,7 @@ const CodeBlock = ({
       {/* eslint-disable-next-line react/no-danger -- output of highlight.js applied to a known-safe embed snippet generated server-side */}
       <pre
         className={cn(
-          "w-full max-w-full min-w-0 rounded-xl border border-border/50 bg-muted/30 p-4 pr-12 font-mono text-[12px] [overflow-wrap:anywhere] [word-break:break-word] whitespace-pre-wrap tab-2 text-foreground/90",
+          "w-full max-w-full min-w-0 rounded-xl border border-border/50 bg-muted/30 p-4 pr-12 font-mono text-xs [overflow-wrap:anywhere] [word-break:break-word] whitespace-pre-wrap tab-2 text-foreground/90",
           hljsClassName,
         )}
       >
@@ -183,6 +197,7 @@ export const EmbedCodeDialog = ({
     () => generateEmbedUrl(shortId, options, customDomain, formSlug),
     [shortId, options, customDomain, formSlug],
   );
+
   const embedCode = useMemo(
     () => generateEmbedCode(embedType, options, shortId, docTitle, customDomain, formSlug),
     [embedType, options, shortId, docTitle, customDomain, formSlug],
@@ -200,7 +215,7 @@ export const EmbedCodeDialog = ({
             <DialogTitle className="text-xl font-bold text-foreground">
               Add to your website
             </DialogTitle>
-            <p className="mt-1.5 text-[13px] text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {embedType === "popup"
                 ? `Drop a single script on your site. ${APP_NAME} auto-renders a floating bubble at the position you configured; clicking it opens the form.`
                 : "Integrate this form seamlessly into your website using the snippet below."}
@@ -211,16 +226,16 @@ export const EmbedCodeDialog = ({
             {embedType === "standard" ? (
               <div className="space-y-5">
                 <div>
-                  <h3 className="mb-2.5 text-[13px] font-semibold text-foreground">Embed code</h3>
-                  <p className="mb-3.5 text-[12px] text-muted-foreground">
+                  <h3 className="mb-2.5 text-sm font-semibold text-foreground">Embed code</h3>
+                  <p className="mb-3.5 text-xs text-muted-foreground">
                     Paste this HTML code snippet on the page where you want the embed to appear.
                   </p>
                   <CodeBlock code={embedCode} language="html" />
                 </div>
 
                 <div>
-                  <h3 className="mb-2.5 text-[13px] font-semibold text-foreground">Direct link</h3>
-                  <p className="mb-3.5 text-[12px] text-muted-foreground">
+                  <h3 className="mb-2.5 text-sm font-semibold text-foreground">Direct link</h3>
+                  <p className="mb-3.5 text-xs text-muted-foreground">
                     Alternatively, paste this link in a no-code tool (Notion, Ghost, Canva, etc).
                   </p>
                   <div className="mb-4">
@@ -234,13 +249,13 @@ export const EmbedCodeDialog = ({
               </div>
             ) : embedType === "popup" ? (
               <div>
-                <p className="mb-4 text-[12px] text-muted-foreground">
+                <p className="mb-4 text-xs text-muted-foreground">
                   Paste this{" "}
                   <strong className="font-semibold text-foreground">single script tag</strong> into
                   your site's{" "}
-                  <code className="rounded border border-border/50 bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">{`<head>`}</code>
+                  <code className="rounded border border-border/50 bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground">{`<head>`}</code>
                   . All popup settings are read from{" "}
-                  <code className="rounded border border-border/50 bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                  <code className="rounded border border-border/50 bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground">
                     data-*
                   </code>{" "}
                   attributes on the script itself, no separate button required.
@@ -255,7 +270,7 @@ export const EmbedCodeDialog = ({
 ></script>`}
                   language="html"
                 />
-                <p className="mt-6 mb-2 text-[12px] text-muted-foreground">
+                <p className="mt-6 mb-2 text-xs text-muted-foreground">
                   The script auto-renders a floating bubble at the configured position, preloads the
                   form in the background, and expands into the popup when the bubble is clicked. The
                   bubble uses your form's icon automatically.
@@ -264,10 +279,8 @@ export const EmbedCodeDialog = ({
             ) : (
               /* Full page */
               <div>
-                <h3 className="mb-2.5 text-[13px] font-semibold text-foreground">
-                  Full page redirect
-                </h3>
-                <p className="mb-3.5 text-[12px] text-muted-foreground">
+                <h3 className="mb-2.5 text-sm font-semibold text-foreground">Full page redirect</h3>
+                <p className="mb-3.5 text-xs text-muted-foreground">
                   Use a meta redirect or link to send visitors directly to your form.
                 </p>
                 <CodeBlock code={embedCode} language="html" />
@@ -282,16 +295,17 @@ export const EmbedCodeDialog = ({
                 <AccordionItem value="save" className="border-b border-border/50">
                   <AccordionTrigger
                     iconPosition="end"
-                    className="group-hover:text-brand px-0 py-5 text-[14px] font-semibold text-foreground transition-colors hover:no-underline"
+                    // oxlint-disable-next-line shadcn/no-raw-colors -- no brand token; needs design decision
+                    className="group-hover:text-brand px-0 py-5 text-base font-semibold text-foreground transition-colors hover:no-underline"
                   >
                     Save website page and query parameters
                   </AccordionTrigger>
-                  <AccordionContent className="space-y-4 pb-8 text-[12px] text-muted-foreground">
+                  <AccordionContent className="space-y-4 pb-8 text-xs text-muted-foreground">
                     <p>
                       Your page's URL and query parameters are automatically forwarded to the{" "}
                       {embedType === "popup" ? "popup" : "form"} and saved via hidden fields.
                     </p>
-                    <div className="rounded-lg border border-border/50 bg-muted p-3.5 font-mono text-[11px] break-all">
+                    <div className="rounded-lg border border-border/50 bg-muted p-3.5 font-mono text-2xs break-all">
                       https://company.com/register?ref=downloads&email=alice@example.com
                     </div>
                     {embedType === "popup" && (
@@ -322,11 +336,12 @@ export const EmbedCodeDialog = ({
                 <AccordionItem value="js" className="border-b border-border/50">
                   <AccordionTrigger
                     iconPosition="end"
-                    className="group-hover:text-brand px-0 py-5 text-[14px] font-semibold text-foreground transition-colors hover:no-underline"
+                    // oxlint-disable-next-line shadcn/no-raw-colors -- no brand token; needs design decision
+                    className="group-hover:text-brand px-0 py-5 text-base font-semibold text-foreground transition-colors hover:no-underline"
                   >
                     Use JavaScript
                   </AccordionTrigger>
-                  <AccordionContent className="space-y-5 pb-8 text-[12px] text-muted-foreground">
+                  <AccordionContent className="space-y-5 pb-8 text-xs text-muted-foreground">
                     <p className="opacity-80">Share these instructions with your developers.</p>
 
                     {embedType === "standard" ? (

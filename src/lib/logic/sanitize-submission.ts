@@ -14,12 +14,14 @@ import type { EngineField } from "./types";
 const collectAllFields = (content: Value): PlateFormField[] => {
   const out: PlateFormField[] = [];
   const { steps } = transformPlateForPreview(content);
+
   for (const segments of steps) {
     for (const field of getFieldsFromSegments(segments)) {
       if (field.fieldType === "Button") continue;
       out.push(field);
     }
   }
+
   return out;
 };
 
@@ -56,6 +58,7 @@ export const sanitizeSubmission = (
   for (const field of fields) {
     if (visibility[field.name] === false) {
       hiddenStripped.push(field.name);
+
       if (field.name in submitted) {
         rejected.push(field.name);
         delete data[field.name];
@@ -82,8 +85,10 @@ export const buildVisibleSchema = (
   const allFields = collectAllFields(content);
   const ruleset = extractRuleset(content);
   const { visibility, effectiveRequired } = evaluate(ruleset, answers, toEngineFields(allFields));
+
   const visibleFields = allFields
     .filter((f) => visibility[f.name] !== false)
     .map((f) => ({ ...f, required: effectiveRequired[f.name] === true }) as PlateFormField);
+
   return generateZodSchemaFromFields(visibleFields);
 };

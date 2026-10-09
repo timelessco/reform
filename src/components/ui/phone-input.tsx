@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const getBrowserDefaultCountry = (): BasePhoneInput.Country | undefined => {
   if (typeof navigator === "undefined") return undefined;
   const region = navigator.language.split(/[-_]/)[1]?.toUpperCase();
+
   return region && BasePhoneInput.isSupportedCountry(region) ? region : undefined;
 };
 
@@ -66,6 +67,7 @@ function PhoneInput({
   // from navigator.language, then key the component to remount with the resolved value.
   const mounted = useMounted();
   const defaultCountry = defaultCountryProp ?? (mounted ? getBrowserDefaultCountry() : undefined);
+
   return (
     <PhoneInputContext.Provider
       value={{ variant: phoneInputSize, popupClassName, scrollAreaClassName }}
@@ -76,12 +78,17 @@ function PhoneInput({
         // both inner pieces stay transparent. Surface uses --form-input-bg (same as form-input util)
         // for theme consistency. [&]: bumps specificity past react-phone-number-input's defaults.
         className={cn(
+          // min-h (not fixed h): the inner pieces carry the themed --bf-input-height (via
+          // [data-bf-input-fill]); the wrapper hugs them so a customized input height grows the
+          // surface instead of overflowing it (overflow-hidden was clipping the text — #broken).
           "flex flex-row items-stretch overflow-hidden rounded-lg text-foreground elevation-sm dark:shadow-none [&]:bg-[var(--form-input-bg,var(--color-gray-50))]",
-          phoneInputSize === "sm" && "[&]:h-7",
-          phoneInputSize === "lg" && "[&]:h-9",
-          phoneInputSize === "default" && "[&]:h-8",
-          props["aria-invalid"] &&
-            "**:data-[slot=input-group]:ring-1 **:data-[slot=input-group]:ring-destructive",
+          phoneInputSize === "sm" && "[&]:min-h-7",
+          phoneInputSize === "lg" && "[&]:min-h-9",
+          phoneInputSize === "default" && "[&]:min-h-8",
+          // form-input-error (!important red ring) on the WRAPPER itself — the previous ring on the
+          // inner [data-slot=input-group] was clipped by this element's overflow-hidden, so it never
+          // showed. The wrapper's own box-shadow renders outside and isn't clipped.
+          props["aria-invalid"] && "form-input-error",
           className,
         )}
         countrySelectComponent={CountrySelect}
@@ -89,6 +96,7 @@ function PhoneInput({
         smartCaret={false}
         value={value || undefined}
         defaultCountry={defaultCountry}
+        // SAFETY: empty string signals a cleared input; the wrapper maps it back to undefined above
         onChange={(next) => onChange?.(next || ("" as BasePhoneInput.Value))}
         {...props}
       />
@@ -106,7 +114,7 @@ function InputComponent({ className, ...props }: React.ComponentProps<"input">) 
         // Right "input-text" piece: bordered in light for the seam, transparent in dark (bg
         // contrast like other dark inputs). Surface bg-background by default; .bf-themed overrides
         // via [data-bf-input-fill]. Inner input fully transparent — bg/shadow/border forced with !
-        // because Input's cva ships bg-card + dark:border in a CSS layer out-racing tailwind-merge.
+        // because Input's cva ships bg-card + dark:border in a CSS layer out-racing cn's merge.
         "flex-1 rounded-l-none rounded-r-[8px] bg-transparent! px-2.5 py-2 text-sm tracking-[0.28px] text-foreground shadow-none! ring-0! outline-none! focus-visible:ring-0 aria-invalid:ring-0 dark:border-0! dark:bg-transparent! dark:shadow-none!",
         variant === "sm" && "h-7",
         variant === "lg" && "h-9",
@@ -144,6 +152,7 @@ function CountrySelect({
 
   const filteredCountries = useMemo(() => {
     if (!searchValue) return countryList;
+
     return countryList.filter(({ label }) =>
       label.toLowerCase().includes(searchValue.toLowerCase()),
     );
@@ -199,6 +208,7 @@ function CountrySelect({
           themeReanchor.className,
           popupClassName,
         )}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
       >
         {/* One InputGroup carries bg + focus ring so icon and input read as one control.

@@ -1,81 +1,122 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { Input } from "@/components/ui/input";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  FileTextIcon,
-  HelpCircleIcon,
-  Loader2Icon,
-  PlusIcon,
-  Trash2Icon,
-  XIcon,
-} from "@/components/ui/icons";
+import { CheckIcon, FileTextIcon, HelpCircleIcon, Loader2Icon } from "@/components/ui/icons";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  bulkArchiveFormsLocal,
-  createFormLocal,
-  createWorkspaceLocal,
-  updateFormStatus,
-} from "@/collections";
-import { useDuplicateForm } from "@/hooks/use-duplicate-form";
-import { useFavorites, useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
+  FigAddMdIcon,
+  FigAppsIcon,
+  FigBulletListIcon,
+  FigCommentIcon,
+  FigFilterIcon,
+  FigPeopleIcon,
+  FigPlusIcon,
+  FigRegistrationIcon,
+  FigRsvpIcon,
+  FigSmallDownIcon,
+  FigSortIcon,
+  FigSurveyIcon,
+  FigTilesIcon,
+  FigTimeIcon,
+} from "@/components/dashboard/dashboard-icons";
+import { FormCardThumbnail, FormListThumbnail } from "@/components/dashboard/form-card-thumbnail";
+import { createFormLocal } from "@/collections";
+import {
+  useFavorites,
+  useOrgForms,
+  useOrgWorkspaces,
+  useSubmissionCounts,
+} from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth/auth-client";
-import { formatForDisplay, HOTKEYS } from "@/lib/hotkeys";
 import { clearLocalDraftIds } from "@/db/local-draft";
 import { hasLocalDataToSync, syncLocalDataToCloud } from "@/db/sync";
-import { getLeadingSortIndex, sortByManualOrder } from "@/lib/sort-utils";
+import { buildTemplateContent, FORM_TEMPLATE_META } from "@/lib/form-templates";
+import type { FormTemplateId } from "@/lib/form-templates";
+import { sortByManualOrder } from "@/lib/sort-utils";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
-import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys";
+import { log } from "evlog";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { orgDataForLayoutQueryOptions } from "@/lib/server-fn/org";
-import { parseError } from "@/lib/errors/parse";
 import { formatDistanceToNow } from "date-fns";
-import { generateKeyBetween } from "fractional-indexing";
-import { FolderPlus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { IconSwap } from "@/components/transitions/icon-swap";
-import { NumberPopIn } from "@/components/transitions/number-pop-in";
+import * as v from "valibot";
 import { TextSwap } from "@/components/transitions/text-swap";
+import { ToolbarPill, ToolbarSearch, ViewToggle } from "@/components/ui/route-toolbar";
 import { toast } from "sonner";
-const FORMS_PER_PAGE = 10;
+
+// Fallback page size before the viewport is measured (SSR / first paint).
+const FORMS_PER_PAGE = 12;
+
+// Page size that fills the viewport: as many full card rows as fit above the pager, × the current
+// column count — so the pagination control stays on-screen without scrolling. Measured live via a ref
+// callback + ResizeObserver (no useEffect; same pattern as use-mobile) so it adapts to viewport width
+// (columns), height, sidebar collapse, and the chrome above the grid.
+const PAGER_RESERVE = 120; // pager block + section gap + bottom breathing room
+
+const CARD_STRIDE_FALLBACK = 220; // card height before a card is measured
+
+const useViewportPageSize = (
+  fallback: number,
+): readonly [number, (grid: HTMLDivElement | null) => void] => {
+  const [perPage, setPerPage] = useState(fallback);
+
+  const attach = useCallback((grid: HTMLDivElement | null) => {
+    if (!grid) return;
+
+    const recompute = () => {
+      const style = getComputedStyle(grid);
+      const cols = Math.max(1, style.gridTemplateColumns.split(" ").length);
+      const gap = Number.parseFloat(style.rowGap) || 12;
+      const card = grid.firstElementChild as HTMLElement | null;
+      const stride = (card?.getBoundingClientRect().height || CARD_STRIDE_FALLBACK) + gap;
+      const available = window.innerHeight - grid.getBoundingClientRect().top - PAGER_RESERVE;
+      const rows = Math.max(1, Math.floor((available + gap) / stride));
+      setPerPage(cols * rows);
+    };
+
+    recompute();
+    const observer = new ResizeObserver(recompute);
+    observer.observe(grid);
+    window.addEventListener("resize", recompute);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", recompute);
+    };
+  }, []);
+
+  return [perPage, attach] as const;
+};
 
 type FormFilter = "all" | "favorites" | "drafts" | "published";
+
+type FormViewMode = "grid" | "list";
+
+type SortField = "responses" | "created" | "edited";
+
+type SortDir = "asc" | "desc";
+
+type FormSort = { field: SortField; dir: SortDir };
+
+// Sort fields shown in the Sort dropdown. Only Responses nests into Ascending / Descending; the
+// date fields are plain items that sort newest-first (descending).
+const SORT_FIELDS: ReadonlyArray<{ value: SortField; label: string; nested: boolean }> = [
+  { value: "responses", label: "Responses", nested: true },
+  { value: "created", label: "Date created", nested: false },
+  { value: "edited", label: "Last edited", nested: false },
+];
 
 const FILTER_OPTIONS: ReadonlyArray<{ value: FormFilter; label: string }> = [
   { value: "all", label: "All" },
@@ -84,41 +125,99 @@ const FILTER_OPTIONS: ReadonlyArray<{ value: FormFilter; label: string }> = [
   { value: "published", label: "Published" },
 ];
 
-const DashboardFilters = ({
+// Template-card icons — verbatim Figma glyphs from node 26208:8027.
+const TEMPLATE_ICONS: Partial<
+  Record<FormTemplateId, React.ComponentType<React.SVGProps<SVGSVGElement>>>
+> = {
+  blank: FigAddMdIcon,
+  survey: FigSurveyIcon,
+  feedback: FigCommentIcon,
+  eventRsvp: FigRsvpIcon,
+  registration: FigRegistrationIcon,
+};
+
+const greetingFor = (date: Date): string => {
+  const h = date.getHours();
+
+  if (h < 12) return "Good morning";
+
+  if (h < 18) return "Good afternoon";
+
+  return "Good evening";
+};
+
+// Figma 26208:8074 — gray/100 pill trigger (filter icon + static "Filter" label + chevron); the
+// active option is marked with a tick inside the dropdown, not shown on the trigger.
+// Search moved out of the app header into the All Forms toolbar (Figma 26835:10024):
+// gray/100 pill, 170px, search-alt icon, "Search" placeholder. Writes ?q= (debounced).
+const DashboardSearch = () => {
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { q?: string };
+  const [input, setInput] = useState(search.q ?? "");
+
+  // Sync local input when the URL param changes externally (back/forward, clear). Adjusted during
+  // render (the "store info from a previous render" pattern), not via a setState-in-effect.
+  const [lastSearchQ, setLastSearchQ] = useState(search.q);
+
+  if (lastSearchQ !== search.q) {
+    setLastSearchQ(search.q);
+    setInput(search.q ?? "");
+  }
+
+  // Debounce keystrokes → URL ?q= so the dashboard list re-filters.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const next = input.trim() || undefined;
+
+      if ((search.q ?? undefined) === next) return;
+      void navigate({
+        to: "/dashboard",
+        search: (prev: Record<string, unknown>) => ({ ...prev, q: next }),
+        replace: true,
+      });
+    }, 200);
+
+    return () => clearTimeout(handle);
+  }, [input, search.q, navigate]);
+
+  return (
+    <ToolbarSearch
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      aria-label="Search forms"
+    />
+  );
+};
+
+const FilterMenu = ({
   currentFilter,
-  counts,
   onChange,
 }: {
   currentFilter: FormFilter;
-  counts: Record<FormFilter, number>;
   onChange: (next: FormFilter) => void;
 }) => (
-  <div role="tablist" aria-label="Filter forms" className="-mx-1 flex flex-wrap items-center gap-1">
-    {FILTER_OPTIONS.map((option) => {
-      const isActive = currentFilter === option.value;
-      const count = counts[option.value];
-      return (
-        <button
-          key={option.value}
-          type="button"
-          role="tab"
-          aria-selected={isActive}
-          onClick={() => onChange(option.value)}
-          className={cn(
-            "inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[13px] transition-colors",
-            isActive
-              ? "border-transparent bg-foreground text-background"
-              : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          <span>{option.label}</span>
-          <span className={cn(isActive ? "text-background/70" : "text-muted-foreground/60")}>
-            <NumberPopIn value={count} className="tabular-nums" />
-          </span>
-        </button>
-      );
-    })}
-  </div>
+  <DropdownMenu>
+    <DropdownMenuTrigger
+      render={
+        <ToolbarPill aria-label="Filter forms">
+          <FigFilterIcon />
+          <span>Filter</span>
+          <FigSmallDownIcon />
+        </ToolbarPill>
+      }
+    />
+    <DropdownMenuContent align="end" sideOffset={4}>
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>Filter</DropdownMenuLabel>
+        {FILTER_OPTIONS.map((option) => (
+          <DropdownMenuItem key={option.value} onClick={() => onChange(option.value)}>
+            <span className="flex-1 text-left">{option.label}</span>
+            {currentFilter === option.value && <CheckIcon className="size-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuGroup>
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 const FILTER_EMPTY_COPY: Record<Exclude<FormFilter, "all">, string> = {
@@ -129,6 +228,7 @@ const FILTER_EMPTY_COPY: Record<Exclude<FormFilter, "all">, string> = {
 
 const FilteredEmptyState = ({ filter }: { filter: FormFilter }) => {
   if (filter === "all") return null;
+
   return (
     <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
       {FILTER_EMPTY_COPY[filter]}
@@ -150,6 +250,7 @@ const SyncOverlay = () => {
     const dotInterval = setInterval(() => {
       setDotCount((d) => (d + 1) % 4);
     }, 500);
+
     return () => clearInterval(dotInterval);
   }, []);
 
@@ -157,6 +258,7 @@ const SyncOverlay = () => {
     const messageInterval = setInterval(() => {
       setMessageIndex((i) => (i + 1) % SYNC_MESSAGES.length);
     }, 2500);
+
     return () => clearInterval(messageInterval);
   }, []);
 
@@ -178,7 +280,6 @@ const SyncOverlay = () => {
   );
 };
 
-// Module-level flag survives component unmount/remount during navigation
 let _hasSynced = false;
 
 const useLocalDataSync = (
@@ -189,56 +290,60 @@ const useLocalDataSync = (
   useEffect(() => {
     const syncData = async () => {
       if (!sessionUser || !activeOrgId) return;
+
       if (_hasSynced) return;
 
       const hasData = await hasLocalDataToSync();
+
       if (!hasData) {
         _hasSynced = true;
+
         return;
       }
 
       setIsSyncing(true);
+
       try {
         const result = await syncLocalDataToCloud(activeOrgId);
+
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
           sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
+
         _hasSynced = true;
       } catch (error) {
-        console.error("Failed to sync local data:", error);
+        log.error({ tag: "dashboard", msg: "Failed to sync local data", error });
         toast.error("Signed in but failed to sync local data");
       } finally {
         setIsSyncing(false);
       }
     };
+
     void syncData();
   }, [sessionUser, activeOrgId]);
+
   return { isSyncing };
 };
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const duplicateFormFn = useDuplicateForm();
+  const { q: searchQuery = "" } = useSearch({ strict: false }) as { q?: string };
+
   const { data: activeOrg } = useQuery({
     ...orgDataForLayoutQueryOptions(),
     select: (d) => d.activeOrg,
   });
+
   const [isCreating, setIsCreating] = useState(false);
-  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [formToDelete, setFormToDelete] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-  const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-  const [duplicatingFormId, setDuplicatingFormId] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FormFilter>("all");
+  const [viewMode, setViewMode] = useState<FormViewMode>("grid");
+  const [sortBy, setSortBy] = useState<FormSort>({ field: "edited", dir: "desc" });
+  // `formsPerPage` is the viewport-fill batch size; `visibleCount` is how many forms are rendered now
+  // (infinite scroll grows it). Initial fallback before the viewport is measured.
+  const [formsPerPage, gridRef] = useViewportPageSize(FORMS_PER_PAGE);
+  const [visibleCount, setVisibleCount] = useState(FORMS_PER_PAGE);
 
   const { data: session } = useSession();
   const { isSyncing } = useLocalDataSync(session?.user, activeOrg?.id);
@@ -257,23 +362,23 @@ const DashboardPage = () => {
   const orgForms = useMemo(() => (isDataReady ? liveForms || [] : []), [isDataReady, liveForms]);
 
   const { data: favorites } = useFavorites(session?.user?.id);
+  const submissionCounts = useSubmissionCounts();
+
   const favoriteFormIds = useMemo(
     () => new Set((favorites ?? []).map((f) => f.formId)),
     [favorites],
   );
 
-  const filterCounts = useMemo<Record<FormFilter, number>>(() => {
-    let drafts = 0;
-    let published = 0;
-    let favs = 0;
-    for (const form of orgForms) {
-      if (form.status === "draft") drafts++;
-      else if (form.status === "published") published++;
-      if (favoriteFormIds.has(form.id)) favs++;
-    }
-    return { all: orgForms.length, favorites: favs, drafts, published };
-  }, [orgForms, favoriteFormIds]);
+  const orderedWorkspaces = useMemo(
+    () =>
+      sortByManualOrder(
+        orgWorkspaces,
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      ),
+    [orgWorkspaces],
+  );
 
+  // Filter → search → sort pipeline. Search matches title; sort by responses/created/edited × dir.
   const filteredForms = useMemo(() => {
     switch (currentFilter) {
       case "favorites":
@@ -287,80 +392,39 @@ const DashboardPage = () => {
     }
   }, [orgForms, currentFilter, favoriteFormIds]);
 
-  const workspaceNameMap = useMemo(
-    () => new Map(orgWorkspaces.map((ws) => [ws.id, ws.name])),
-    [orgWorkspaces],
-  );
+  const searchedForms = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
 
-  const totalPages = Math.max(1, Math.ceil(filteredForms.length / FORMS_PER_PAGE));
-  const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
-  const paginatedForms = filteredForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
+    if (!q) return filteredForms;
 
-  const handleFilterChange = useCallback((next: FormFilter) => {
-    setCurrentFilter(next);
-    setCurrentPage(1);
-    setSelectedFormIds(new Set());
-  }, []);
+    return filteredForms.filter((f) => (f.title ?? "Untitled").toLowerCase().includes(q));
+  }, [filteredForms, searchQuery]);
 
-  const handleOpenCreateWorkspace = useCallback(() => {
-    setNewWorkspaceName("");
-    setCreateWorkspaceOpen(true);
-  }, []);
+  const visibleForms = useMemo(() => {
+    const dir = sortBy.dir === "asc" ? 1 : -1;
 
-  const handleCloseCreateWorkspace = useCallback(() => {
-    setCreateWorkspaceOpen(false);
-    setNewWorkspaceName("");
-  }, []);
-
-  const handleConfirmCreateWorkspace = useCallback(async () => {
-    const trimmedName = newWorkspaceName.trim();
-    if (!activeOrg?.id || !trimmedName || isCreatingWorkspace) return;
-    setIsCreatingWorkspace(true);
-    try {
-      // Place before current lead so it tops the sidebar; fractional-indexing keeps it stable through drag-reorders.
-      const leadingSortIndex = generateKeyBetween(null, getLeadingSortIndex(orgWorkspaces));
-      const workspace = await createWorkspaceLocal(activeOrg.id, trimmedName, leadingSortIndex);
-      setCreateWorkspaceOpen(false);
-      setNewWorkspaceName("");
-      toast.success("Workspace created");
-      void navigate({
-        to: "/workspace/$workspaceId",
-        params: { workspaceId: workspace.id },
-      });
-    } catch (error) {
-      console.error("Failed to create workspace:", error);
-      toast.error("Failed to create workspace");
-    } finally {
-      setIsCreatingWorkspace(false);
-    }
-  }, [activeOrg?.id, newWorkspaceName, orgWorkspaces, navigate, isCreatingWorkspace]);
-
-  const handleCreateWorkspaceKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        void handleConfirmCreateWorkspace();
+    const compare = (a: FormCardForm, b: FormCardForm) => {
+      switch (sortBy.field) {
+        case "responses":
+          return (submissionCounts.get(a.id) ?? 0) - (submissionCounts.get(b.id) ?? 0);
+        case "created":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        default: // edited
+          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
       }
-    },
-    [handleConfirmCreateWorkspace],
-  );
+    };
 
-  // Mirror sidebar order so "New form" targets the same first-listed workspace when no explicit pick.
-  const orderedWorkspaces = useMemo(
-    () =>
-      sortByManualOrder(
-        orgWorkspaces,
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      ),
-    [orgWorkspaces],
-  );
+    return [...searchedForms].sort((a, b) => compare(a, b) * dir);
+  }, [searchedForms, sortBy, submissionCounts]);
 
   const handleCreateForm = useCallback(
     (workspaceId?: string) => {
       const targetId = workspaceId ?? orderedWorkspaces[0]?.id;
+
       if (!targetId) return;
 
       setIsCreating(true);
+
       try {
         const { form: newForm } = createFormLocal(targetId);
         void navigate({
@@ -368,7 +432,7 @@ const DashboardPage = () => {
           params: { workspaceId: targetId, formId: newForm.id },
         });
       } catch (error) {
-        console.error("Failed to create form:", error);
+        log.error({ tag: "dashboard", msg: "Failed to create form", error });
       } finally {
         setIsCreating(false);
       }
@@ -376,452 +440,549 @@ const DashboardPage = () => {
     [orderedWorkspaces, navigate],
   );
 
-  const handleDeleteClick = useCallback((form: { id: string; title: string }) => {
-    setFormToDelete(form);
-    setDeleteDialogOpen(true);
-  }, []);
+  // Template cards create a pre-seeded form (starter fields per template) then open the editor.
+  const handleCreateFromTemplate = useCallback(
+    (templateId: FormTemplateId) => {
+      const targetId = orderedWorkspaces[0]?.id;
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (formToDelete) {
+      if (!targetId) return;
+      const meta = FORM_TEMPLATE_META.find((t) => t.id === templateId);
+      const title = meta?.label ?? "Untitled";
+
+      setIsCreating(true);
+
       try {
-        await updateFormStatus(formToDelete.id, "archived");
-        setDeleteDialogOpen(false);
-        setFormToDelete(null);
+        const { form: newForm } = createFormLocal(targetId, {
+          title,
+          content: buildTemplateContent(templateId),
+        });
+
+        void navigate({
+          to: "/workspace/$workspaceId/form-builder/$formId/edit",
+          params: { workspaceId: targetId, formId: newForm.id },
+        });
       } catch (error) {
-        console.error("Failed to archive form:", error);
-      }
-    }
-  }, [formToDelete]);
-
-  const handleDuplicate = useCallback(
-    async (formId: string) => {
-      setDuplicatingFormId(formId);
-      try {
-        await duplicateFormFn(formId);
-      } catch {
-        toast.error("Failed to duplicate form");
+        log.error({ tag: "dashboard", msg: "Failed to create form from template", error });
       } finally {
-        setDuplicatingFormId(null);
+        setIsCreating(false);
       }
     },
-    [duplicateFormFn],
-  );
-
-  const handlePrevPage = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
-
-  const handleNextPage = useCallback(
-    () => setCurrentPage((p) => Math.min(totalPages, p + 1)),
-    [totalPages],
+    [orderedWorkspaces, navigate],
   );
 
   const formatLastEdited = (timestamp: string) =>
     `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
 
-  const hasSelection = selectedFormIds.size > 0;
+  // Infinite scroll: render the first `visibleCount` forms; a sentinel below the grid loads more.
+  const renderedForms = visibleForms.slice(0, visibleCount);
+  const hasMore = visibleCount < visibleForms.length;
 
-  const handleToggleSelect = useCallback((formId: string) => {
-    setSelectedFormIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(formId)) {
-        next.delete(formId);
-      } else {
-        next.add(formId);
-      }
-      return next;
-    });
-  }, []);
+  // Reset the scroll window whenever the list itself changes (filter / search / sort).
+  const listKey = `${currentFilter}|${searchQuery}|${sortBy.field}|${sortBy.dir}`;
+  const [lastListKey, setLastListKey] = useState(listKey);
 
-  // Global dashboard hotkeys (Mod+A/Delete/Escape) at doc level; bail when a dialog is open so its hotkeys win. Check Base UI's data-open attr — more reliable than tracking each dialog in context.
-  const isModalDialogOpen = () =>
-    typeof document !== "undefined" &&
-    document.querySelector('[data-slot="dialog-content"][data-open]') !== null;
-
-  const handleSelectAll = useCallback(() => {
-    if (isModalDialogOpen()) return;
-    if (selectedFormIds.size === paginatedForms.length) {
-      setSelectedFormIds(new Set());
-    } else {
-      setSelectedFormIds(new Set(paginatedForms.map((f) => f.id)));
-    }
-  }, [selectedFormIds.size, paginatedForms]);
-
-  const handleClearSelection = useCallback(() => {
-    if (isModalDialogOpen()) return;
-    setSelectedFormIds(new Set());
-  }, []);
-
-  const handleBulkDelete = useCallback(() => {
-    if (isModalDialogOpen()) return;
-    if (selectedFormIds.size === 0) return;
-    setBulkDeleteDialogOpen(true);
-  }, [selectedFormIds.size]);
-
-  const handleConfirmBulkDelete = useCallback(async () => {
-    const ids = [...selectedFormIds];
-    if (ids.length === 0) return;
-    try {
-      await bulkArchiveFormsLocal(ids);
-      setSelectedFormIds(new Set());
-      setBulkDeleteDialogOpen(false);
-      toast.success(`${ids.length} form${ids.length !== 1 ? "s" : ""} deleted`);
-    } catch (error) {
-      const message = parseError(error).message || "Failed to delete some forms";
-      toast.error(message);
-    }
-  }, [selectedFormIds]);
-
-  const [lastPageForSelection, setLastPageForSelection] = useState(currentPage);
-  if (lastPageForSelection !== currentPage) {
-    setLastPageForSelection(currentPage);
-    setSelectedFormIds(new Set());
+  if (lastListKey !== listKey) {
+    setLastListKey(listKey);
+    setVisibleCount(formsPerPage);
   }
 
-  useHotkey(HOTKEYS.DASHBOARD_SELECT_ALL, handleSelectAll, {
-    conflictBehavior: "replace",
-    ignoreInputs: true,
-  });
+  // Grow the window when the sentinel scrolls into view. No useEffect — ref-callback + observer
+  // (same pattern as useViewportPageSize). The callback ref re-runs (re-observes) when the batch
+  // size or total changes, so the observer's closure always reads current values.
+  const totalForms = visibleForms.length;
 
-  useHotkeys(
-    [
-      { hotkey: HOTKEYS.DASHBOARD_DELETE, callback: handleBulkDelete },
-      { hotkey: "Delete", callback: handleBulkDelete },
-    ],
-    { enabled: hasSelection, conflictBehavior: "replace", ignoreInputs: true },
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            setVisibleCount((c) => Math.min(c + formsPerPage, totalForms));
+          }
+        },
+        { rootMargin: "300px" },
+      );
+
+      observer.observe(node);
+
+      return () => observer.disconnect();
+    },
+    [formsPerPage, totalForms],
   );
 
-  useHotkey(HOTKEYS.DASHBOARD_CLEAR_SELECTION, handleClearSelection, {
-    enabled: hasSelection,
-    conflictBehavior: "replace",
-    ignoreInputs: true,
-  });
+  const handleFilterChange = useCallback((next: FormFilter) => {
+    setCurrentFilter(next);
+  }, []);
+
+  const orgWorkspacesCount = orderedWorkspaces.length;
+  const userName = session?.user?.name;
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-background text-foreground">
-      <main className="mx-auto w-full max-w-6xl flex-1 p-6 md:p-12 lg:p-20">
-        <DashboardHeader
-          isLoading={isLoading}
-          orgFormsCount={orgForms.length}
-          orderedWorkspaces={orderedWorkspaces}
-          isCreating={isCreating}
-          handleCreateWorkspace={handleOpenCreateWorkspace}
-          handleCreateForm={handleCreateForm}
-        />
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background text-foreground">
+      {/* 1060 cap = Figma 900px content column + lg:px-20 gutters (80×2), so template cards land at 170.4px. */}
+      <main className="mx-auto w-full max-w-[1060px] flex-1 px-6 py-8 md:px-12 md:py-12 lg:px-20">
+        <section className="flex flex-col gap-5">
+          {/* Greeting */}
+          {/* font-sans re-binds the wght axis so font-semibold actually renders 600 (Figma Semi Bold);
+              without it the inherited font-variation-settings pins wght to 450. */}
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 1.15 line-height has no scale equivalent */}
+          <h1 className="font-sans text-xl leading-[1.15] font-semibold tracking-normal text-foreground">
+            <TextSwap key={userName}>
+              {greetingFor(new Date())}
+              {userName ? `, ${userName}` : ""}
+            </TextSwap>
+          </h1>
 
-        <div className="space-y-6">
-          {!isLoading && orgForms.length > 0 && (
-            <DashboardFilters
-              currentFilter={currentFilter}
-              counts={filterCounts}
-              onChange={handleFilterChange}
-            />
-          )}
+          {/* Quick-create templates */}
+          <QuickCreateTemplates
+            isCreating={isCreating}
+            disabled={isLoading || isCreating || orgWorkspacesCount === 0}
+            onCreate={handleCreateFromTemplate}
+          />
+        </section>
 
-          <DashboardFormList
+        {/* All Forms */}
+        <section className="mt-10 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            {/* font-sans re-binds the wght axis so font-semibold renders 600 (Figma SemiBold), not the pinned 450. */}
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px/1.15/0.225px title type has no scale equivalent */}
+            <h2 className="font-sans text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-foreground">
+              All Forms
+            </h2>
+            {!isLoading && orgForms.length > 0 && (
+              <div className="flex items-center gap-2">
+                <DashboardSearch />
+                <FilterMenu currentFilter={currentFilter} onChange={handleFilterChange} />
+                <SortMenu sortBy={sortBy} onChange={setSortBy} />
+                <ViewToggle
+                  value={viewMode}
+                  onValueChange={setViewMode}
+                  options={[
+                    {
+                      value: "grid",
+                      icon: <FigTilesIcon className="size-4" />,
+                      label: "Grid view",
+                    },
+                    {
+                      value: "list",
+                      icon: <FigBulletListIcon className="size-4" />,
+                      label: "List view",
+                    },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+
+          <DashboardFormGrid
             isSyncing={isSyncing}
             isLoading={isLoading}
-            paginatedForms={paginatedForms}
-            selectedFormIds={selectedFormIds}
-            workspaceNameMap={workspaceNameMap}
-            duplicatingFormId={duplicatingFormId}
+            viewMode={viewMode}
+            gridRef={gridRef}
+            paginatedForms={renderedForms}
+            submissionCounts={submissionCounts}
             formatLastEdited={formatLastEdited}
-            handleDuplicate={handleDuplicate}
-            handleDeleteClick={handleDeleteClick}
-            handleToggleSelect={handleToggleSelect}
           />
 
-          {!isLoading && filteredForms.length === 0 && orgForms.length > 0 && (
+          {!isLoading && visibleForms.length === 0 && orgForms.length > 0 && (
             <FilteredEmptyState filter={currentFilter} />
           )}
 
-          {!isLoading && totalPages > 1 && (
-            <DashboardPagination
-              startIndex={startIndex}
-              totalForms={filteredForms.length}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPrevPage={handlePrevPage}
-              onNextPage={handleNextPage}
-              onSetPage={setCurrentPage}
-            />
-          )}
+          {/* Infinite-scroll sentinel — observing this triggers the next batch (rootMargin pre-loads). */}
+          {!isLoading && hasMore && <div ref={loadMoreRef} aria-hidden className="h-px w-full" />}
 
           {!isLoading && orgForms.length === 0 && (
             <DashboardEmptyState
               isCreating={isCreating}
-              disabled={isLoading || isCreating || orgWorkspaces.length === 0}
-              onCreate={handleCreateForm}
+              disabled={isLoading || isCreating || orgWorkspacesCount === 0}
+              onCreate={() => handleCreateForm()}
             />
           )}
-        </div>
+        </section>
       </main>
 
-      {hasSelection && (
-        <BulkSelectionToolbar
-          count={selectedFormIds.size}
-          onBulkDelete={handleBulkDelete}
-          onClearSelection={handleClearSelection}
-        />
-      )}
-
-      {!hasSelection && <FloatingHelpButton />}
-
-      <BulkDeleteDialog
-        open={bulkDeleteDialogOpen}
-        onOpenChange={setBulkDeleteDialogOpen}
-        count={selectedFormIds.size}
-        onConfirm={handleConfirmBulkDelete}
-      />
-
-      <SingleDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title={formToDelete?.title}
-        onConfirm={handleConfirmDelete}
-      />
-
-      <WorkspaceCreateDialog
-        open={createWorkspaceOpen}
-        name={newWorkspaceName}
-        isCreating={isCreatingWorkspace}
-        onOpenChange={setCreateWorkspaceOpen}
-        onNameChange={(e) => setNewWorkspaceName(e.target.value)}
-        onClose={handleCloseCreateWorkspace}
-        onCreate={handleConfirmCreateWorkspace}
-        onKeyDown={handleCreateWorkspaceKeyDown}
-      />
+      <FloatingHelpButton />
     </div>
   );
 };
 
-interface WorkspaceCreateDialogProps {
-  open: boolean;
-  name: string;
+interface QuickCreateTemplatesProps {
   isCreating: boolean;
-  onOpenChange: (open: boolean) => void;
-  onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onClose: () => void;
-  onCreate: () => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
+  disabled: boolean;
+  onCreate: (templateId: FormTemplateId) => void;
 }
 
-const WorkspaceCreateDialog = ({
-  open,
-  name,
-  isCreating,
-  onOpenChange,
-  onNameChange,
-  onClose,
-  onCreate,
-  onKeyDown,
-}: WorkspaceCreateDialogProps) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="gap-4 sm:max-w-md">
-      <DialogHeader>
-        <DialogTitle>Create workspace</DialogTitle>
-        <DialogDescription>Give your new workspace a name to get started.</DialogDescription>
-      </DialogHeader>
-      <Input
-        value={name}
-        onChange={onNameChange}
-        placeholder="Workspace name"
-        aria-label="Workspace name"
-        onKeyDown={onKeyDown}
-        autoFocus
-      />
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose} disabled={isCreating}>
-          Cancel
-        </Button>
-        <Button onClick={onCreate} disabled={!name.trim() || isCreating}>
-          {isCreating ? (
-            <>
-              <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />
-              Creating…
-            </>
-          ) : (
-            "Save"
+// Shared card chrome for the quick-create row.
+const QUICK_CARD_CLASS =
+  "flex flex-1 cursor-pointer flex-col items-center gap-3 rounded-2xl border bg-card px-5 py-4.5 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.28px tracking have no scale equivalent
+const QUICK_CARD_LABEL = "text-base font-[450] tracking-[0.28px] text-foreground";
+
+// Figma node 27170:28095 — row of equal-flex template cards. Blank = dashed gray/300 border (Figma
+// node 27170:28095); the rest = solid gray/100 hairline. 24px icon + 14px label (Medium/450, gray/950).
+// Only `featured` templates are pinned here; rest live in /templates.
+const QuickCreateTemplates = ({ disabled, onCreate }: QuickCreateTemplatesProps) => (
+  <div className="flex items-stretch gap-3">
+    {FORM_TEMPLATE_META.filter((t) => t.featured).map((template) => {
+      const Icon = TEMPLATE_ICONS[template.id] ?? FigPlusIcon;
+      const isBlank = template.id === "blank";
+
+      return (
+        <button
+          key={template.id}
+          type="button"
+          disabled={disabled}
+          onClick={() => onCreate(template.id)}
+          className={cn(
+            QUICK_CARD_CLASS,
+            isBlank ? "border-dashed border-border" : "border-border",
           )}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
-interface DashboardHeaderProps {
-  isLoading: boolean;
-  orgFormsCount: number;
-  orderedWorkspaces: ReadonlyArray<{ id: string; name: string }>;
-  isCreating: boolean;
-  handleCreateWorkspace: () => void;
-  handleCreateForm: (workspaceId?: string) => void;
-}
-
-const DashboardHeader = ({
-  isLoading,
-  orgFormsCount,
-  orderedWorkspaces,
-  isCreating,
-  handleCreateWorkspace,
-  handleCreateForm,
-}: DashboardHeaderProps) => {
-  const orgWorkspacesCount = orderedWorkspaces.length;
-  const topWorkspace = orderedWorkspaces[0];
-  const hasMultipleWorkspaces = orgWorkspacesCount > 1;
-
-  const subtitleString = isLoading
-    ? "Loading..."
-    : `${orgFormsCount} form${orgFormsCount !== 1 ? "s" : ""} across ${orgWorkspacesCount} workspace${orgWorkspacesCount !== 1 ? "s" : ""}`;
-
-  return (
-    <div className="mb-8 flex items-center justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold">Home</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          <TextSwap key={subtitleString}>{subtitleString}</TextSwap>
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-        <Button
-          className="ml-1"
-          size="sm"
-          variant="secondary"
-          prefix={<FolderPlus className="size-4" />}
-          onClick={handleCreateWorkspace}
-          disabled={isLoading}
+          aria-label={`Create ${template.label}`}
         >
-          New workspace
-        </Button>
-        {hasMultipleWorkspaces ? (
-          <ButtonGroup>
-            <Button
-              size="sm"
-              prefix={
-                isCreating ? (
-                  <Loader2Icon className="animate-spin" />
-                ) : (
-                  <PlusIcon className="size-4" />
-                )
-              }
-              onClick={() => handleCreateForm(topWorkspace?.id)}
-              disabled={isLoading || isCreating || !topWorkspace}
-            >
-              New form in {topWorkspace?.name ?? "workspace"}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    size="sm"
-                    aria-label="Pick a different workspace"
-                    disabled={isLoading || isCreating}
-                  >
-                    <ChevronDownIcon className="size-3" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" sideOffset={4} className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Create new form in…</DropdownMenuLabel>
-                  {orderedWorkspaces.map((ws) => (
-                    <DropdownMenuItem
-                      key={ws.id}
-                      onClick={() => handleCreateForm(ws.id)}
-                      disabled={isCreating}
-                    >
-                      <span className="flex-1 truncate text-left">{ws.name}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </ButtonGroup>
-        ) : (
-          <Button
-            size="sm"
-            prefix={
-              isCreating ? (
-                <Loader2Icon className="animate-spin" />
-              ) : (
-                <PlusIcon className="size-4" />
-              )
-            }
-            onClick={() => handleCreateForm()}
-            disabled={isLoading || isCreating || orgWorkspacesCount === 0}
-          >
-            New form
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-type FormListItemForm = {
-  id: string;
-  title: string | null;
-  status: "draft" | "published" | "archived" | string;
-  workspaceId: string;
-  updatedAt: string;
-};
-
-interface DashboardFormListProps {
-  isSyncing: boolean;
-  isLoading: boolean;
-  paginatedForms: ReadonlyArray<FormListItemForm>;
-  selectedFormIds: Set<string>;
-  workspaceNameMap: Map<string, string>;
-  duplicatingFormId: string | null;
-  formatLastEdited: (timestamp: string) => string;
-  handleDuplicate: (formId: string) => Promise<void> | void;
-  handleDeleteClick: (form: { id: string; title: string }) => void;
-  handleToggleSelect: (formId: string) => void;
-}
-
-const DashboardFormList = ({
-  isSyncing,
-  isLoading,
-  paginatedForms,
-  selectedFormIds,
-  workspaceNameMap,
-  duplicatingFormId,
-  formatLastEdited,
-  handleDuplicate,
-  handleDeleteClick,
-  handleToggleSelect,
-}: DashboardFormListProps) => (
-  <div className="grid grid-cols-1 gap-2">
-    {isSyncing ? (
-      <SyncOverlay />
-    ) : isLoading ? (
-      ["a", "b", "c", "d", "e"].map((id) => (
-        <div key={`skeleton-${id}`} className="-mx-2 flex animate-pulse flex-col rounded-xl p-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-2">
-                <div className="h-5 w-48 rounded bg-muted" />
-                <div className="h-3 w-32 rounded bg-muted" />
-              </div>
-            </div>
-          </div>
-        </div>
-      ))
-    ) : (
-      paginatedForms.map((form) => (
-        <FormListItem
-          key={form.id}
-          form={form}
-          isSelected={selectedFormIds.has(form.id)}
-          workspaceNameMap={workspaceNameMap}
-          duplicatingFormId={duplicatingFormId}
-          formatLastEdited={formatLastEdited}
-          onDuplicate={handleDuplicate}
-          onDeleteClick={handleDeleteClick}
-          onToggleSelect={handleToggleSelect}
-        />
-      ))
-    )}
+          <Icon className="size-6 text-foreground" />
+          <span className={QUICK_CARD_LABEL}>{template.label}</span>
+        </button>
+      );
+    })}
+    {/* Browse the full gallery instead of creating a form. */}
+    <Link
+      to="/templates"
+      className={cn(QUICK_CARD_CLASS, "border-border")}
+      aria-label="Browse all templates"
+    >
+      <FigAppsIcon className="size-6 text-foreground" />
+      <span className={QUICK_CARD_LABEL}>All Templates</span>
+    </Link>
   </div>
 );
+
+const SortMenu = ({
+  sortBy,
+  onChange,
+}: {
+  sortBy: FormSort;
+  onChange: (next: FormSort) => void;
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger
+      render={
+        <ToolbarPill aria-label="Sort forms">
+          <FigSortIcon />
+          <span>Sort</span>
+          <FigSmallDownIcon />
+        </ToolbarPill>
+      }
+    />
+    <DropdownMenuContent align="end" sideOffset={4} className="min-w-[168px]">
+      <DropdownMenuGroup>
+        {SORT_FIELDS.map((field) =>
+          field.nested ? (
+            <DropdownMenuSub key={field.value}>
+              <DropdownMenuSubTrigger>
+                <span className="flex-1 text-left whitespace-nowrap">{field.label}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {(["asc", "desc"] as const).map((dir) => (
+                  <DropdownMenuItem key={dir} onClick={() => onChange({ field: field.value, dir })}>
+                    <span className="flex-1 text-left">
+                      {dir === "asc" ? "Ascending" : "Descending"}
+                    </span>
+                    {sortBy.field === field.value && sortBy.dir === dir && (
+                      <CheckIcon className="size-4" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem
+              key={field.value}
+              onClick={() => onChange({ field: field.value, dir: "desc" })}
+            >
+              <span className="flex-1 text-left whitespace-nowrap">{field.label}</span>
+              {sortBy.field === field.value && <CheckIcon className="size-4" />}
+            </DropdownMenuItem>
+          ),
+        )}
+      </DropdownMenuGroup>
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
+type FormCardForm = {
+  id: string;
+  title: string | null;
+  status: string;
+  workspaceId: string;
+  updatedAt: string;
+  createdAt: string;
+  cover?: string | null;
+  previewImageUrl?: string | null;
+  customization?: Record<string, unknown> | null;
+};
+
+interface DashboardFormGridProps {
+  isSyncing: boolean;
+  isLoading: boolean;
+  viewMode: FormViewMode;
+  gridRef: (grid: HTMLDivElement | null) => void;
+  paginatedForms: ReadonlyArray<FormCardForm>;
+  submissionCounts: Map<string, number>;
+  formatLastEdited: (timestamp: string) => string;
+}
+
+const DashboardFormGrid = ({
+  isSyncing,
+  isLoading,
+  viewMode,
+  gridRef,
+  paginatedForms,
+  submissionCounts,
+  formatLastEdited,
+}: DashboardFormGridProps) => {
+  if (isSyncing) return <SyncOverlay />;
+
+  if (isLoading) {
+    return (
+      <div
+        ref={gridRef}
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={`skeleton-${i}`}
+            className="h-[218px] animate-pulse rounded-2xl border border-border bg-card"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (viewMode === "list") {
+    return <DashboardTable paginatedForms={paginatedForms} submissionCounts={submissionCounts} />;
+  }
+
+  return (
+    <div
+      ref={gridRef}
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    >
+      {paginatedForms.map((form) => (
+        <FormCard
+          key={form.id}
+          form={form}
+          responseCount={submissionCounts.get(form.id) ?? 0}
+          formatLastEdited={formatLastEdited}
+        />
+      ))}
+    </div>
+  );
+};
+
+interface FormCardProps {
+  form: FormCardForm;
+  responseCount: number;
+  formatLastEdited: (timestamp: string) => string;
+}
+
+// Figma node 26216:10218 — card with 90px preview area (cover banner) and an info block:
+// title (gray/900) then 3 meta rows (icon + 14px gray/700, status in green).
+const FormCard = ({ form, responseCount, formatLastEdited }: FormCardProps) => {
+  const isPublished = form.status === "published";
+
+  return (
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- custom background+shadow transition has no plain-utility equivalent
+    <div className="group relative flex flex-col rounded-2xl border border-border bg-card px-1.5 pt-1.5 pb-2 transition-[background-color,box-shadow] duration-200 hover:elevation-card">
+      <Link
+        to={
+          isPublished
+            ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+            : "/workspace/$workspaceId/form-builder/$formId/edit"
+        }
+        params={{ workspaceId: form.workspaceId, formId: form.id }}
+        preload="intent"
+        className="flex flex-col outline-none"
+      >
+        <FormCardThumbnail
+          title={form.title ?? "Untitled"}
+          cover={form.cover}
+          preview={form.previewImageUrl}
+        />
+
+        {/* Info block */}
+        <div className="mt-3 flex w-full flex-col gap-2">
+          <div className="px-1">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
+            <p className="truncate text-base font-medium tracking-[0.28px] text-foreground">
+              {form.title || "Untitled"}
+            </p>
+          </div>
+          <div className="flex w-full flex-col">
+            <MetaRow>
+              {/* Status dot — Figma icon/line/dot (node 27170:28329): 6px circle centered in a 16px
+                  slot so its label aligns with the 16px-icon rows below. Green #1e8d02 / muted draft. */}
+              <span className="flex size-4 shrink-0 items-center justify-center">
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    isPublished ? "bg-(--color-success)" : "bg-muted-foreground/50",
+                  )}
+                />
+              </span>
+              <span
+                className={cn(
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent
+                  "text-base font-[420] tracking-[0.28px]",
+                  isPublished ? "text-(--color-success)" : "text-muted-foreground",
+                )}
+              >
+                {isPublished ? "Published" : "Draft"}
+              </span>
+            </MetaRow>
+            <MetaRow>
+              <FigTimeIcon className="size-4 shrink-0 text-foreground" />
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-foreground">
+                {formatLastEdited(form.updatedAt)}
+              </span>
+            </MetaRow>
+            <MetaRow>
+              <FigPeopleIcon className="size-4 shrink-0 text-foreground" />
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-foreground">
+                {responseCount === 0
+                  ? "--"
+                  : `${responseCount} ${responseCount === 1 ? "response" : "responses"}`}
+              </span>
+            </MetaRow>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+};
+
+const MetaRow = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex w-full items-center gap-2 px-1 py-1.25">{children}</div>
+);
+
+// Shared column widths for the list table (Figma node 26216:13434). Title is fluid (flex-1);
+// a 32px gap (gap-8) separates it from the fixed Status/Responses/Edited columns.
+const LIST_COL_STATUS = "w-36"; // 144px
+
+const LIST_COL_RESPONSES = "w-36"; // 144px
+
+const LIST_COL_EDITED = "w-[216px]";
+
+interface DashboardTableProps {
+  paginatedForms: ReadonlyArray<FormCardForm>;
+  submissionCounts: Map<string, number>;
+}
+
+const TableHead = ({ children }: { children: React.ReactNode }) => (
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.26px tracking have no scale equivalent
+  <span className="text-sm font-[420] tracking-[0.26px] text-muted-foreground">{children}</span>
+);
+
+const DashboardTable = ({ paginatedForms, submissionCounts }: DashboardTableProps) => (
+  <div className="overflow-x-auto">
+    <div className="min-w-[680px]">
+      {/* Header row — border-b gray-100, 13px / font-420 / gray-500 (Figma 26216:13365) */}
+      <div className="flex h-8 items-center gap-8 border-b border-border px-1">
+        <div className="flex-1 px-2">
+          <TableHead>Name</TableHead>
+        </div>
+        <div className="flex shrink-0 items-center">
+          <div className={cn(LIST_COL_STATUS, "px-2")}>
+            <TableHead>Status</TableHead>
+          </div>
+          <div className={cn(LIST_COL_RESPONSES, "px-2")}>
+            <TableHead>Responses</TableHead>
+          </div>
+          <div className={cn(LIST_COL_EDITED, "px-2")}>
+            <TableHead>Last edited</TableHead>
+          </div>
+        </div>
+      </div>
+
+      {paginatedForms.map((form) => (
+        <FormListRow key={form.id} form={form} responseCount={submissionCounts.get(form.id) ?? 0} />
+      ))}
+    </div>
+  </div>
+);
+
+interface FormListRowProps {
+  form: FormCardForm;
+  responseCount: number;
+}
+
+// Figma 26216:13294 — 44px row: thumbnail+title (flex) | status pill | responses | edited.
+const FormListRow = ({ form, responseCount }: FormListRowProps) => {
+  const isPublished = form.status === "published";
+  const relative = `${formatDistanceToNow(parseTimestampAsUTC(form.updatedAt) ?? new Date())} ago`;
+
+  return (
+    <div className="group flex h-11 items-center gap-8 rounded-lg border-b border-border px-1 transition-colors hover:bg-secondary">
+      {/* Name — thumbnail + title */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 pl-1">
+        <Link
+          to={
+            isPublished
+              ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+              : "/workspace/$workspaceId/form-builder/$formId/edit"
+          }
+          params={{ workspaceId: form.workspaceId, formId: form.id }}
+          preload="intent"
+          className="flex min-w-0 flex-1 items-center gap-2 outline-none"
+        >
+          <FormListThumbnail
+            title={form.title ?? "Untitled"}
+            cover={form.cover}
+            preview={form.previewImageUrl}
+          />
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.28px tracking have no scale equivalent */}
+          <span className="truncate text-base font-[450] tracking-[0.28px] text-foreground">
+            {form.title || "Untitled"}
+          </span>
+        </Link>
+      </div>
+
+      <div className="flex shrink-0 items-center">
+        {/* Status pill — published: soft-green pair; draft: muted */}
+        <div className={cn(LIST_COL_STATUS, "px-2")}>
+          <span
+            className={cn(
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma pill (60px radius, 450 weight, 0.24px tracking) has no scale equivalent
+              "inline-flex items-center rounded-[60px] px-1.5 py-0.75 text-xs font-[450] tracking-[0.24px]",
+              isPublished
+                ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
+                : "bg-secondary text-muted-foreground",
+            )}
+          >
+            {isPublished ? "Published" : "Draft"}
+          </span>
+        </div>
+        {/* Responses */}
+        <div className={cn(LIST_COL_RESPONSES, "px-2")}>
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+          <span className="text-base font-[420] tracking-[0.28px] text-foreground">
+            {responseCount}
+          </span>
+        </div>
+        {/* Last edited */}
+        <div className={cn(LIST_COL_EDITED, "px-2")}>
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+          <span className="truncate text-base font-[420] tracking-[0.28px] text-foreground">
+            {relative}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FloatingHelpButton = () => (
   <div className="fixed right-6 bottom-6">
@@ -833,61 +994,6 @@ const FloatingHelpButton = () => (
     >
       <HelpCircleIcon className="size-5 text-muted-foreground" />
     </Button>
-  </div>
-);
-
-type DashboardPaginationProps = {
-  startIndex: number;
-  totalForms: number;
-  currentPage: number;
-  totalPages: number;
-  onPrevPage: () => void;
-  onNextPage: () => void;
-  onSetPage: (page: number) => void;
-};
-
-const DashboardPagination = ({
-  startIndex,
-  totalForms,
-  currentPage,
-  totalPages,
-  onPrevPage,
-  onNextPage,
-  onSetPage,
-}: DashboardPaginationProps) => (
-  <div className="flex items-center justify-between border-t pt-4">
-    <p className="text-sm text-muted-foreground">
-      Showing {startIndex + 1}-{Math.min(startIndex + FORMS_PER_PAGE, totalForms)} of {totalForms}{" "}
-      forms
-    </p>
-    <div className="flex items-center gap-2">
-      <Button variant="secondary" size="sm" onClick={onPrevPage} disabled={currentPage === 1}>
-        <ChevronLeftIcon className="size-4" />
-        Previous
-      </Button>
-      <div className="flex items-center gap-1">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <Button
-            key={page}
-            variant={currentPage === page ? "default" : "ghost"}
-            size="sm"
-            className="size-8 p-0"
-            onClick={() => onSetPage(page)}
-          >
-            {page}
-          </Button>
-        ))}
-      </div>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onNextPage}
-        disabled={currentPage === totalPages}
-      >
-        Next
-        <ChevronRightIcon className="size-4" />
-      </Button>
-    </div>
   </div>
 );
 
@@ -915,256 +1021,10 @@ const DashboardEmptyState = ({ isCreating, disabled, onCreate }: DashboardEmptyS
   </div>
 );
 
-type BulkDeleteDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  count: number;
-  onConfirm: () => void;
-};
-
-const BulkDeleteDialog = ({ open, onOpenChange, count, onConfirm }: BulkDeleteDialogProps) => (
-  <AlertDialog open={open} onOpenChange={onOpenChange}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>
-          Delete {count} form{count !== 1 ? "s" : ""}
-        </AlertDialogTitle>
-        <AlertDialogDescription>
-          Are you sure you want to delete {count} form{count !== 1 ? "s" : ""}? This action cannot
-          be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction
-          onClick={onConfirm}
-          className="bg-destructive text-white hover:bg-destructive/90"
-        >
-          Delete
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
-
-type SingleDeleteDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string | undefined;
-  onConfirm: () => void;
-};
-
-const SingleDeleteDialog = ({ open, onOpenChange, title, onConfirm }: SingleDeleteDialogProps) => (
-  <AlertDialog open={open} onOpenChange={onOpenChange}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Delete form</AlertDialogTitle>
-        <AlertDialogDescription>
-          Are you sure you want to delete "{title}"? This action cannot be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction
-          onClick={onConfirm}
-          className="bg-destructive text-white hover:bg-destructive/90"
-        >
-          Delete
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
-
-type FormListItemProps = {
-  form: FormListItemForm;
-  isSelected: boolean;
-  workspaceNameMap: Map<string, string>;
-  duplicatingFormId: string | null;
-  formatLastEdited: (timestamp: string) => string;
-  onDuplicate: (formId: string) => void;
-  onDeleteClick: (form: { id: string; title: string }) => void;
-  onToggleSelect: (formId: string) => void;
-};
-
-const FormListItem = ({
-  form,
-  isSelected,
-  workspaceNameMap,
-  duplicatingFormId,
-  formatLastEdited,
-  onDuplicate,
-  onDeleteClick,
-  onToggleSelect,
-}: FormListItemProps) => (
-  <Card
-    className={`group cursor-pointer gap-0 bg-transparent px-3 py-2 ring-0 transition-[background-color,box-shadow] duration-200 hover:bg-muted/30 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring/50 ${isSelected ? "bg-muted/50" : ""}`}
-  >
-    <Link
-      to={
-        form.status === "published"
-          ? "/workspace/$workspaceId/form-builder/$formId/submissions"
-          : "/workspace/$workspaceId/form-builder/$formId/edit"
-      }
-      params={{
-        workspaceId: form.workspaceId,
-        formId: form.id,
-      }}
-      preload="intent"
-      className="outline-none"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold transition-colors">{form.title || "Untitled"}</span>
-              <Badge
-                variant="secondary"
-                className={`h-4 px-1.5 text-[10px] font-normal ${
-                  form.status === "published"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-muted/80 text-muted-foreground"
-                } rounded-full`}
-              >
-                {form.status === "published" ? "Published" : "Draft"}
-              </Badge>
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}</span>
-              <span className="size-0.5 rounded-full bg-muted-foreground/30"></span>
-              <span>{formatLastEdited(form.updatedAt)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "flex items-center gap-1 transition-opacity",
-            duplicatingFormId === form.id || isSelected
-              ? "opacity-100"
-              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
-          )}
-        >
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Duplicate form"
-                    disabled={duplicatingFormId === form.id}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onDuplicate(form.id);
-                    }}
-                  />
-                }
-              >
-                <IconSwap
-                  state={duplicatingFormId === form.id ? "b" : "a"}
-                  iconA={<CopyIcon className="size-4 text-muted-foreground" />}
-                  iconB={<Loader2Icon className="size-4 animate-spin text-muted-foreground" />}
-                />
-              </TooltipTrigger>
-              <TooltipContent>Duplicate</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Delete form"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onDeleteClick({
-                        id: form.id,
-                        title: form.title || "Untitled",
-                      });
-                    }}
-                  />
-                }
-              >
-                <Trash2Icon className="size-4 text-[var(--sidebar-icon-stroke)]" />
-              </TooltipTrigger>
-              <TooltipContent>Delete</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={isSelected ? "Deselect form" : "Select form"}
-                    className={
-                      isSelected
-                        ? "bg-muted-foreground/20 text-foreground hover:bg-muted-foreground/30"
-                        : "text-muted-foreground"
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onToggleSelect(form.id);
-                    }}
-                  />
-                }
-              >
-                <CheckIcon className="size-3.5 text-[var(--sidebar-icon-stroke)]" />
-              </TooltipTrigger>
-              <TooltipContent>{isSelected ? "Deselect" : "Select"}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-    </Link>
-  </Card>
-);
-
-type BulkSelectionToolbarProps = {
-  count: number;
-  onBulkDelete: () => void;
-  onClearSelection: () => void;
-};
-
-const BulkSelectionToolbar = ({
-  count,
-  onBulkDelete,
-  onClearSelection,
-}: BulkSelectionToolbarProps) => (
-  <div className="fixed bottom-6 left-1/2 z-50 w-[min(560px,90vw)] -translate-x-1/2 animate-in duration-300 fade-in slide-in-from-bottom-4">
-    <div className="shadow-card-elevated flex items-center justify-between rounded-2xl bg-background px-4 py-3 dark:bg-muted/50">
-      <div className="flex items-center gap-2.5">
-        <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
-          <CheckIcon className="size-4" strokeWidth={3} />
-        </div>
-        <span className="text-sm font-medium">{count} selected</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBulkDelete}>
-          Delete
-          <span className="ml-1 text-xs text-muted-foreground">
-            {formatForDisplay(HOTKEYS.DASHBOARD_DELETE)}
-          </span>
-        </Button>
-        <Button variant="secondary" size="sm" onClick={onClearSelection}>
-          <XIcon className="size-3.5" />
-          Clear
-          <span className="ml-1 text-xs text-muted-foreground">
-            {formatForDisplay(HOTKEYS.DASHBOARD_CLEAR_SELECTION)}
-          </span>
-        </Button>
-      </div>
-    </div>
-  </div>
-);
-
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
+  // Header search writes ?q= (debounced). Optional so existing navigations need not supply it.
+  validateSearch: v.object({ q: v.optional(v.string()) }),
   ssr: "data-only",
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

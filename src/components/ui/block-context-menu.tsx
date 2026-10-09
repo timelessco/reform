@@ -4,7 +4,6 @@ import {
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
 import { KEYS } from "platejs";
-import type { PlateEditor } from "platejs/react";
 import { useEditorPlugin, usePlateState, usePluginOption } from "platejs/react";
 import * as React from "react";
 
@@ -21,53 +20,6 @@ import {
 import { useIsTouchDevice } from "@/hooks/use-is-touch-device";
 
 type _Value = "askAI" | null;
-
-type OptionNode = { type?: string; variant?: string };
-
-/** Walk back to the first formOptionItem in the consecutive run — `shuffle` is read
- * off the group's anchor node by the plate→form transform. */
-const getGroupStartPath = (editor: PlateEditor, path: number[]): number[] => {
-  let current = path;
-  while (current[current.length - 1] > 0) {
-    const prevPath = [...current];
-    prevPath[prevPath.length - 1] -= 1;
-    try {
-      const prev = editor.api.node(prevPath);
-      if ((prev?.[0] as OptionNode | undefined)?.type === "formOptionItem") {
-        current = prevPath;
-        continue;
-      }
-    } catch {
-      // out of range
-    }
-    break;
-  }
-  return current;
-};
-
-/** Anchor path of a selected single-select Dropdown field, or null. Matches a selected
- * dropdown option row, or a formLabel whose next sibling is one. */
-const findDropdownAnchorPath = (editor: PlateEditor): number[] | null => {
-  const nodes = editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
-  for (const [node, path] of nodes) {
-    const n = node as OptionNode;
-    if (n.type === "formOptionItem" && n.variant === "dropdown") {
-      return getGroupStartPath(editor, path);
-    }
-    if (n.type === "formLabel") {
-      const nextPath = [...path];
-      nextPath[nextPath.length - 1] += 1;
-      try {
-        const next = editor.api.node(nextPath);
-        const nn = next?.[0] as OptionNode | undefined;
-        if (nn?.type === "formOptionItem" && nn.variant === "dropdown") return nextPath;
-      } catch {
-        // no next sibling
-      }
-    }
-  }
-  return null;
-};
 
 export const BlockContextMenu = ({ children }: { children: React.ReactNode }) => {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
@@ -104,42 +56,21 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
 
   const selectedNodes = editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
   const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
+
   // Read required from the next sibling input node (not the label)
   const isRequired = selectedNodes.some(([node, path]) => {
     if (node.type !== "formLabel") return false;
     const nextPath = [...path];
     nextPath[nextPath.length - 1] += 1;
+
     try {
       const next = editor.api.node(nextPath);
+
       return next ? Boolean(next[0]?.required) : false;
     } catch {
       return false;
     }
   });
-
-  // Single-select Dropdown fields expose a "Shuffle options" toggle (Figma node 25578:10632).
-  const dropdownAnchorPath = findDropdownAnchorPath(editor);
-  const isShuffled = (() => {
-    if (!dropdownAnchorPath) return false;
-    try {
-      const anchor = editor.api.node(dropdownAnchorPath);
-      return Boolean((anchor?.[0] as { shuffle?: boolean } | undefined)?.shuffle);
-    } catch {
-      return false;
-    }
-  })();
-
-  const handleShuffleToggle = React.useCallback(() => {
-    const anchorPath = findDropdownAnchorPath(editor);
-    if (!anchorPath) return;
-    try {
-      const anchor = editor.api.node(anchorPath);
-      const current = Boolean((anchor?.[0] as { shuffle?: boolean } | undefined)?.shuffle);
-      editor.tf.setNodes({ shuffle: !current }, { at: anchorPath });
-    } catch {
-      // node removed
-    }
-  }, [editor]);
 
   const handleRequiredToggle = React.useCallback(() => {
     editor
@@ -150,8 +81,10 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
           // Write required to the next sibling input node
           const nextPath = [...path];
           nextPath[nextPath.length - 1] += 1;
+
           try {
             const next = editor.api.node(nextPath);
+
             if (next) {
               editor.tf.setNodes({ required: !next[0]?.required }, { at: nextPath });
             }
@@ -173,7 +106,9 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
 
   const handleContextMenu = React.useCallback(
     (event: React.MouseEvent) => {
+      // SAFETY: context menu targets render inside the editor DOM, so dataset lives on an Element
       const dataset = (event.target as HTMLElement).dataset;
+
       const disabled =
         dataset?.slateEditor === "true" || readOnly || dataset?.plateOpenContextMenu === "false";
 
@@ -206,6 +141,7 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
   const handleTurnIntoH1 = React.useCallback(() => handleTurnInto(KEYS.h1), [handleTurnInto]);
   const handleTurnIntoH2 = React.useCallback(() => handleTurnInto(KEYS.h2), [handleTurnInto]);
   const handleTurnIntoH3 = React.useCallback(() => handleTurnInto(KEYS.h3), [handleTurnInto]);
+
   const handleTurnIntoBlockquote = React.useCallback(
     () => handleTurnInto(KEYS.blockquote),
     [handleTurnInto],
@@ -239,11 +175,6 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
             {hasFormLabel && (
               <ContextMenuItem onClick={handleRequiredToggle}>
                 {isRequired ? "Unmark Required" : "Mark Required"}
-              </ContextMenuItem>
-            )}
-            {dropdownAnchorPath && (
-              <ContextMenuItem onClick={handleShuffleToggle}>
-                {isShuffled ? "Don't shuffle options" : "Shuffle options"}
               </ContextMenuItem>
             )}
             <ContextMenuItem onClick={handleDelete}>Delete</ContextMenuItem>

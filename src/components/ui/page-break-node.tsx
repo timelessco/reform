@@ -34,30 +34,34 @@ export const PageBreakElement = (props: PlateElementProps) => {
   const selected = useSelected();
   const focused = useFocused();
 
+  // SAFETY: pageBreak nodes are created with a boolean isThankYouPage, absent as undefined
   const isThankYouPage = (element.isThankYouPage as boolean) ?? false;
 
-  // Narrow subscription: re-render only when this pageBreak's own number changes, not on every
-  // keystroke. Returning a primitive lets Plate skip re-renders when the count is unchanged.
+  // SAFETY: hasFormFields is written as a boolean by the form normalizer, absent as undefined
+  const hasFormFields = (element.hasFormFields as boolean) ?? false;
+
   const pageNumber = useEditorSelector(
     (ed) => {
-      const path = ed.api.findPath(element);
-      if (!path) return 2;
+      const index = ed.children.indexOf(element);
+
+      if (index < 0) return 2;
 
       let count = 2; // Page 1 is before first pageBreak, so this starts at 2
-      for (const [, nodePath] of ed.api.nodes({
-        at: [],
-        match: { type: "pageBreak" },
-      })) {
-        if (nodePath[0] < path[0]) {
+
+      for (const node of ed.children.slice(0, index)) {
+        if (node.type === "pageBreak") {
           count++;
         }
       }
+
       return count;
     },
     [element],
   );
+
   const handleThankYouToggle = (checked: boolean) => {
     const path = editor.api.findPath(element);
+
     if (!path) return;
 
     editor.tf.withoutNormalizing(() => {
@@ -70,6 +74,7 @@ export const PageBreakElement = (props: PlateElementProps) => {
             editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
           }
         }
+
         editor.tf.setNodes({ isThankYouPage: true }, { at: path });
         // form-blocks-kit normalizer strips pageBreaks/fields/buttons after this thank-you pageBreak.
       } else {
@@ -93,7 +98,7 @@ export const PageBreakElement = (props: PlateElementProps) => {
         <div className="mx-4 flex items-center gap-4 text-sm text-muted-foreground">
           <span>Page {pageNumber}</span>
 
-          {!((element.hasFormFields as boolean) ?? false) && (
+          {!hasFormFields && (
             <div className="flex items-center gap-2">
               <Label
                 htmlFor={`thank-you-toggle-${String(element.id || pageNumber)}`}

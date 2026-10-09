@@ -33,9 +33,12 @@ const nextVisibleStepIndex = (
 ): number => {
   for (let i = fromIndex + 1; i < stepFieldNames.length; i++) {
     const names = stepFieldNames[i];
+
     if (names.length === 0) return i; // static-only step stays in the flow
+
     if (names.some((name) => visibility[name] !== false)) return i;
   }
+
   return -1;
 };
 
@@ -63,35 +66,56 @@ export const useStepPreviewForm = ({
   /** Field names currently visible per conditional logic — step-form hides the rest.
    * `null` when no logic context is mounted (render everything). */
   visibleFieldNames: Set<string> | null;
-  /** Field names auto-filled by an active "Set value" action — rendered read-only. */
+  /** Field names auto-filled by an active "Set value" action — dimmed, still editable. */
   lockedFieldNames: Set<string>;
+  /** Field names that are effectively required (authored OR a passing "Require field" action),
+   * so the rendered label shows the mark. `null` when no logic context is mounted. */
+  requiredFieldNames: Set<string> | null;
   /** True when a passing hide-submit action should suppress the completion button. */
   hideSubmit: boolean;
 } => {
   const { formData, goToNextStep, goToStep, submitForm, currentStep, formId, tracking } =
     useStepForm();
+
   const { saveDraft } = useDraftAutoSave(formId);
   const logic = useFormLogic();
 
   // Mirror of the live form values, used to recompute visibility/required reactively.
   const [liveValues, setLiveValues] = useState<Record<string, unknown>>(() => ({}));
+
   const mergedAnswers = useMemo<Record<string, unknown>>(
     () => ({ ...formData, ...liveValues }),
     [formData, liveValues],
   );
+
   const evaluation = useMemo(
     () => (logic ? evaluate(logic.ruleset, mergedAnswers, logic.allFields) : null),
     [logic, mergedAnswers],
   );
+
   const visibleFieldNames = useMemo<Set<string> | null>(() => {
     if (!evaluation) return null;
+
     return new Set(
       fields.filter((f) => evaluation.visibility[f.name] !== false).map((f) => f.name),
     );
   }, [evaluation, fields]);
+
   const lockedFieldNames = useMemo<Set<string>>(
     () => new Set(evaluation ? Object.keys(evaluation.setValues) : []),
     [evaluation],
+  );
+
+  // Effective-required field names (authored OR a passing "Require field" action) so the
+  // rendered label can show the mark even when the requiredness comes from logic.
+  const requiredFieldNames = useMemo<Set<string> | null>(
+    () =>
+      evaluation
+        ? new Set(
+            fields.filter((f) => evaluation.effectiveRequired[f.name] === true).map((f) => f.name),
+          )
+        : null,
+    [evaluation, fields],
   );
 
   // `start` dedup latch keyed `visitId::questionId`, per Step mount. Cross-step idempotency via server upsert (coalesce on startedAt); StepForm remounts on back-nav, resetting this.
@@ -101,6 +125,7 @@ export const useStepPreviewForm = ({
   // Hidden fields are excluded so they never block submit; a passing require-action adds requiredness.
   const effectiveFields = useMemo(() => {
     if (!evaluation) return fields;
+
     return fields
       .filter((f) => evaluation.visibility[f.name] !== false)
       .map((f) => ({ ...f, required: evaluation.effectiveRequired[f.name] === true }));
@@ -114,9 +139,11 @@ export const useStepPreviewForm = ({
   // Question id → ref, keyed by Plate Block id (= data-bf-question-id), so focus on any descendant resolves even for fields without `name` (Phone, MultiSelect, etc.).
   const questionsById = useMemo<Map<string, QuestionRef>>(() => {
     const map = new Map<string, QuestionRef>();
+
     for (const q of questions) {
       map.set(q.questionId, q);
     }
+
     return map;
   }, [questions]);
 
@@ -124,9 +151,11 @@ export const useStepPreviewForm = ({
     const fieldDefaults = generateDefaultValuesFromFields(fields);
     // Merge context data — for back-nav to previous step.
     const merged: Record<string, unknown> = { ...fieldDefaults };
+
     for (const field of fields) {
       if (!(field.name in formData)) continue;
       const persisted = formData[field.name];
+
       // For repeatable fields, pad short persisted arrays up to the
       // editor-configured `initialRows` minimum. Without this, a creator
       // bumping `initialRows` from 1 → 4 wouldn't see 4 rows in preview if
@@ -134,6 +163,7 @@ export const useStepPreviewForm = ({
       if ("isFieldArray" in field && field.isFieldArray === true && Array.isArray(persisted)) {
         const rawRows = "initialRows" in field ? field.initialRows : undefined;
         const minRows = typeof rawRows === "number" && rawRows > 0 ? Math.floor(rawRows) : 1;
+
         if (persisted.length < minRows) {
           const seed = "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
           merged[field.name] = [
@@ -143,18 +173,22 @@ export const useStepPreviewForm = ({
           continue;
         }
       }
+
       merged[field.name] = persisted;
     }
+
     return merged;
   }, [fields, formData]);
 
   const handleFieldFocus = (event: React.FocusEvent<HTMLFormElement>): void => {
     if (!(tracking?.visitId && tracking.mode)) return;
     const q = resolveQuestionFromFocus(event.target as Element, questionsById);
+
     if (!q) return;
 
     const visitId = tracking.visitId;
     const key = `${visitId}::${q.questionId}`;
+
     if (!startFiredRef.current.has(key)) {
       startFiredRef.current.add(key);
       enqueueQuestionProgress({
@@ -169,6 +203,7 @@ export const useStepPreviewForm = ({
         event: "start",
       });
     }
+
     if (!didStartFiredVisits.has(visitId)) {
       didStartFiredVisits.add(visitId);
       fireUpdateVisit({ visitId, didStartForm: true });
@@ -217,6 +252,7 @@ export const useStepPreviewForm = ({
       if (tracking?.visitId && tracking.mode && questions.length > 0) {
         const visitId = tracking.visitId;
         const lastIndex = questions.length - 1;
+
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
           enqueueQuestionProgress({
@@ -232,6 +268,7 @@ export const useStepPreviewForm = ({
             wasLastQuestion: isLastStep && i === lastIndex,
           });
         }
+
         flushQuestionProgressBuffer();
       }
 
@@ -240,27 +277,35 @@ export const useStepPreviewForm = ({
       if (!logic) {
         if (isLastStep) await submitForm(value);
         else goToNextStep(value);
+
         return;
       }
 
       const finalAnswers = { ...formData, ...value };
       const submitEval = evaluate(logic.ruleset, finalAnswers, logic.allFields);
+
       const finish = async () => {
         if (submitEval.hideSubmit) return; // completion blocked while the condition holds
         await submitForm(value);
+
         if (submitEval.redirectUrl) globalThis.location.href = submitEval.redirectUrl;
       };
 
       const currentStepId = logic.stepIds[currentStep];
       const jumpTo = currentStepId ? submitEval.resolveJump(currentStepId) : null;
+
       if (jumpTo === THANK_YOU_STEP) {
         await finish();
+
         return;
       }
+
       let target = jumpTo ? logic.stepIds.indexOf(jumpTo) : -1;
+
       if (target < 0) {
         target = nextVisibleStepIndex(logic.stepFieldNames, submitEval.visibility, currentStep);
       }
+
       if (target < 0) await finish();
       else goToStep(value, target);
     },
@@ -268,17 +313,20 @@ export const useStepPreviewForm = ({
     onSubmitInvalid({ formApi }) {
       try {
         const errorMap = formApi.state.errorMap.onDynamic;
+
         const inputs = Array.from(
           document.querySelectorAll(`#${formName} input`),
         ) as HTMLInputElement[];
 
         let firstInput: HTMLInputElement | undefined;
+
         for (const input of inputs) {
           if (errorMap?.[input.name]) {
             firstInput = input;
             break;
           }
         }
+
         firstInput?.focus();
       } catch {
         // ignore
@@ -296,24 +344,38 @@ export const useStepPreviewForm = ({
 
   // Auto-fill fields targeted by a "Set value" action. Apply only when the *computed*
   // value changes (not every render) so the respondent can still edit in between.
-  const appliedSetValuesRef = useRef<Record<string, string>>({});
+  // Values may be a string (scalar / single-choice) or string[] (multi-choice) — compared
+  // order-sensitively via a null-joined key, and cleared to the field's native empty shape.
+  const appliedSetValuesRef = useRef<Record<string, string | string[]>>({});
   useEffect(() => {
     if (!evaluation) return;
     const prev = appliedSetValuesRef.current;
     const next = evaluation.setValues;
     const onThisStep = (name: string) => fields.some((f) => f.name === name);
+    const isArrayField = (name: string) => Array.isArray(defaultValues[name]);
+    const key = (v: unknown) => (Array.isArray(v) ? v.join(" ") : v == null ? "" : String(v));
+    const emptyFor = (name: string): string | string[] => (isArrayField(name) ? [] : "");
+
     // Apply changed set-values (only this step's fields live in this form instance;
-    // cross-step targets are applied by their own step when it mounts).
+    // cross-step targets are applied by their own step when it mounts). A clearValue ("")
+    // onto a multi-choice field becomes [] so the array shape is preserved.
     for (const [name, val] of Object.entries(next)) {
-      if (prev[name] !== val && onThisStep(name)) form.setFieldValue(name, val);
+      if (!onThisStep(name) || key(prev[name]) === key(val)) continue;
+      form.setFieldValue(name, val === "" && isArrayField(name) ? [] : val);
     }
-    // Revert fields that were auto-filled but are no longer controlled, so a stale
-    // forced value doesn't persist after its condition stops matching.
+
+    // Clear an auto-fill when its condition stops matching — but only if the field still holds
+    // the value we forced. If the respondent has since edited it, keep their correction.
     for (const name of Object.keys(prev)) {
-      if (!(name in next) && onThisStep(name)) form.setFieldValue(name, "");
+      if (name in next || !onThisStep(name)) continue;
+
+      if (key(form.getFieldValue(name)) === key(prev[name])) {
+        form.setFieldValue(name, emptyFor(name));
+      }
     }
+
     appliedSetValuesRef.current = { ...next };
-  }, [evaluation, fields, form]);
+  }, [evaluation, fields, form, defaultValues]);
 
   return {
     form: form as unknown as AppForm,
@@ -321,6 +383,7 @@ export const useStepPreviewForm = ({
     handleFieldFocus,
     visibleFieldNames,
     lockedFieldNames,
+    requiredFieldNames,
     hideSubmit: evaluation?.hideSubmit ?? false,
   };
 };

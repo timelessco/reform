@@ -20,7 +20,6 @@ type UpdateVisitArgs = {
   didSubmit?: boolean;
   submissionId?: string | null;
   visitEndedAt?: string | null;
-  durationMs?: number | null;
   // CWV, sent on unload beacon. Null when a metric never finalizes (e.g. no interaction → no INP).
   lcpMs?: number | null;
   inpMs?: number | null;
@@ -53,9 +52,11 @@ const logDevError = (label: string, err: unknown): void => {
 export const fireRecordVisit = async (args: RecordVisitArgs): Promise<string | null> => {
   try {
     const result = await recordFormVisit({ data: args });
+
     return result.visitId;
   } catch (err) {
     logDevError("recordFormVisit", err);
+
     return null;
   }
 };
@@ -75,14 +76,15 @@ export const fireUpdateVisit = (args: UpdateVisitArgs): void => {
 export const fireUpdateVisitBeacon = (args: UpdateVisitArgs): void => {
   if (typeof navigator === "undefined" || typeof navigator.sendBeacon !== "function") {
     fireUpdateVisit(args);
+
     return;
   }
+
   const blob = new Blob(
     [
       JSON.stringify({
         visitId: args.visitId,
         visitEndedAt: args.visitEndedAt,
-        durationMs: args.durationMs,
         lcpMs: args.lcpMs,
         inpMs: args.inpMs,
         cls: args.cls,
@@ -90,15 +92,20 @@ export const fireUpdateVisitBeacon = (args: UpdateVisitArgs): void => {
     ],
     { type: "text/plain" },
   );
+
   const queued = navigator.sendBeacon("/api/track/visit-end", blob);
+
   if (!queued) {
     fireUpdateVisit(args);
   }
 };
 
 const QUESTION_PROGRESS_BUFFER: QuestionProgressArgs[] = [];
+
 const QUESTION_PROGRESS_MAX_BATCH = 5;
+
 const QUESTION_PROGRESS_FLUSH_MS = 500;
+
 let questionProgressFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
 const flushQuestionProgressNow = (): void => {
@@ -107,20 +114,26 @@ const flushQuestionProgressNow = (): void => {
       clearTimeout(questionProgressFlushTimer);
       questionProgressFlushTimer = null;
     }
+
     return;
   }
+
   // Collapse intra-batch dups: latest per (visitId, questionId, event).
   // Handles StrictMode double-fire / stacked focus events.
   const dedup = new Map<string, QuestionProgressArgs>();
+
   for (const item of QUESTION_PROGRESS_BUFFER) {
     dedup.set(`${item.visitId}::${item.questionId}::${item.event}`, item);
   }
+
   const items = [...dedup.values()];
   QUESTION_PROGRESS_BUFFER.length = 0;
+
   if (questionProgressFlushTimer) {
     clearTimeout(questionProgressFlushTimer);
     questionProgressFlushTimer = null;
   }
+
   void recordQuestionProgressBatch({ data: { items } }).catch((err) => {
     logDevError("recordQuestionProgressBatch", err);
   });
@@ -134,6 +147,7 @@ const scheduleQuestionProgressFlush = (): void => {
 /** Enqueue a question-progress event. Auto-flushes at 5 events or 500ms. */
 export const enqueueQuestionProgress = (args: QuestionProgressArgs): void => {
   QUESTION_PROGRESS_BUFFER.push(args);
+
   if (QUESTION_PROGRESS_BUFFER.length >= QUESTION_PROGRESS_MAX_BATCH) {
     flushQuestionProgressNow();
   } else {

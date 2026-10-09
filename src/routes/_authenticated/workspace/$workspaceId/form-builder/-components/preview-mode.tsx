@@ -1,6 +1,6 @@
-import { APP_NAME, SPRITE_PATH } from "@/lib/config/app-config";
+import { SPRITE_PATH } from "@/lib/config/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
-import { SparklesIcon, XIcon } from "@/components/ui/icons";
+import { XIcon } from "@/components/ui/icons";
 import { useState, useCallback, useMemo } from "react";
 import { PopoverContainerContext } from "@/components/ui/popover";
 import type { Value } from "platejs";
@@ -10,13 +10,15 @@ import { RenderStepPreviewInputEager } from "@/components/form-components/render
 import { PreviewRendererContext } from "@/components/form-components/render-step-preview-input";
 import { Button } from "@/components/ui/button";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
+import { useEditorColorMode } from "@/hooks/use-editor-color-mode";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useFormThemeContextValue } from "@/hooks/use-form-theme";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useResolvedTheme } from "@/components/theme-provider";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { cn, isHexColor, isValidUrl } from "@/lib/utils";
+import { cn, isValidUrl } from "@/lib/utils";
+import { POPUP_FORM_STYLE_VARS } from "@/lib/popup-style";
 import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
@@ -25,50 +27,6 @@ const noop = async () => {};
 export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspaceId: string }) => {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
-
-  const resolvedAppTheme = useResolvedTheme();
-
-  const { customization, hasCustomization, themeVars, effectiveTheme } = useFormCustomization(
-    doc,
-    resolvedAppTheme,
-  );
-  const content = (doc?.content as Value) || [];
-  // Preview shows what the user is about to publish — read the draft.
-  const docSettings = doc?.draftSettings;
-  const previewSettings = useMemo<PublicFormSettings>(
-    () =>
-      buildPublicFormSettings(docSettings, {
-        branding: Boolean(docSettings?.branding ?? true),
-      }),
-    [docSettings],
-  );
-
-  const search = useSearch({ strict: false });
-  const embedType = (search.embedType as EmbedType) ?? "fullpage";
-  const hideTitle = (search.embedHideTitle as boolean) ?? false;
-  const transparentBackground = (search.embedTransparent as boolean) ?? false;
-  const branding = (search.embedBranding as boolean) ?? docSettings?.branding ?? true;
-  const height = (search.embedHeight as number) ?? 558;
-  const dynamicHeight = (search.embedDynamicHeight as boolean) ?? true;
-  const popupPosition = (search.embedPopupPosition as string) ?? "bottom-right";
-  const popupWidth = (search.embedPopupWidth as number) ?? 376;
-  const darkOverlay = (search.embedDarkOverlay as boolean) ?? false;
-  const showEmoji = (search.embedEmoji as boolean) ?? true;
-  const alignLeft = (search.embedAlignLeft as boolean) ?? false;
-  const dynamicWidth = (search.embedDynamicWidth as boolean) ?? false;
-
-  const [isPopupOpen, setIsPopupOpen] = useState(true);
-  const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
-  const handleOpenPopup = useCallback(() => setIsPopupOpen(true), []);
-
-  const [lastEmbedType, setLastEmbedType] = useState(embedType);
-  if (lastEmbedType !== embedType) {
-    setLastEmbedType(embedType);
-    if (embedType === "popup") setIsPopupOpen(true);
-  }
-
-  // Portaled popovers lose CSS-var inheritance. Publish themeVars/hasCustomization via EditorThemeProvider so they re-anchor theme. Must run before early returns.
-  const themeCtxValue = useFormThemeContextValue({ themeVars, hasCustomization, customization });
 
   if (!isLoading && savedDocs !== undefined && savedDocs.length === 0) {
     return (
@@ -90,6 +48,72 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
     return <div className="flex size-full items-center justify-center">Loading…</div>;
   }
 
+  return <PreviewModeContent doc={doc} formId={formId} />;
+};
+
+// Structural doc shape so both the builder's server-backed form and the landing page's
+// localStorage draft can drive the same preview surfaces.
+export interface PreviewDoc {
+  title?: string | null;
+  icon?: string | null;
+  cover?: string | null;
+  content?: unknown;
+  draftSettings?: Parameters<typeof buildPublicFormSettings>[0];
+  customization?: unknown;
+}
+
+export const PreviewModeContent = ({ doc, formId }: { doc: PreviewDoc; formId: string }) => {
+  const resolvedAppTheme = useResolvedTheme();
+  const { editorColorMode } = useEditorColorMode();
+
+  const { customization, hasCustomization, themeVars, effectiveTheme } = useFormCustomization(
+    doc,
+    resolvedAppTheme,
+    editorColorMode,
+  );
+
+  const content = (doc?.content as Value) || [];
+  // Preview shows what the user is about to publish; read the draft.
+  const docSettings = doc?.draftSettings;
+
+  const search = useSearch({ strict: false });
+
+  // "Show branding" toggle writes the draft setting immediately AND mirrors to embedBranding (via the share-form's debounced navigate).
+  // Read the draft FIRST; the search param lags 300ms, so the badge would stick until a tab switch. Drives the inline "Made with Reform." badge live.
+  const branding =
+    (docSettings?.branding as boolean | undefined) ?? (search.embedBranding as boolean) ?? true;
+
+  const previewSettings = useMemo<PublicFormSettings>(
+    () => buildPublicFormSettings(docSettings, { branding }),
+    [docSettings, branding],
+  );
+
+  const embedType = (search.embedType as EmbedType) ?? "fullpage";
+  const hideTitle = (search.embedHideTitle as boolean) ?? false;
+  const transparentBackground = (search.embedTransparent as boolean) ?? false;
+  const height = (search.embedHeight as number) ?? 558;
+  const dynamicHeight = (search.embedDynamicHeight as boolean) ?? true;
+  const popupPosition = (search.embedPopupPosition as string) ?? "bottom-right";
+  const popupWidth = (search.embedPopupWidth as number) ?? 376;
+  const darkOverlay = (search.embedDarkOverlay as boolean) ?? false;
+  const showEmoji = (search.embedEmoji as boolean) ?? true;
+  const dynamicWidth = (search.embedDynamicWidth as boolean) ?? false;
+
+  const [isPopupOpen, setIsPopupOpen] = useState(true);
+  const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
+  const handleOpenPopup = useCallback(() => setIsPopupOpen(true), []);
+
+  const [lastEmbedType, setLastEmbedType] = useState(embedType);
+
+  if (lastEmbedType !== embedType) {
+    setLastEmbedType(embedType);
+
+    if (embedType === "popup") setIsPopupOpen(true);
+  }
+
+  // Portaled popovers lose CSS-var inheritance. Publish themeVars/hasCustomization via EditorThemeProvider so they re-anchor theme.
+  const themeCtxValue = useFormThemeContextValue({ themeVars, hasCustomization, customization });
+
   return (
     <EditorThemeProvider value={themeCtxValue}>
       <PreviewRendererContext.Provider value={RenderStepPreviewInputEager}>
@@ -97,22 +121,42 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
           className={cn(
             hasCustomization && "bf-themed",
             effectiveTheme === "dark" ? "dark" : "bf-light",
-            "flex size-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300",
+            "relative flex size-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300",
+            "[view-transition-name:preview-content]",
           )}
-          style={{
-            ...(hasCustomization ? themeVars : undefined),
-            viewTransitionName: "preview-content",
-          }}
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
+          style={themeVars}
         >
+          {/* Scroll-fade overlays at the top/bottom edges of the preview (Figma light 26075-12467/12473, dark 26178-7606/7610).
+              Skip fullpage; it already has the cover gradient fade, so two would look odd. */}
+          {embedType !== "fullpage" &&
+            (() => {
+              const rgb = effectiveTheme === "dark" ? "19,19,19" : "255,255,255";
+
+              return (
+                <>
+                  <div
+                    aria-hidden
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- scroll-fade gradient has no theme token; needs design decision
+                    className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[150px] bg-[linear-gradient(180deg,rgba(var(--fade-rgb),0.9)_0%,rgba(var(--fade-rgb),0.62)_32.04%,rgba(var(--fade-rgb),0.4)_68.23%,rgba(var(--fade-rgb),0.08)_100%)]"
+                    style={{ "--fade-rgb": rgb } as React.CSSProperties}
+                  />
+                  <div
+                    aria-hidden
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- scroll-fade gradient has no theme token; needs design decision
+                    className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[221px] bg-[linear-gradient(180deg,rgba(var(--fade-rgb),0.08)_0%,rgba(var(--fade-rgb),0.4)_14.68%,rgba(var(--fade-rgb),0.62)_37.29%,rgba(var(--fade-rgb),0.9)_51.38%)]"
+                    style={{ "--fade-rgb": rgb } as React.CSSProperties}
+                  />
+                </>
+              );
+            })()}
           {embedType !== "fullpage" && (
             <EmbedPreviewSurface
               embedType={embedType}
               transparentBackground={transparentBackground}
               dynamicHeight={dynamicHeight}
               height={height}
-              alignLeft={alignLeft}
               dynamicWidth={dynamicWidth}
-              branding={branding}
               darkOverlay={darkOverlay}
               isPopupOpen={isPopupOpen}
               handleClosePopup={handleClosePopup}
@@ -137,7 +181,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
               doc={doc}
               content={content}
               customization={customization}
-              branding={branding}
               formId={formId}
             />
           )}
@@ -149,7 +192,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
 
 type SharedPreviewProps = {
   hideTitle: boolean;
-  doc: NonNullable<ReturnType<typeof useForm>["data"]>[number];
+  doc: PreviewDoc;
   content: Value;
   customization: ReturnType<typeof useFormCustomization>["customization"];
   previewSettings: PublicFormSettings;
@@ -161,9 +204,7 @@ type EmbedPreviewSurfaceProps = SharedPreviewProps & {
   transparentBackground: boolean;
   dynamicHeight: boolean;
   height: number;
-  alignLeft: boolean;
   dynamicWidth: boolean;
-  branding: boolean;
   darkOverlay: boolean;
   isPopupOpen: boolean;
   handleClosePopup: () => void;
@@ -178,9 +219,7 @@ const EmbedPreviewSurface = ({
   transparentBackground,
   dynamicHeight,
   height,
-  alignLeft,
   dynamicWidth,
-  branding,
   darkOverlay,
   isPopupOpen,
   handleClosePopup,
@@ -198,104 +237,88 @@ const EmbedPreviewSurface = ({
   // Track embed bounds so portaled popovers render + collision-detect within it; else they portal to body and escape the embed frame.
   const [embedFrame, setEmbedFrame] = useState<HTMLElement | null>(null);
   useFocusTrap(embedType === "standard", embedFrame);
+
   return (
     <div className="flex flex-1 scrollbar-none flex-col overflow-x-hidden overflow-y-auto">
       <div className="relative flex-1 p-4 lg:p-0">
-        <div className="mx-auto max-w-[1000px] space-y-8 px-4 pt-4 lg:px-8">
-          <div className="flex items-center pt-2">
-            <span className="text-[10px] font-bold tracking-widest text-muted-foreground/40 uppercase">
-              Live Preview
-            </span>
-          </div>
-
-          <div className="space-y-4 opacity-40">
-            <div className="h-4 w-20 rounded-sm border border-border/50 bg-muted/50" />
-            <div className="flex items-end justify-between border-b border-border/30 pb-3">
-              <div className="flex gap-4 lg:gap-6">
-                <div className="h-1.5 w-8 rounded-full bg-muted/50 lg:w-10" />
-                <div className="h-1.5 w-8 rounded-full bg-muted/50 lg:w-10" />
-              </div>
-              <div className="h-6 w-12 rounded-md border border-border/30 bg-muted/30 lg:w-14" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-12 gap-4 pt-2 lg:gap-8">
-            <div className="col-span-3 hidden space-y-5 opacity-30 lg:block">
-              <div className="h-6 w-full rounded-sm bg-muted/40" />
-              <div className="space-y-2">
-                <div className="h-1.5 w-full rounded-full bg-muted/50" />
-                <div className="h-1.5 w-4/5 rounded-full bg-muted/50" />
-              </div>
-              <div className="h-24 w-full rounded-xl border border-dashed border-border/50 bg-muted/20" />
-            </div>
-
-            <div className="col-span-12 space-y-6 lg:col-span-9">
-              <div className="space-y-3 opacity-40">
-                <div className="h-5 w-2/3 rounded-sm border border-border/50 bg-muted/50" />
-                <div className="space-y-1.5">
-                  <div className="h-1.5 w-full rounded-full bg-muted/50" />
-                  <div className="h-1.5 w-full rounded-full bg-muted/50" />
+        <div className="mx-auto max-w-[1000px] space-y-10 px-4 pt-6 pb-10 lg:px-8">
+          {/* Popup floats over a rich host page; embed sits inline in a lighter one. */}
+          {embedType === "popup" ? (
+            <PopupHostSkeleton />
+          ) : (
+            <>
+              {/* Host-page skeleton above the embed; Figma 26178-7520 (740-frame): gray/100 bars,
+                  h-16 rounded-12/14, 60px avatar, gap 14/12. Widths are 740-frame proportions. */}
+              <div className="flex flex-col gap-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="size-[60px] shrink-0 rounded-full bg-(--color-gray-100)" />
+                  <div className="flex w-[37%] flex-col gap-3">
+                    <div className="h-4 w-full rounded-2xl bg-(--color-gray-100)" />
+                    <div className="h-4 w-[82%] rounded-2xl bg-(--color-gray-100)" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3.5">
+                  <div className="h-4 w-full rounded-3xl bg-(--color-gray-100)" />
+                  <div className="h-4 w-[58%] rounded-3xl bg-(--color-gray-100)" />
                 </div>
               </div>
 
-              {embedType === "standard" && (
-                <div className="group/embed relative">
-                  <div className="pointer-events-none absolute -top-5 right-0 text-[8px] font-bold tracking-widest text-muted-foreground/30 uppercase">
-                    Embedded State
-                  </div>
-
+              {/* z-20 lifts the form above the top/bottom scroll-fade overlays (z-10) so the gradient
+                  only dims the host-page skeleton, never the form itself. */}
+              <div className="relative z-20 flex w-full justify-start">
+                <div
+                  ref={setEmbedFrame}
+                  className={cn(
+                    // No card frame (border/radius/shadow); the real embed iframe is frameborder=0,
+                    // so the preview must match live with a borderless form on the host page (Figma 25724-11834).
+                    "h-[var(--embed-height)] w-full overflow-hidden transition-all duration-200",
+                    dynamicWidth ? "" : "max-w-[460px]",
+                    transparentBackground ? "bg-transparent" : "bg-background",
+                  )}
+                  style={
+                    {
+                      "--embed-height": dynamicHeight ? "auto" : `${height}px`,
+                    } as React.CSSProperties
+                  }
+                >
                   <div
-                    ref={setEmbedFrame}
                     className={cn(
-                      "w-full overflow-hidden rounded-lg border-2 border-dashed border-border transition-all duration-500",
-                      transparentBackground
-                        ? "bg-[repeating-conic-gradient(#e8e8e8_0%_25%,white_0%_50%)] bg-[length:12px_12px]"
-                        : "bg-background",
+                      "size-full overflow-x-hidden pb-6",
+                      !dynamicHeight &&
+                        "scrollbar-thin scrollbar-thumb-muted-foreground/20 overflow-y-auto",
                     )}
-                    style={{
-                      height: dynamicHeight ? "auto" : height,
-                    }}
+                    style={
+                      dynamicWidth
+                        ? ({ "--bf-page-width": "100%" } as React.CSSProperties)
+                        : undefined
+                    }
                   >
-                    <div
-                      className={cn(
-                        "size-full overflow-x-hidden",
-                        !dynamicHeight &&
-                          "scrollbar-thin scrollbar-thumb-muted-foreground/20 overflow-y-auto",
-                        alignLeft ? "max-w-[600px]" : "",
-                      )}
-                      style={
-                        dynamicWidth
-                          ? ({ "--bf-page-width": "100%" } as React.CSSProperties)
-                          : undefined
-                      }
-                    >
-                      <PopoverContainerContext value={embedFrame}>
-                        <FormPreviewFromPlate
-                          content={content}
-                          title={hideTitle ? "" : (doc.title ?? undefined)}
-                          icon={showEmoji ? (doc.icon ?? undefined) : undefined}
-                          cover={doc.cover ?? undefined}
-                          onSubmit={noop}
-                          hideTitle={hideTitle}
-                          customization={customization}
-                          settings={previewSettings}
-                          formId={formId}
-                          boundToParent={previewSettings?.presentationMode === "field-by-field"}
-                        />
-                      </PopoverContainerContext>
-                    </div>
+                    <PopoverContainerContext value={embedFrame}>
+                      <FormPreviewFromPlate
+                        content={content}
+                        title={hideTitle ? "" : (doc.title ?? undefined)}
+                        icon={showEmoji ? (doc.icon ?? undefined) : undefined}
+                        cover={doc.cover ?? undefined}
+                        onSubmit={noop}
+                        hideTitle={hideTitle}
+                        customization={customization}
+                        settings={previewSettings}
+                        formId={formId}
+                        boundToParent={previewSettings?.presentationMode === "field-by-field"}
+                      />
+                    </PopoverContainerContext>
                   </div>
                 </div>
-              )}
-
-              <div className="space-y-2 pt-4 opacity-20">
-                <div className="h-1.5 w-full rounded-full bg-muted/50" />
-                <div className="h-1.5 w-3/4 rounded-full bg-muted/50" />
               </div>
 
-              {branding && <BrandingBadge />}
-            </div>
-          </div>
+              {/* Host-page skeleton below the embed; Figma 26178-7602 (740-frame): 3 bars full/61%/13%. */}
+              <div className="flex flex-col gap-3">
+                <div className="h-4 w-full rounded-2xl bg-(--color-gray-100)" />
+                <div className="h-4 w-[61%] rounded-2xl bg-(--color-gray-100)" />
+                <div className="h-4 w-[13%] rounded-2xl bg-(--color-gray-100)" />
+              </div>
+            </>
+          )}
         </div>
 
         {embedType === "popup" && (
@@ -311,11 +334,72 @@ const EmbedPreviewSurface = ({
             doc={doc}
             content={content}
             customization={customization}
-            branding={branding}
             showEmoji={showEmoji}
             formId={formId}
           />
         )}
+      </div>
+    </div>
+  );
+};
+
+// Rich fake-webpage behind the popup, mirroring Figma 26178-8180 (740-frame): gray/100 bars (h-16, rounded-12), 60px avatars, rounded-16 blocks (66/140px).
+// Bars pin to neutral gray-100; .bf-themed remaps --muted to the form tint, host chrome must stay neutral.
+const PopupHostSkeleton = () => {
+  const bar = "h-4 rounded-2xl bg-(--color-gray-100)";
+
+  const authorRow = (
+    <div className="flex items-center gap-3">
+      <div className="size-[60px] shrink-0 rounded-full bg-(--color-gray-100)" />
+      <div className="flex flex-1 flex-col gap-3">
+        <div className={cn(bar, "w-full")} />
+        <div className={cn(bar, "w-[82%]")} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* author row (column ~37% of 740) */}
+      <div className="w-[47%]">{authorRow}</div>
+
+      {/* 2 lines + 66px block */}
+      <div className="flex flex-col gap-3.5">
+        <div className={cn(bar, "w-full")} />
+        <div className={cn(bar, "w-full")} />
+        <div className="h-[66px] w-full rounded-4xl bg-(--color-gray-100)" />
+      </div>
+
+      {/* 3 lines + 2-col 140px blocks */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
+          <div className={cn(bar, "w-full")} />
+          <div className={cn(bar, "w-[82%]")} />
+          <div className={cn(bar, "w-full")} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-[140px] rounded-4xl bg-(--color-gray-100)" />
+          <div className="h-[140px] rounded-4xl bg-(--color-gray-100)" />
+        </div>
+      </div>
+
+      {/* 2 lines */}
+      <div className="flex flex-col gap-3.5">
+        <div className={cn(bar, "w-[82%]")} />
+        <div className={cn(bar, "w-full")} />
+      </div>
+
+      {/* author pair + 3 lines */}
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-5">
+          {authorRow}
+          {authorRow}
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className={cn(bar, "w-full")} />
+          <div className={cn(bar, "w-[61%]")} />
+          <div className={cn(bar, "w-[13%]")} />
+        </div>
       </div>
     </div>
   );
@@ -328,7 +412,6 @@ type PopupPreviewOverlayProps = SharedPreviewProps & {
   handleOpenPopup: () => void;
   popupPosition: string;
   popupWidth: number;
-  branding: boolean;
   showEmoji: boolean;
 };
 
@@ -344,18 +427,20 @@ const PopupPreviewOverlay = ({
   doc,
   content,
   customization,
-  branding,
   showEmoji,
   formId,
 }: PopupPreviewOverlayProps) => {
   const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null);
   useFocusTrap(isPopupOpen, popupEl);
+
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col">
       {darkOverlay && isPopupOpen && (
         <button
           type="button"
-          className="pointer-events-auto absolute inset-0 z-10 size-full cursor-default border-none bg-black/40 transition-opacity duration-300"
+          // Dark overlay (Figma 27196-14471): black 24% + 6px backdrop blur.
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- no backdrop-blur token for 6px; needs design decision
+          className="pointer-events-auto absolute inset-0 z-10 size-full cursor-default border-none bg-black/24 backdrop-blur-[6px] transition-opacity duration-300"
           onClick={handleClosePopup}
           aria-label="Close preview"
         />
@@ -364,46 +449,51 @@ const PopupPreviewOverlay = ({
       {isPopupOpen && (
         <div
           ref={setPopupEl}
-          className="pointer-events-auto absolute z-20 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-[0_30px_60px_rgba(0,0,0,0.15)] transition-[top,left,transform] duration-300 ease-out"
-          style={{
-            width: popupWidth,
-            ...(popupPosition === "center"
-              ? {
-                  top: "50%",
-                  left: `calc(50% - ${popupWidth / 2}px)`,
-                  transform: "translateY(-50%)",
-                }
-              : popupPosition === "bottom-left"
-                ? {
-                    top: "100%",
-                    left: 48,
-                    transform: "translateY(calc(-100% - 48px))",
-                  }
-                : {
-                    top: "100%",
-                    left: `calc(100% - ${popupWidth}px - 48px)`,
-                    transform: "translateY(calc(-100% - 48px))",
-                  }),
-          }}
+          // Frame radius follows the Cover-radius customization (--bf-cover-radius) so top + bottom
+          // match the cover; 20px fallback for unthemed forms (Figma 26889:14685).
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma popup shadow + top/left/transform transition have no tokens; needs design decision
+          className="pointer-events-auto absolute top-[var(--popup-top)] left-[var(--popup-left)] z-20 flex w-[var(--popup-w)] [transform:var(--popup-transform)] flex-col overflow-hidden rounded-(--bf-cover-radius,20px) bg-background shadow-[0px_0px_1px_0px_rgba(0,0,0,0.2),0px_0px_10px_2px_rgba(0,0,0,0.04),0px_24px_30px_-8px_rgba(0,0,0,0.1)] transition-[top,left,transform] duration-300 ease-out"
+          style={
+            {
+              "--popup-w": `${popupWidth}px`,
+              "--popup-top": popupPosition === "center" ? "50%" : "100%",
+              "--popup-left":
+                popupPosition === "center"
+                  ? `calc(50% - ${popupWidth / 2}px)`
+                  : popupPosition === "bottom-left"
+                    ? "48px"
+                    : `calc(100% - ${popupWidth}px - 48px)`,
+              "--popup-transform":
+                popupPosition === "center" ? "translateY(-50%)" : "translateY(calc(-100% - 48px))",
+            } as React.CSSProperties
+          }
         >
-          <div className="pointer-events-auto absolute top-4 right-4 z-30">
+          {/* Close (rounded-8px, 18px X): over the cover → white/10 chip + white X (Figma 26889:14689);
+              no cover → dark ghost aligned with the title row (26883:11949). */}
+          <div className="pointer-events-auto absolute top-3 right-2 z-30">
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-full bg-background/50 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-muted"
+              variant="ghost-flat"
+              size="icon-xs"
+              className={cn(
+                "size-7 rounded-lg p-1.25",
+                doc.cover && isValidUrl(doc.cover)
+                  ? "bg-white/10 text-white hover:bg-white/20"
+                  : "text-foreground hover:bg-black/5 hover:text-foreground",
+              )}
               onClick={handleClosePopup}
               aria-label="Close"
             >
-              <XIcon className="size-4" />
+              <XIcon className="size-4.5" />
             </Button>
           </div>
 
           <div
-            className={
-              previewSettings.presentationMode === "field-by-field"
-                ? "h-[650px] overflow-hidden"
-                : "max-h-[650px] overflow-x-hidden overflow-y-auto"
-            }
+            // Height fits the content (up to 650px) for both layouts; one-at-a-time no longer
+            // forces a fixed 650px, so the popup shrinks to the single field (Figma 27015-16542).
+            className="max-h-[650px] overflow-x-hidden overflow-y-auto"
+            // Popup card (Figma 26883): compact title + flush cover, shared with the live popup.
+            // oxlint-disable-next-line shadcn/no-inline-styles -- POPUP_FORM_STYLE_VARS from src/lib/popup-style.ts; consumed by .bf-themed bridge rules in styles.css
+            style={POPUP_FORM_STYLE_VARS}
           >
             <FormPreviewFromPlate
               content={content}
@@ -418,16 +508,6 @@ const PopupPreviewOverlay = ({
               formId={formId}
             />
           </div>
-
-          {branding && (
-            <div className="flex shrink-0 justify-center border-t border-border bg-muted/60 py-3">
-              <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
-                <span>Made with</span>
-                <SparklesIcon className="size-3 fill-muted-foreground text-muted-foreground" />
-                <span className="text-foreground">{APP_NAME}</span>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -436,11 +516,12 @@ const PopupPreviewOverlay = ({
           type="button"
           onClick={handleOpenPopup}
           aria-label="Open form preview"
-          className="pointer-events-auto absolute z-20 flex size-14 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] transition-[inset] duration-300 ease-out hover:scale-105 active:scale-95"
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma FAB shadow + inset transition have no tokens; needs design decision
+          className="pointer-events-auto absolute right-auto bottom-6 left-[var(--fab-left)] z-20 flex size-14 cursor-pointer items-center justify-center rounded-full bg-background/50 text-muted-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] ring-1 ring-border/50 backdrop-blur-sm transition-[inset] duration-300 ease-out hover:scale-105 hover:bg-muted active:scale-95"
           style={
-            popupPosition === "bottom-left"
-              ? { bottom: 24, left: 24, right: "auto" }
-              : { bottom: 24, right: "auto", left: "calc(100% - 80px)" }
+            {
+              "--fab-left": popupPosition === "bottom-left" ? "24px" : "calc(100% - 80px)",
+            } as React.CSSProperties
           }
         >
           {doc.icon && isValidUrl(doc.icon) ? (
@@ -470,7 +551,6 @@ const PopupPreviewOverlay = ({
 
 type FullpagePreviewSurfaceProps = SharedPreviewProps & {
   transparentBackground: boolean;
-  branding: boolean;
 };
 
 const FullpagePreviewSurface = ({
@@ -480,32 +560,30 @@ const FullpagePreviewSurface = ({
   doc,
   content,
   customization,
-  branding,
   formId,
 }: FullpagePreviewSurfaceProps) => {
   // Match FormPreviewFromPlate cover resolution: formHeader node is sole truth (legacy doc.cover may be stale). Only header-less forms fall back to doc.cover.
   const effectiveCover = useMemo(() => {
     const header = extractFormHeader(content);
+
     if (header) return header.cover ?? null;
+
     return doc.cover ?? null;
   }, [content, doc.cover]);
+
   return (
     <div
+      data-bf-cover-pane
       className={cn(
         "relative flex flex-1 flex-col overflow-hidden transition-colors duration-300",
         transparentBackground ? "bg-transparent" : "bg-background",
       )}
     >
-      {/* Field-by-field: cover as full-pane bg here — form-preview's bg-image only fills content height. */}
-      {previewSettings.presentationMode === "field-by-field" && effectiveCover && (
-        <FieldByFieldCoverBackground cover={effectiveCover} />
-      )}
       <div
         className={cn(
           "h-full min-h-0 w-full flex-1",
           previewSettings.presentationMode !== "field-by-field" &&
             "overflow-x-hidden overflow-y-auto",
-          previewSettings.presentationMode !== "field-by-field" && branding && "pb-16",
         )}
       >
         <FormPreviewFromPlate
@@ -521,51 +599,6 @@ const FullpagePreviewSurface = ({
           formId={formId}
         />
       </div>
-      {branding && <BrandingBadge />}
     </div>
   );
 };
-
-const FieldByFieldCoverBackground = ({ cover }: { cover: string }) => {
-  const isImage = isValidUrl(cover);
-  const isHex = isHexColor(cover);
-  const hasTint = isImage && cover.includes("tint=true");
-  if (!isImage && !isHex) return null;
-  return (
-    <>
-      {isImage ? (
-        <img
-          src={cover}
-          alt=""
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-0 z-0 size-full object-cover",
-            hasTint && "brightness-60 grayscale",
-          )}
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0"
-          style={{ backgroundColor: cover }}
-        />
-      )}
-      {hasTint && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 bg-primary opacity-50 mix-blend-color"
-        />
-      )}
-    </>
-  );
-};
-
-const BrandingBadge = () => (
-  <div className="absolute right-0 bottom-0 left-0 z-50 flex justify-center border-t border-border bg-muted/60 py-3 backdrop-blur">
-    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
-      <span>Made with</span>
-      <SparklesIcon className="size-3 fill-muted-foreground text-muted-foreground" />
-      <span className="text-foreground">{APP_NAME}</span>
-    </span>
-  </div>
-);

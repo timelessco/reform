@@ -9,10 +9,10 @@ import { LabelRequiredBadge } from "@/components/ui/required-badge-button";
 const headingVariants = cva("relative", {
   variants: {
     variant: {
-      h1: "font-heading text-4xl font-bold",
-      h2: "font-heading text-2xl font-semibold",
-      h3: "font-heading text-xl font-semibold",
-      h4: "font-heading text-lg font-semibold",
+      h1: "text-4xl font-bold",
+      h2: "text-2xl font-semibold",
+      h3: "text-xl font-semibold",
+      h4: "text-lg font-semibold",
       h5: "text-lg font-semibold",
       h6: "text-base font-semibold",
     },

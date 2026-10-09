@@ -1,4 +1,4 @@
-import { domAnimation, LazyMotion, m, useReducedMotion } from "motion/react";
+import { domAnimation, LazyMotion, m, useReducedMotion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -36,6 +36,16 @@ export type ElasticSliderProps = {
   isAuto?: boolean;
   /** Called when the user clicks/drags into the auto zone. */
   onAutoChange?: () => void;
+
+  /** Hash-mark style: "line" (dashes, Figma Size) or "dot" (Figma Radius). Both are functional
+   * snap guides — the handle lands on them. Default "line". */
+  markStyle?: "line" | "dot";
+  /** Replaces the right-side value text with an icon (e.g. the corner-radius glyph for Radius). */
+  endIcon?: React.ReactNode;
+
+  /** Flat at rest: track fill + chrome (marks, fill, handle) hidden until hover/drag/keyboard-focus.
+   * Label + value stay visible, so the row reads like a plain ConfigRow until you interact (Figma). */
+  revealOnHover?: boolean;
 };
 
 export const ElasticSlider = ({
@@ -53,8 +63,12 @@ export const ElasticSlider = ({
   allowAuto = false,
   isAuto = false,
   onAutoChange,
+  markStyle = "line",
+  endIcon,
+  revealOnHover = false,
 }: ElasticSliderProps) => {
   const shouldReduceMotion = useReducedMotion();
+
   const {
     wrapperRef,
     trackRef,
@@ -66,8 +80,8 @@ export const ElasticSlider = ({
     keyboardFocusRing,
     valueDodge,
     handleOpacity,
-    hashMarkCount,
-    hashMarkPct,
+    hashMarks,
+    dotMarks,
     fillWidth,
     handleLeft,
     rubberWidth,
@@ -86,7 +100,12 @@ export const ElasticSlider = ({
     isAuto,
     onAutoChange,
     shouldReduceMotion,
+    markStyle,
   });
+
+  // `x` is a raw px number (motion's transform shortcut); convert to a px string so the rubber
+  // pull can ride a CSS custom property instead of an inline transform.
+  const rubberXPx = useTransform(rubberX, (x) => `${x}px`);
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -96,10 +115,16 @@ export const ElasticSlider = ({
         className={cn(
           "[--elastic-slider-height:--spacing(9)] [--elastic-slider-radius:var(--radius-lg)]",
           "[--elastic-slider-bg:var(--muted)]",
-          "[--elastic-slider-fill:var(--muted-foreground)]/10",
-          "[--elastic-slider-fill-active:var(--muted-foreground)]/20",
-          "[--elastic-slider-hash:var(--muted-foreground)]/30",
-          "[--elastic-slider-handle:var(--foreground)]",
+          // Filled state (Figma gray/300): a rounded tile spanning left edge → handle. Override
+          // --elastic-slider-tile-radius per row. Dark equivalents keep contrast on dark surfaces.
+          "[--elastic-slider-tile-bg:var(--color-gray-300)] dark:[--elastic-slider-tile-bg:var(--color-gray-600)]",
+          "[--elastic-slider-tile-radius:var(--elastic-slider-radius)]",
+          // Dot marks = gray/400 (Figma 25441-4850) — darker than the fill so they stay visible on it.
+          "[--elastic-slider-hash:var(--color-gray-400)] dark:[--elastic-slider-hash:var(--color-gray-500)]",
+          // Line marks = gray/300 (Figma 25441-4645 stroke #E0E0E0, round cap) — matches the fill, so
+          // it reads on the track and blends into the filled tile, as in Figma. Token flips for dark.
+          "[--elastic-slider-line:var(--color-gray-300)]",
+          "[--elastic-slider-handle:var(--color-gray-500)] dark:[--elastic-slider-handle:var(--color-gray-400)]",
           "[--elastic-slider-label:var(--muted-foreground)]",
           "[--elastic-slider-focus:var(--foreground)]",
           "relative h-(--elastic-slider-height)",
@@ -120,38 +145,61 @@ export const ElasticSlider = ({
           aria-valuenow={value}
           aria-valuetext={displayValue}
           className={cn(
-            "group/elastic-slider absolute inset-0 cursor-pointer touch-none overflow-hidden rounded-(--elastic-slider-radius) bg-(--elastic-slider-bg) outline-none select-none",
-            "data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-ring/50 data-[focus-visible=true]:ring-offset-1 data-[focus-visible=true]:ring-offset-background",
+            "group/elastic-slider absolute inset-0 w-(--elastic-slider-rubber-width) translate-x-(--elastic-slider-rubber-x) cursor-pointer touch-none overflow-hidden rounded-(--elastic-slider-radius) transition-colors outline-none select-none",
+            // revealOnHover: transparent at rest, gray track only on hover/drag/keyboard-focus (Figma).
+            revealOnHover
+              ? "bg-transparent hover:bg-(--elastic-slider-bg) data-[active=true]:bg-(--elastic-slider-bg) data-[focus-visible=true]:bg-(--elastic-slider-bg)"
+              : "bg-(--elastic-slider-bg)",
+            // No focus ring (not in Figma): the revealed gray track already signals keyboard focus.
             trackClassName,
           )}
-          style={{ width: rubberWidth, x: rubberX }}
+          style={
+            {
+              "--elastic-slider-rubber-width": rubberWidth,
+              "--elastic-slider-rubber-x": rubberXPx,
+            } as React.CSSProperties
+          }
           {...handlers}
         >
-          <SliderHashMarks hashMarkCount={hashMarkCount} hashMarkPct={hashMarkPct} />
-
-          <m.div
-            data-slot="elastic-slider-fill"
-            aria-hidden="true"
+          <div
+            data-slot="elastic-slider-chrome"
             className={cn(
-              "pointer-events-none absolute inset-y-0 inset-s-0 transition-colors",
-              "bg-(--elastic-slider-fill) group-data-[active=true]/elastic-slider:bg-(--elastic-slider-fill-active)",
+              "pointer-events-none absolute inset-0",
+              // Fade marks/fill/handle in together with the track bg (handle keeps its own opacity).
+              revealOnHover &&
+                "opacity-0 transition-opacity group-hover/elastic-slider:opacity-100 group-data-[active=true]/elastic-slider:opacity-100 group-data-[focus-visible=true]/elastic-slider:opacity-100",
             )}
-            style={{ width: fillWidth }}
-          />
+          >
+            <m.div
+              data-slot="elastic-slider-fill"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 inset-s-0 w-(--elastic-slider-fill-width) rounded-(--elastic-slider-tile-radius) bg-(--elastic-slider-tile-bg)"
+              style={{ "--elastic-slider-fill-width": fillWidth } as React.CSSProperties}
+            />
 
-          <SliderHandle
-            handleLeft={handleLeft}
-            handleOpacity={handleOpacity}
-            isActive={isActive}
-            valueDodge={valueDodge}
-            shouldReduceMotion={shouldReduceMotion}
-          />
+            {/* Marks render ABOVE the fill so they stay visible inside the filled tile (Figma). */}
+            {markStyle === "dot" ? (
+              <SliderDotMarks dotMarks={dotMarks} />
+            ) : (
+              <SliderHashMarks hashMarks={hashMarks} />
+            )}
+
+            <SliderHandle
+              handleLeft={handleLeft}
+              handleOpacity={handleOpacity}
+              isActive={isActive}
+              valueDodge={valueDodge}
+              shouldReduceMotion={shouldReduceMotion}
+              dimmed={isAuto}
+            />
+          </div>
 
           <SliderLabels
             labelRef={labelRef}
             valueRef={valueRef}
             label={label}
             displayValue={displayValue}
+            endIcon={endIcon}
           />
         </m.div>
       </div>
@@ -159,31 +207,46 @@ export const ElasticSlider = ({
   );
 };
 
-const SliderHashMarks = ({
-  hashMarkCount,
-  hashMarkPct,
-}: {
-  hashMarkCount: number;
-  hashMarkPct: (i: number) => number;
-}) => (
+// Dash variant (Figma Size): evenly spaced vertical lines, rendered ABOVE the fill so they stay
+// visible inside the filled tile. Marks under the label text are hidden (hook's `hidden` flag).
+const SliderHashMarks = ({ hashMarks }: { hashMarks: { pct: number; hidden: boolean }[] }) => (
   <div
     data-slot="elastic-slider-hash-marks"
     aria-hidden="true"
     className="pointer-events-none absolute inset-0"
   >
-    {Array.from({ length: hashMarkCount }, (_, i) => {
-      const pct = hashMarkPct(i);
-      return (
-        <div
-          key={`hash-${pct}`}
-          className={cn(
-            "absolute top-1/2 h-2 w-px -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-200 rtl:translate-x-1/2",
-            "bg-transparent group-data-[active=true]/elastic-slider:bg-(--elastic-slider-hash)",
-          )}
-          style={{ left: `${pct}%` }}
-        />
-      );
-    })}
+    {hashMarks.map(({ pct, hidden }) => (
+      <div
+        key={`hash-${pct}`}
+        className={cn(
+          "absolute top-1/2 left-(--elastic-slider-mark-left) h-1.5 w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-line) rtl:translate-x-1/2",
+          hidden && "opacity-0",
+        )}
+        style={{ "--elastic-slider-mark-left": `${pct}%` } as React.CSSProperties}
+      />
+    ))}
+  </div>
+);
+
+// Dot variant (Figma Radius): a dot per snap stop, rendered ABOVE the fill so dots stay visible
+// inside the filled tile. The hook hides the dot the handle sits on (no collision) and any dot that
+// falls under the label text.
+const SliderDotMarks = ({ dotMarks }: { dotMarks: { pct: number; hidden: boolean }[] | null }) => (
+  <div
+    data-slot="elastic-slider-dot-marks"
+    aria-hidden="true"
+    className="pointer-events-none absolute inset-0"
+  >
+    {dotMarks?.map(({ pct, hidden }) => (
+      <div
+        key={`dot-${pct}`}
+        className={cn(
+          "absolute top-1/2 left-(--elastic-slider-mark-left) size-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-hash) transition-opacity duration-150 rtl:translate-x-1/2",
+          hidden && "opacity-0",
+        )}
+        style={{ "--elastic-slider-mark-left": `${pct}%` } as React.CSSProperties}
+      />
+    ))}
   </div>
 );
 
@@ -193,34 +256,35 @@ interface SliderHandleProps {
   isActive: boolean;
   valueDodge: boolean;
   shouldReduceMotion: boolean | null;
+  /** Auto/min state: handle is gray/300 (Figma), matching the fill tile color; gray/500 otherwise. */
+  dimmed: boolean;
 }
 
+// Figma Frame 1533208826: 2×12px rounded bar, always visible, riding the fill tile's right edge.
 const SliderHandle = ({
   handleLeft,
   handleOpacity,
   isActive,
   valueDodge,
   shouldReduceMotion,
+  dimmed,
 }: SliderHandleProps) => (
   <m.div
     data-slot="elastic-slider-handle"
     aria-hidden="true"
-    className="pointer-events-none absolute top-1/2 h-5 w-1 rounded-full bg-(--elastic-slider-handle)"
-    style={{ left: handleLeft, y: "-50%" }}
+    className={cn(
+      "pointer-events-none absolute top-1/2 left-(--elastic-slider-handle-left) h-3 w-[2px] -translate-y-1/2 rounded-full",
+      dimmed ? "bg-(--elastic-slider-tile-bg)" : "bg-(--elastic-slider-handle)",
+    )}
+    style={{ "--elastic-slider-handle-left": handleLeft } as React.CSSProperties}
     animate={{
       opacity: handleOpacity,
-      scaleX: isActive ? 1 : 0.25,
       scaleY: isActive && valueDodge ? 0.75 : 1,
     }}
     transition={
       shouldReduceMotion
         ? { duration: 0 }
         : {
-            scaleX: {
-              type: "spring",
-              visualDuration: 0.25,
-              bounce: 0.15,
-            },
             scaleY: { type: "spring", visualDuration: 0.2, bounce: 0.1 },
             opacity: { duration: 0.15 },
           }
@@ -233,9 +297,11 @@ interface SliderLabelsProps {
   valueRef: React.RefObject<HTMLSpanElement | null>;
   label: string;
   displayValue: string;
+  /** When set, replaces the value text (Figma Radius corner glyph). */
+  endIcon?: React.ReactNode;
 }
 
-const SliderLabels = ({ labelRef, valueRef, label, displayValue }: SliderLabelsProps) => (
+const SliderLabels = ({ labelRef, valueRef, label, displayValue, endIcon }: SliderLabelsProps) => (
   <>
     <span
       ref={labelRef}
@@ -251,11 +317,11 @@ const SliderLabels = ({ labelRef, valueRef, label, displayValue }: SliderLabelsP
       data-slot="elastic-slider-value"
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-e-3 top-1/2 -translate-y-1/2 font-mono text-sm/none font-medium transition-colors",
+        "pointer-events-none absolute inset-e-3 top-1/2 inline-flex -translate-y-1/2 items-center text-sm/none font-medium transition-colors",
         "text-(--elastic-slider-label) group-data-[active=true]/elastic-slider:text-(--elastic-slider-focus)",
       )}
     >
-      {displayValue}
+      {endIcon ?? displayValue}
     </span>
   </>
 );

@@ -4,8 +4,11 @@ import { THEME_COLORS } from "@/lib/theme/theme-presets";
 const DEFAULT_ACCENT = THEME_COLORS.neutral.primary;
 
 const BG = "#0a0a0a";
+
 const FG = "#fafafa";
+
 const FG_MUTED = "#a3a3a3";
+
 const FG_DIM = "#525252";
 
 export type OgCardProps = {

@@ -3,6 +3,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useEditorRef } from "platejs/react";
+import * as v from "valibot";
 
 import {
   AtSignIcon,
@@ -14,7 +15,7 @@ import {
   TextIcon,
 } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useFieldLabelText, useFormInputNode } from "@/hooks/use-form-input-node";
+import { useFieldLabelText } from "@/hooks/use-form-input-node";
 import { cn } from "@/lib/utils";
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -30,7 +31,7 @@ type FormFieldVariant = {
   customRender?: (props: PlateElementProps) => ReactNode;
 };
 
-const VARIANTS: Record<string, FormFieldVariant> = {
+const VARIANTS = {
   formInput: { label: "Short answer", icon: TextIcon },
   formEmail: { label: "Email", icon: AtSignIcon },
   formPhone: { label: "Phone", icon: PhoneIcon },
@@ -38,36 +39,48 @@ const VARIANTS: Record<string, FormFieldVariant> = {
   formLink: { label: "Link", icon: LinkIcon },
   formDate: { label: "Date", icon: CalendarIcon, defaultPlaceholder: "Select a date" },
   formTime: { label: "Time", icon: ClockIcon, defaultPlaceholder: "Select a time" },
-};
+} satisfies Record<string, FormFieldVariant>;
+
+const isVariantKey = (value: string): value is keyof typeof VARIANTS => value in VARIANTS;
+
+const isString = (value: unknown): value is string => v.is(v.string(), value);
+
+const isPositiveNumber = (value: unknown): value is number => v.is(v.number(), value) && value > 0;
 
 export const FormFieldElement = (allProps: PlateElementProps) => {
   const { children, ...props } = allProps;
   const { attributes, element, ...rest } = props;
-  // Hook is unconditional (rules-of-hooks); variant gating happens after.
-  const { focused, isSelected } = useFormInputNode(element);
   // Pulled from the preceding label block so the editor's add-item indicator
   // reads e.g. "Add full name" (matching the live preview) instead of the
   // generic "Add item". Hook subscribes to label edits and updates live.
   const fieldLabel = useFieldLabelText(element);
   const editor = useEditorRef();
-  const variant = VARIANTS[element.type];
+
+  const variant: FormFieldVariant | undefined = isVariantKey(element.type)
+    ? VARIANTS[element.type]
+    : undefined;
+
   if (!variant) return null;
+
   if (variant.customRender) return variant.customRender(allProps);
 
-  const placeholder = (element.placeholder as string | undefined) ?? variant.defaultPlaceholder;
+  const placeholder =
+    (isString(element.placeholder) ? element.placeholder : undefined) ?? variant.defaultPlaceholder;
+
   const Icon = variant.icon;
-  const isFieldArray = (element as { isFieldArray?: boolean }).isFieldArray === true;
-  const rawInitialRows = (element as { initialRows?: number }).initialRows;
+  const isFieldArray = element.isFieldArray === true;
+
   const initialRows =
-    isFieldArray && typeof rawInitialRows === "number" && rawInitialRows > 0
-      ? Math.floor(rawInitialRows)
-      : 1;
+    isFieldArray && isPositiveNumber(element.initialRows) ? Math.floor(element.initialRows) : 1;
+
   const addLabelText = `Add${fieldLabel ? ` ${fieldLabel.toLowerCase()}` : " item"}`;
 
   const setInitialRows = (next: number) => {
     const path = editor.api.findPath(element);
+
     if (!path) return;
     const clamped = Math.max(1, next);
+
     if (clamped === 1) {
       editor.tf.unsetNodes(["initialRows"], { at: path });
     } else {
@@ -85,13 +98,15 @@ export const FormFieldElement = (allProps: PlateElementProps) => {
           "data-bf-input-fill": "true",
         }}
         className={cn(
-          "relative flex h-7 w-full cursor-text items-center gap-[4px] rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] pr-[8px] pl-[10px] text-sm caret-current elevation-sm",
-          isSelected && focused && "ring-[3px] ring-ring/50",
+          "relative flex h-[30px] w-full cursor-text items-center gap-[4px] rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-[10px] text-sm caret-current elevation-sm",
         )}
         element={element}
         {...rest}
       >
-        <span className="line-clamp-1 min-w-0 flex-1 break-all text-muted-foreground/50 outline-none">
+        <span
+          className="line-clamp-1 min-w-0 flex-1 break-all text-muted-foreground/50 outline-none"
+          data-bf-placeholder
+        >
           {children}
         </span>
         <Tooltip>
@@ -121,10 +136,13 @@ export const FormFieldElement = (allProps: PlateElementProps) => {
               className="mt-2 flex items-center gap-2 select-none"
             >
               <div
-                className="relative flex h-7 flex-1 items-center gap-[4px] rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] pr-[8px] pl-[10px] text-sm elevation-sm"
+                className="relative flex h-[30px] flex-1 items-center gap-[4px] rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-[10px] text-sm elevation-sm"
                 aria-hidden="true"
               >
-                <span className="line-clamp-1 min-w-0 flex-1 break-all text-muted-foreground/50">
+                <span
+                  className="line-clamp-1 min-w-0 flex-1 break-all text-muted-foreground/50"
+                  data-bf-placeholder
+                >
                   {placeholder}
                 </span>
                 <Icon className="ml-1 size-3.5 shrink-0 text-muted-foreground" />

@@ -23,6 +23,7 @@ const formatQuestionLabel = (q: QuestionDropoffRow): string => {
   if (q.questionLabel) {
     return q.questionLabel;
   }
+
   return q.questionId;
 };
 
@@ -36,7 +37,7 @@ const SummaryStat = ({ label, value }: SummaryStatProps) => (
     <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
       {label}
     </span>
-    <span className="text-lg font-semibold text-foreground tabular-nums">{value}</span>
+    <span className="text-lg font-semibold text-foreground">{value}</span>
   </div>
 );
 
@@ -47,9 +48,11 @@ interface CutDateBannerProps {
 // Surfaces per-Question rework cut-date when selected range predates it; older data hidden from funnel — see ADR-0002.
 const CutDateBanner = ({ startDate }: CutDateBannerProps) => {
   const cutDateKey = PER_QUESTION_ANALYTICS_CUT_TS.slice(0, 10);
+
   if (startDate >= cutDateKey) {
     return null;
   }
+
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
       <InfoIcon className="size-3.5 shrink-0" aria-hidden="true" />
@@ -68,8 +71,9 @@ const DropoffHeader = ({ mode, singleStep }: DropoffHeaderProps) => {
     mode === "multi-step"
       ? "Drop-off = % who viewed but didn't complete"
       : "Drop-off = % who started but didn't complete";
+
   return (
-    <div className="grid h-9 grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 text-[13px] font-normal text-secondary-foreground/80">
+    <div className="grid h-9 grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 text-sm font-normal text-secondary-foreground/80">
       <span aria-hidden="true" />
       <span>{singleStep ? "Question" : "Step / Question"}</span>
       <span className="text-right">Viewed</span>
@@ -106,21 +110,20 @@ interface QuestionRowProps {
 const QuestionRow = ({ question, index, mode }: QuestionRowProps) => {
   const dropoffRate = computeDropoffRate(question, mode, "question");
   const label = formatQuestionLabel(question);
+
   return (
-    <div className="grid grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 py-2 text-[13px] transition-colors last:border-b-0 hover:bg-muted/40">
+    <div className="grid grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/40">
       <span aria-hidden="true" />
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-muted-foreground tabular-nums">{index + 1}.</span>
+        <span className="text-muted-foreground">{index + 1}.</span>
         <span className="truncate font-medium text-foreground" title={label}>
           {label}
         </span>
       </span>
-      <span className="text-right tabular-nums">{numberFormatter.format(question.viewCount)}</span>
-      <span className="text-right tabular-nums">{numberFormatter.format(question.startCount)}</span>
-      <span className="text-right tabular-nums">
-        {numberFormatter.format(question.completeCount)}
-      </span>
-      <span className="text-right tabular-nums">{formatPercent(dropoffRate)}</span>
+      <span className="text-right">{numberFormatter.format(question.viewCount)}</span>
+      <span className="text-right">{numberFormatter.format(question.startCount)}</span>
+      <span className="text-right">{numberFormatter.format(question.completeCount)}</span>
+      <span className="text-right">{formatPercent(dropoffRate)}</span>
     </div>
   );
 };
@@ -139,7 +142,7 @@ const StepRow = ({ step, mode }: StepRowProps) => {
     <Collapsible>
       <CollapsibleTrigger
         className={cn(
-          "group/funnel-step grid w-full grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 py-2 text-left text-[13px] transition-colors last:border-b-0 hover:bg-muted/40",
+          "group/funnel-step grid w-full grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-b border-border px-2.5 py-2 text-left text-sm transition-colors last:border-b-0 hover:bg-muted/40",
           !hasQuestions && "pointer-events-none",
         )}
         disabled={!hasQuestions}
@@ -152,26 +155,25 @@ const StepRow = ({ step, mode }: StepRowProps) => {
           aria-hidden="true"
         />
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-muted-foreground tabular-nums">{step.stepIndex + 1}.</span>
+          <span className="text-muted-foreground">{step.stepIndex + 1}.</span>
           <span className="truncate font-medium text-foreground" title={stepLabel}>
             {stepLabel}
           </span>
         </span>
-        <span className="text-right tabular-nums">{numberFormatter.format(step.viewCount)}</span>
-        <span className="text-right tabular-nums">{numberFormatter.format(step.startCount)}</span>
-        <span className="text-right tabular-nums">
-          {numberFormatter.format(step.completeCount)}
-        </span>
-        <span className="text-right tabular-nums">{formatPercent(dropoffRate)}</span>
+        <span className="text-right">{numberFormatter.format(step.viewCount)}</span>
+        <span className="text-right">{numberFormatter.format(step.startCount)}</span>
+        <span className="text-right">{numberFormatter.format(step.completeCount)}</span>
+        <span className="text-right">{formatPercent(dropoffRate)}</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="bg-muted/30">
           {step.questions.map((q) => {
             const qDropoff = computeDropoffRate(q, mode, "question");
+
             return (
               <div
                 key={q.questionId}
-                className="grid grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-t border-border/60 px-2.5 py-2 text-[13px] transition-colors hover:bg-muted/50"
+                className="grid grid-cols-[24px_minmax(0,1fr)_80px_90px_90px_100px] items-center gap-3 border-t border-border/60 px-2.5 py-2 text-sm transition-colors hover:bg-muted/50"
               >
                 <span aria-hidden="true" />
                 <span className="flex min-w-0 items-center gap-2 pl-4">
@@ -179,16 +181,10 @@ const StepRow = ({ step, mode }: StepRowProps) => {
                     {formatQuestionLabel(q)}
                   </span>
                 </span>
-                <span className="text-right tabular-nums">
-                  {numberFormatter.format(q.viewCount)}
-                </span>
-                <span className="text-right tabular-nums">
-                  {numberFormatter.format(q.startCount)}
-                </span>
-                <span className="text-right tabular-nums">
-                  {numberFormatter.format(q.completeCount)}
-                </span>
-                <span className="text-right tabular-nums">{formatPercent(qDropoff)}</span>
+                <span className="text-right">{numberFormatter.format(q.viewCount)}</span>
+                <span className="text-right">{numberFormatter.format(q.startCount)}</span>
+                <span className="text-right">{numberFormatter.format(q.completeCount)}</span>
+                <span className="text-right">{formatPercent(qDropoff)}</span>
               </div>
             );
           })}

@@ -39,9 +39,11 @@ const dateLabelFormatter = new Intl.DateTimeFormat("en-US", {
 
 const formatDateLabel = (value: string): string => {
   const parsed = new Date(`${value}T00:00:00.000Z`);
+
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
+
   return dateLabelFormatter.format(parsed);
 };
 

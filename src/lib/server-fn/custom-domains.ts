@@ -1,3 +1,4 @@
+import { log } from "evlog";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, isNotNull } from "drizzle-orm";
@@ -26,7 +27,7 @@ const serializeDomain = (domain: CustomDomainRow) => ({
 
 export const listOrgDomains = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ orgId: v.string() }))
+  .validator(v.object({ orgId: v.string() }))
   .handler(async ({ data, context }) => {
     const [membership] = await db
       .select()
@@ -56,7 +57,7 @@ export const listOrgDomains = createServerFn({ method: "POST" })
 
 export const addDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       orgId: v.string(),
       domain: v.string(),
@@ -115,6 +116,7 @@ export const addDomain = createServerFn({ method: "POST" })
     let vercelFailed = false;
     let vercelErrorMessage: string | undefined;
     let verification: VercelDomainVerification[] | undefined;
+
     try {
       const vercelResult = await vercelDomains.add(data.domain);
       vercelDomainId = vercelResult.domain;
@@ -122,10 +124,11 @@ export const addDomain = createServerFn({ method: "POST" })
     } catch (e) {
       vercelFailed = true;
       vercelErrorMessage = e instanceof Error ? e.message : "Unknown Vercel error";
-      console.error("[addDomain] Vercel add failed:", vercelErrorMessage);
+      log.error({ tag: "addDomain", msg: "Vercel add failed", error: vercelErrorMessage });
     }
 
     const now = new Date();
+
     const [domain] = await db
       .insert(customDomains)
       .values({
@@ -150,7 +153,7 @@ export const addDomain = createServerFn({ method: "POST" })
 
 export const removeDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ domainId: v.string() }))
+  .validator(v.object({ domainId: v.string() }))
   .handler(async ({ data, context }) => {
     const [domain] = await db
       .select()
@@ -217,6 +220,7 @@ export const removeDomain = createServerFn({ method: "POST" })
 
 const assertCanReadDomain = async (domainId: string, userId: string) => {
   const [domain] = await db.select().from(customDomains).where(eq(customDomains.id, domainId));
+
   if (!domain) {
     throw createError({
       code: "domains/not-found" satisfies ErrorCode,
@@ -227,10 +231,12 @@ const assertCanReadDomain = async (domainId: string, userId: string) => {
       internal: { domainId },
     });
   }
+
   const [membership] = await db
     .select()
     .from(member)
     .where(and(eq(member.userId, userId), eq(member.organizationId, domain.organizationId)));
+
   if (!membership) {
     throw createError({
       code: "domains/not-authorized" satisfies ErrorCode,
@@ -245,23 +251,25 @@ const assertCanReadDomain = async (domainId: string, userId: string) => {
 
 export const checkDomainStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ domainId: v.string() }))
+  .validator(v.object({ domainId: v.string() }))
   .handler(async ({ data, context }) => {
     await assertCanReadDomain(data.domainId, context.session.user.id);
+
     return refreshDomainStatusFromVercel(data.domainId);
   });
 
 export const recheckDomainStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ domainId: v.string() }))
+  .validator(v.object({ domainId: v.string() }))
   .handler(async ({ data, context }) => {
     await assertCanReadDomain(data.domainId, context.session.user.id);
+
     return triggerDomainVerification(data.domainId);
   });
 
 export const updateDomainMeta = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       domainId: v.string(),
       siteTitle: v.optional(v.string()),
@@ -309,12 +317,14 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
     }
 
     const { domainId, ...updateFields } = data;
+
     const { updated, boundFormIds } = await db.transaction(async (tx) => {
       const [updatedRow] = await tx
         .update(customDomains)
         .set({ ...updateFields, updatedAt: new Date() })
         .where(eq(customDomains.id, domainId))
         .returning();
+
       if (!updatedRow) {
         throw createError({
           code: "domains/not-found" satisfies ErrorCode,
@@ -325,11 +335,13 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
           internal: { domainId },
         });
       }
+
       // Same transaction so a concurrent assignFormDomain can't slip a form between meta UPDATE and read.
       const bound = await tx
         .select({ id: forms.id })
         .from(forms)
         .where(and(eq(forms.customDomainId, domainId), isNotNull(forms.lastPublishedVersionId)));
+
       return { updated: updatedRow, boundFormIds: bound.map((f) => f.id) };
     });
 
@@ -340,7 +352,7 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
   });
 
 export const getDomainByHost = createServerFn({ method: "POST" })
-  .inputValidator(v.object({ host: v.string() }))
+  .validator(v.object({ host: v.string() }))
   .handler(async ({ data }) => {
     const [domain] = await db
       .select({

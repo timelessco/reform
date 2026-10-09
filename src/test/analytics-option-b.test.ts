@@ -29,6 +29,7 @@ vi.mock<typeof import("@tanstack/react-start/server")>(
   import("@tanstack/react-start/server"),
   async (importOriginal) => {
     const original = await importOriginal();
+
     return {
       ...original,
       getRequestHeaders: () =>
@@ -70,6 +71,7 @@ describe("analytics Option B contract", () => {
       .select({ id: forms.id })
       .from(forms)
       .where(eq(forms.workspaceId, workspaceId));
+
     if (formIds.length > 0) {
       const ids = formIds.map((f) => f.id);
       await db.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, ids));
@@ -78,6 +80,7 @@ describe("analytics Option B contract", () => {
       await db.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, ids));
       await db.delete(formSettings).where(inArray(formSettings.formId, ids));
     }
+
     await db.delete(forms).where(eq(forms.workspaceId, workspaceId));
     await cleanupTestUser(ownerId);
     await cleanupTestOrg(orgId);
@@ -85,10 +88,12 @@ describe("analytics Option B contract", () => {
 
   /** Set up a form whose live analytics setting is the given value. */
   const seedForm = async (analytics: boolean) => {
-    const form = await createTestForm(workspaceId, ownerId);
+    // Ingestion now requires a published form (analytics ingestion gate).
+    const form = await createTestForm(workspaceId, ownerId, "published");
     await db
       .insert(formSettings)
       .values({ formId: form.id, settings: { ...defaultFormSettings, analytics } });
+
     return form;
   };
 
@@ -136,6 +141,7 @@ describe("analytics Option B contract", () => {
         .select()
         .from(formQuestionProgress)
         .where(eq(formQuestionProgress.formId, form.id));
+
       expect(progress).toHaveLength(1);
       expect(progress[0]?.questionId).toBe("q-1");
       expect(progress[0]?.completedAt).toBeTruthy();

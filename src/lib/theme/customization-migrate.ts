@@ -1,0 +1,32 @@
+// Form customization is a stringly-typed JSONB map with no validation layer.
+// Some keys went stale (replaced/removed) but linger in old rows; strip them at
+// the read boundary so stored data matches runtime behavior.
+
+// Keys that were removed/replaced; runtime ignores them. `coverFit` is dead:
+// the cover image is always full-bleed (`--bf-cover-fit` is hard-set to "cover"
+// in generate-theme-css.ts), so a stored coverFit:"contain" silently diverges.
+export const STALE_CUSTOMIZATION_KEYS = ["coverFit"] as const;
+
+// Pure: returns a new map with stale keys removed. Null/undefined → {}.
+// Idempotent — re-running on its own output is a no-op.
+export const migrateCustomization = (c: Record<string, string> | null | undefined) => {
+  if (!c) return {};
+  const out = { ...c };
+
+  for (const k of STALE_CUSTOMIZATION_KEYS) delete out[k];
+
+  // Custom CSS is a single global `<style>` block, not per-mode. Older rows saved it
+  // under a mode-prefixed key (`light:customCss` / `dark:customCss`) which the theme
+  // generator never read, so it silently never applied. Promote any prefixed value to
+  // the bare `customCss` key (prefer light) and drop the dead prefixed keys.
+  if (!out.customCss) {
+    const legacy = out["light:customCss"] || out["dark:customCss"];
+
+    if (legacy) out.customCss = legacy;
+  }
+
+  delete out["light:customCss"];
+  delete out["dark:customCss"];
+
+  return out;
+};

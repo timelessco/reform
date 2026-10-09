@@ -91,7 +91,7 @@ export const getSubmissionNotificationsQueryOptions = () =>
 
 export const getFormInAppNotificationPreference = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     const userId = context.session.user.id;
@@ -115,6 +115,7 @@ export const getFormInAppNotificationPreference = createServerFn({ method: "GET"
     }
 
     const isOwner = form.createdByUserId === userId;
+
     if (!isOwner) {
       return { canManageInAppNotifications: false, inAppNotifications: false };
     }
@@ -145,7 +146,7 @@ export const getFormInAppNotificationPreferenceQueryOptions = (formId: string) =
 
 export const setFormInAppNotificationPreference = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       enabled: v.boolean(),
@@ -213,7 +214,7 @@ export const setFormInAppNotificationPreference = createServerFn({ method: "POST
 
 export const markSubmissionNotificationRead = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
     const now = new Date();
@@ -238,7 +239,7 @@ export const markSubmissionNotificationRead = createServerFn({ method: "POST" })
 
 export const clearSubmissionNotification = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
 

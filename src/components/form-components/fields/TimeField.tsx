@@ -1,17 +1,18 @@
-import { fieldLabelId, getAriaLabelFallback, getAriaLabelledBy } from "./shared";
+import { useFieldBinding } from "./shared";
 import type { FieldRendererProps } from "./shared";
 
 const TimeField = ({ element, form, name }: FieldRendererProps<"Time">) => {
-  const fieldName = name ?? element.name;
-  const isArrayItem = name !== undefined;
+  const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   return (
     <form.AppField name={fieldName}>
       {(f) => (
         <>
           <f.TimePicker
             id={fieldName}
-            aria-label={getAriaLabelFallback(element)}
-            aria-labelledby={isArrayItem ? fieldLabelId(element.name) : getAriaLabelledBy(element)}
+            use24Hour={element.use24Hour}
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabelledBy}
           />
           <f.FieldError />
         </>

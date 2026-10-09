@@ -19,6 +19,8 @@ import { useRequest as getNitroRequest } from "nitro/context";
 // Returns the audit-capable request logger, or undefined when unavailable.
 export const getAuditLogger = (): AuditableLogger | undefined => {
   const log = getNitroRequest().context?.log as RequestLogger | undefined;
+
   if (!log) return undefined;
+
   return withAuditMethods(log);
 };

@@ -121,7 +121,9 @@ export const twoFactor = pgTable("twoFactor", {
 
 // Single source for enum-like status sets — derives both CHECK constraints and TS unions. Keep tuples in sync with consumers (forms.ts, custom-domains.ts).
 export const FORM_STATUSES = ["draft", "published", "archived"] as const;
+
 export const CUSTOM_DOMAIN_STATUSES = ["pending", "verified", "failed", "suspended"] as const;
+
 export const DEVICE_TYPES = ["desktop", "mobile", "tablet"] as const;
 
 const sqlInList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(", "));
@@ -161,6 +163,8 @@ export const forms = pgTable(
     content: jsonb().notNull().default([]),
     icon: text(),
     cover: text(),
+    // Generated content thumbnail (Plate render → Blob); card preview + OG image. Set on publish.
+    previewImageUrl: text(),
     status: text().notNull().default("draft"),
     // Version history fields
     lastPublishedVersionId: text().references((): AnyPgColumn => formVersions.id, {
@@ -831,6 +835,21 @@ export const uploadRateLimits = pgTable("upload_rate_limits", {
   count: integer("count").notNull().default(0),
 });
 
+// Per-IP short-window rate limit for anonymous analytics ingestion (visits + question progress).
+// Mirrors upload_rate_limits; cleanup-on-write keeps it small (see checkAnalyticsRateLimit).
+export const analyticsRateLimits = pgTable("analytics_rate_limits", {
+  ip: text("ip").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull().defaultNow(),
+  count: integer("count").notNull().default(0),
+});
+
+// Per-org short-window rate limit for AI form-generate (separate from the per-day quota). Keyed by orgId; window/counter live here so tuning needs no migration.
+export const aiRequestRateLimits = pgTable("ai_request_rate_limits", {
+  orgId: text("org_id").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull().defaultNow(),
+  count: integer("count").notNull().default(0),
+});
+
 // AI form-generate calls per org per UTC day; rate-limit check in /api/ai/form-generate. `id` = `${organizationId}:${YYYY-MM-DD}` so one upsert handles the daily bucket, no composite-PK migration.
 export const aiGenerationCounts = pgTable(
   "ai_generation_counts",
@@ -851,7 +870,11 @@ export const aiGenerationCounts = pgTable(
 // so a `typeof <table>.$inferSelect` annotation doesn't pull the table value (and
 // thus drizzle-orm) into the client bundle. Server-only marker above keeps values out.
 export type FormRow = typeof forms.$inferSelect;
+
 export type FormVersionRow = typeof formVersions.$inferSelect;
+
 export type SubmissionRow = typeof submissions.$inferSelect;
+
 export type CustomDomainRow = typeof customDomains.$inferSelect;
+
 export type FormSubmissionNotificationRow = typeof formSubmissionNotifications.$inferSelect;

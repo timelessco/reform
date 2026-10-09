@@ -54,6 +54,7 @@ const fetchWorkspacesWithForms = async (
         title: form.title,
         updatedAt: form.updatedAt.toISOString(),
       });
+
       return acc;
     },
     {} as Record<
@@ -86,16 +87,19 @@ describe("workspace summary collection", () => {
     });
 
     const t = await getTestUtils();
+
     const owner = t.createUser({
       id: ownerId,
       email: `owner-ws-${ownerId}@example.com`,
       name: "Owner",
     });
+
     const memberUser = t.createUser({
       id: memberId,
       email: `member-ws-${memberId}@example.com`,
       name: "Member",
     });
+
     await t.saveUser(owner);
     await t.saveUser(memberUser);
 
@@ -139,11 +143,13 @@ describe("workspace summary collection", () => {
 
   it("optimistic insert appears immediately in collection state", async () => {
     let serverCalled = false;
+
     const collection = createWorkspaceSummaryCollection({
       queryClient,
       queryFn: () => fetchWorkspacesWithForms(memberId),
       onInsert: async () => {
         serverCalled = true;
+
         // Simulate server write — in real app this calls createWorkspace
         return { refetch: false }; // skip refetch to isolate optimistic behavior
       },

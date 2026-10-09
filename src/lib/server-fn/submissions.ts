@@ -11,8 +11,7 @@ import {
 } from "@/lib/editor/transform-plate-to-form";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
-import { getActiveOrgId } from "./auth-helpers";
-import { authForm } from "./auth-helpers.server";
+import { requireScopedForm } from "./auth-helpers.server";
 
 export type SerializedSubmission = {
   id: string;
@@ -43,6 +42,7 @@ const maybePurgeAfterSubmissionDelete = async (formId: string) => {
     .from(forms)
     .leftJoin(formSettings, eq(formSettings.formId, forms.id))
     .where(eq(forms.id, formId));
+
   if (row?.lastPublishedVersionId && row.settings?.limitSubmissions) {
     await purgeFormCache(formId);
   }
@@ -50,42 +50,43 @@ const maybePurgeAfterSubmissionDelete = async (formId: string) => {
 
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
-    v.object({ id: v.pipe(v.string(), v.uuid()), formId: v.pipe(v.string(), v.uuid()) }),
-  )
+  .validator(v.object({ id: v.pipe(v.string(), v.uuid()), formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.formId);
     await db.delete(submissions).where(eq(submissions.id, data.id));
     await maybePurgeAfterSubmissionDelete(data.formId);
+
     return { success: true };
   });
 
 export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       submissionIds: v.array(v.pipe(v.string(), v.uuid())),
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.formId);
+
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0 };
     }
+
     await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
     await maybePurgeAfterSubmissionDelete(data.formId);
+
     return { success: true, deleted: data.submissionIds.length };
   });
 
 export type SubmissionCursor = { createdAt: string; id: string };
+
 export const SUBMISSIONS_PAGE_SIZE = 50;
 
 export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       cursor: v.optional(v.object({ createdAt: v.string(), id: v.string() })),
@@ -99,8 +100,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { formId, cursor, limit, search } = data;
 
-    const orgId = getActiveOrgId(context.session);
-    await authForm(formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, formId);
 
     const cursorCondition = cursor
       ? or(
@@ -125,6 +125,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
       .where(whereCondition)
       .orderBy(desc(submissions.createdAt), desc(submissions.id))
       .limit(limit + 1);
+
     const hasNextPage = rows.length > limit;
     const pageRows = hasNextPage ? rows.slice(0, limit) : rows;
     const lastRow = pageRows.at(-1);
@@ -145,10 +146,9 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
 
 export const getSubmissionsCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.formId);
 
     const [result] = await db
       .select({ total: count() })
@@ -162,10 +162,9 @@ export const getSubmissionsCount = createServerFn({ method: "GET" })
  * historical versions. One round-trip replacing three queries; no orphan-detection waterfall. */
 export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.formId);
 
     const [publishedRow, countRow, allVersions] = await Promise.all([
       db
@@ -198,8 +197,10 @@ export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
 
     // Resolve labels across every historical version. Newest version wins on conflict.
     const fieldLabels: Record<string, string> = {};
+
     for (const v of allVersions) {
       const elements = transformPlateStateToFormElements(v.content as Value);
+
       for (const field of getEditableFields(elements)) {
         if ("label" in field && field.label && !(field.name in fieldLabels)) {
           fieldLabels[field.name] = field.label;

@@ -2,6 +2,7 @@ import { SPRITE_PATH } from "@/lib/config/app-config";
 import type { IconOption } from "./types";
 
 export const WHITE_COLOR = "#ffffff";
+
 export const BLACK_COLOR = "#000000";
 
 // prettier-ignore

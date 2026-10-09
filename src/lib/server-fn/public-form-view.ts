@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import * as v from "valibot";
 import {
   customDomains,
@@ -15,6 +15,12 @@ import { db } from "@/db";
 import { planUnlocks } from "@/lib/config/plan-gates";
 import { resolveOgInputs } from "@/lib/og/resolve-inputs";
 import { buildOgImageUrl } from "@/lib/og/url";
+import { timingSafeEqualStr } from "@/lib/server-fn/email-otp.server";
+import {
+  hashFormPassword,
+  isHashedFormPassword,
+  verifyFormPasswordHash,
+} from "@/lib/server-fn/password-hash.server";
 import { isServerPlan } from "@/lib/server-fn/plan-helpers";
 import { shortIdSchema } from "@/lib/short-id";
 import { buildPublicFormSettings } from "@/types/form-settings";
@@ -24,7 +30,7 @@ import { buildPublicFormSettings } from "@/types/form-settings";
 /** Get a published form by public short id. Returns published version content (not draft);
  * only status === "published" forms. */
 export const getPublishedFormByShortId = createServerFn({ method: "GET" })
-  .inputValidator(v.object({ shortId: shortIdSchema }))
+  .validator(v.object({ shortId: shortIdSchema }))
   .handler(async ({ data }) => {
     // Settings live in form_settings now (split from versioning; see
     // docs/plans/2026-05-04-settings-version-split.md). Editor content still comes from the
@@ -43,6 +49,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
         draftContent: forms.content,
         draftIcon: forms.icon,
         draftCover: forms.cover,
+        previewImageUrl: forms.previewImageUrl,
       })
       .from(forms)
       .innerJoin(workspaces, eq(workspaces.id, forms.workspaceId))
@@ -62,6 +69,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
 
     const canDisableBranding =
       isServerPlan(form.orgPlan) && planUnlocks(form.orgPlan, "disableBranding");
+
     const liveBranding = form.liveSettings?.branding ?? true;
     const liveAnalytics = form.liveSettings?.analytics ?? false;
     const effectiveBranding = canDisableBranding ? liveBranding : true;
@@ -98,6 +106,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
         .select({ value: count() })
         .from(submissions)
         .where(eq(submissions.formId, form.id));
+
       if (submissionCount >= settings.maxSubmissions) {
         return {
           form: null,
@@ -121,11 +130,16 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
       content: form.draftContent,
       icon: form.draftIcon,
     });
-    const ogImageUrl = buildOgImageUrl({
-      shortId: form.shortId,
-      title: og.title,
-      description: og.description,
-    });
+
+    // Prefer the generated content thumbnail (Plate render); fall back to the Satori OG card.
+    const ogImageUrl =
+      form.previewImageUrl ??
+      buildOgImageUrl({
+        shortId: form.shortId,
+        title: og.title,
+        description: og.description,
+      });
+
     const ogDescription = og.description;
 
     if (version) {
@@ -176,7 +190,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
 
 /** Verify a password for a password-protected form. */
 export const verifyFormPassword = createServerFn({ method: "POST" })
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()), password: v.string() }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()), password: v.string() }))
   .handler(async ({ data }) => {
     // Password is a live setting — read from form_settings, not the draft.
     const [formRow] = await db
@@ -188,5 +202,33 @@ export const verifyFormPassword = createServerFn({ method: "POST" })
       return { valid: false };
     }
 
-    return { valid: formRow.settings?.password === data.password };
+    const stored = formRow.settings?.password;
+
+    if (!stored) {
+      return { valid: false };
+    }
+
+    if (isHashedFormPassword(stored)) {
+      return { valid: verifyFormPasswordHash(data.password, stored) };
+    }
+
+    // Legacy plaintext row: constant-time compare, then best-effort upgrade to a hash so
+    // the plaintext is replaced on first successful login. Failure must not break login.
+    const ok = timingSafeEqualStr(stored, data.password);
+
+    if (ok) {
+      try {
+        const hashed = hashFormPassword(data.password);
+        await db
+          .update(formSettings)
+          .set({
+            settings: sql`${formSettings.settings} || ${JSON.stringify({ password: hashed })}::jsonb`,
+          })
+          .where(eq(formSettings.formId, data.formId));
+      } catch {
+        // best-effort: row stays plaintext until next settings save
+      }
+    }
+
+    return { valid: ok };
   });

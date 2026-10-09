@@ -4,8 +4,7 @@ import * as v from "valibot";
 import { formFavorites } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { getActiveOrgId } from "./auth-helpers";
-import { authForm } from "./auth-helpers.server";
+import { requireScopedForm } from "./auth-helpers.server";
 
 export const getFavorites = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -25,7 +24,7 @@ export const getFavorites = createServerFn({ method: "GET" })
 
 export const addFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       sortIndex: v.nullish(v.string()),
@@ -34,7 +33,7 @@ export const addFavorite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
     // Per-form authz: else any authed user could favorite arbitrary form ids in other orgs.
-    await authForm(data.formId, userId, getActiveOrgId(context.session));
+    await requireScopedForm(context.session, data.formId);
     const id = `${userId}:${data.formId}`;
 
     await db
@@ -51,10 +50,10 @@ export const addFavorite = createServerFn({ method: "POST" })
 
 export const removeFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
-    await authForm(data.formId, userId, getActiveOrgId(context.session));
+    await requireScopedForm(context.session, data.formId);
 
     await db
       .delete(formFavorites)
@@ -63,7 +62,7 @@ export const removeFavorite = createServerFn({ method: "POST" })
 
 export const reorderFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       sortIndex: v.string(),
@@ -71,7 +70,7 @@ export const reorderFavorite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
-    await authForm(data.formId, userId, getActiveOrgId(context.session));
+    await requireScopedForm(context.session, data.formId);
 
     await db
       .update(formFavorites)

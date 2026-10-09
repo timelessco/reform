@@ -13,12 +13,15 @@ const formatDuration = (ms: number): string => {
   if (!ms || ms <= 0) {
     return "—";
   }
+
   const totalSeconds = Math.round(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
+
   if (minutes <= 0) {
     return `${seconds}s`;
   }
+
   return `${minutes}m ${seconds}s`;
 };
 
@@ -26,7 +29,9 @@ const formatCompletionRate = (submissions: number, uniqueVisitors: number): stri
   if (uniqueVisitors <= 0) {
     return "—";
   }
+
   const rate = Math.round((submissions / uniqueVisitors) * 100);
+
   return `${rate}%`;
 };
 
@@ -44,7 +49,7 @@ const MetricCard = ({ label, value, Icon }: MetricCardProps) => (
         <span className="text-xs font-medium tracking-wide uppercase">{label}</span>
       </div>
       <span className="text-2xl font-semibold text-foreground">
-        <NumberPopIn value={value} className="tabular-nums" />
+        <NumberPopIn value={value} />
       </span>
     </CardContent>
   </Card>
@@ -73,7 +78,7 @@ export const MetricsRow = ({ metrics }: MetricsRowProps) => (
       Icon={TrendingUp}
     />
     <MetricCard
-      label="Avg duration"
+      label="Completion time"
       value={formatDuration(metrics.avgVisitDurationMs)}
       Icon={Clock}
     />

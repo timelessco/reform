@@ -3,10 +3,9 @@
    producing invalid HTML and React hydration errors. */
 import { useState } from "react";
 
-import { getMultiSelectColor } from "@/components/ui/form-option-item-constants";
-import { ChevronDownIcon } from "@/components/ui/icons";
+import { CheckCheckIcon, CheckIcon, ChevronDownIcon } from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useFormIsDark, useReanchorThemeProps } from "@/hooks/use-form-theme";
+import { useReanchorThemeProps } from "@/hooks/use-form-theme";
 import { cn } from "@/lib/utils";
 
 interface MultiSelectOption {
@@ -50,19 +49,19 @@ export const MultiSelect = ({
 
   // PopoverContent portals to body, losing .bf-themed CSS vars — re-anchor theme on the popup.
   const themeReanchor = useReanchorThemeProps();
-  // Chip colors follow the form's mode, not the app's global `.dark` (the trigger lives in the
-  // editor canvas; the dropdown re-anchors via themeReanchor but neither strips the app `.dark`).
-  const isDark = useFormIsDark();
 
   // Roving focus across options: adds listbox-style ArrowUp/Down + Home/End; Tab still works natively.
   const handleOptionsKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+
     const buttons = Array.from(
       event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-mselect-option]"),
     );
+
     if (buttons.length === 0) return;
     const activeIndex = buttons.findIndex((btn) => btn === document.activeElement);
     let nextIndex = activeIndex;
+
     if (event.key === "ArrowDown") {
       nextIndex = activeIndex < 0 ? 0 : (activeIndex + 1) % buttons.length;
     } else if (event.key === "ArrowUp") {
@@ -73,6 +72,7 @@ export const MultiSelect = ({
     } else if (event.key === "End") {
       nextIndex = buttons.length - 1;
     }
+
     if (nextIndex !== activeIndex) {
       event.preventDefault();
       buttons[nextIndex]?.focus();
@@ -90,51 +90,47 @@ export const MultiSelect = ({
             role="button"
             id={id}
             tabIndex={0}
+            data-bf-input-fill
             aria-haspopup="listbox"
             aria-expanded={open}
             aria-labelledby={ariaLabelledBy}
             aria-invalid={ariaInvalid}
             className={cn(
-              "flex min-h-[30px] w-full cursor-pointer items-center gap-1 rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-2 py-1 text-sm elevation-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              // Figma input-select (25632:9327): 30px gray/50 pill, 10px inline padding, 16px chevron.
+              "flex min-h-[30px] w-full cursor-pointer items-center gap-1 rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-2.5 py-1 text-sm elevation-sm outline-none focus-visible:bg-accent",
               className,
             )}
           >
             <div className="flex flex-1 flex-wrap gap-1">
               {selectedOptions.length > 0 ? (
-                selectedOptions.map((opt) => {
-                  const colorIndex = options.findIndex((o) => o.value === opt.value);
-                  const color = getMultiSelectColor(colorIndex, isDark);
-                  return (
-                    <span
-                      key={opt.value}
-                      className={cn(
-                        "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium",
-                        color.bg,
-                        color.text,
-                      )}
+                selectedOptions.map((opt) => (
+                  <span
+                    key={opt.value}
+                    className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground"
+                  >
+                    {opt.label}
+                    <button
+                      type="button"
+                      className="ml-1 inline-flex size-3 items-center justify-center rounded-full hover:bg-black/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleOption(opt.value);
+                      }}
+                      aria-label={`Remove ${opt.label}`}
                     >
-                      {opt.label}
-                      <button
-                        type="button"
-                        className="ml-1 inline-flex size-3 items-center justify-center rounded-full hover:bg-black/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleOption(opt.value);
-                        }}
-                        aria-label={`Remove ${opt.label}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })
+                      ×
+                    </button>
+                  </span>
+                ))
               ) : (
-                <span className="text-foreground/70">{placeholder}</span>
+                <span className="opacity-70">{placeholder}</span>
               )}
             </div>
+            {/* Double-tick marks this as a multi-select (vs a single-pick dropdown). */}
+            <CheckCheckIcon className="size-4 shrink-0 text-muted-foreground" />
             <ChevronDownIcon
               className={cn(
-                "size-3 shrink-0 text-muted-foreground transition-transform",
+                "size-4 shrink-0 text-muted-foreground transition-transform",
                 open && "rotate-180",
               )}
             />
@@ -144,25 +140,29 @@ export const MultiSelect = ({
       <PopoverContent
         align="start"
         sideOffset={4}
-        className={cn("w-(--anchor-width) p-1", themeReanchor.className)}
+        // Neutral full-width option rows (normal multi-select), elevation-xl popup.
+        className={cn("w-(--anchor-width) gap-0.5 p-1 elevation-xl", themeReanchor.className)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
         onKeyDown={handleOptionsKeyDown}
       >
-        {options.map((opt, idx) => {
+        {options.map((opt) => {
           const isSelected = value.includes(opt.value);
-          const color = getMultiSelectColor(idx, isDark);
+
           return (
             <button
               key={opt.value}
               type="button"
               data-mselect-option
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-                isSelected && cn(color.bg, color.text),
+                // Normal-select rows: neutral, checkmark marks selection, hover/selected tint.
+                "flex h-8 w-full cursor-pointer items-center justify-between rounded-[8px] px-2 text-sm outline-none hover:bg-accent focus-visible:bg-accent",
+                isSelected && "bg-accent font-medium",
               )}
               onClick={() => toggleOption(opt.value)}
             >
               <span>{opt.label}</span>
+              {isSelected && <CheckIcon className="size-4 shrink-0" />}
             </button>
           );
         })}

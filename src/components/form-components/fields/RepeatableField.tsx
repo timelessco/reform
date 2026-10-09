@@ -1,6 +1,7 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, use, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FormPreviewReadOnlyContext } from "@/contexts/step-form-context";
 import type { AppForm } from "@/hooks/use-form-builder";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ type ArrayFieldApi = {
   pushValue: (value: unknown) => void;
   removeValue: (index: number) => void;
 };
+
 type ArrayAppField = React.ComponentType<{
   name: string;
   mode: "array";
@@ -29,10 +31,13 @@ type ItemComponent = React.ComponentType<{ element: never; form: AppForm; name?:
 
 const extractErrorMessage = (err: unknown): string | null => {
   if (typeof err === "string") return err;
+
   if (err && typeof err === "object" && "message" in err) {
     const msg = (err as { message?: unknown }).message;
+
     return typeof msg === "string" ? msg : null;
   }
+
   return null;
 };
 
@@ -40,6 +45,7 @@ const getSeedValue = (element: PlateFormField): string => {
   if ("defaultValue" in element && typeof element.defaultValue === "string") {
     return element.defaultValue;
   }
+
   return "";
 };
 
@@ -61,12 +67,15 @@ const RepeatableFieldBody = ({
   const rawValue = arrayField.state.value;
   const items = Array.isArray(rawValue) ? rawValue : [];
   const itemCount = items.length;
+  // Read-only submission view: render value rows only, no add/remove affordances.
+  const readOnly = use(FormPreviewReadOnlyContext);
 
   // Editor-configured row floor. The first `lockedRows` rows ALWAYS render and
   // cannot be removed by the Respondent (creator's contract — "always collect
   // these N values"). Anything the Respondent adds beyond that via "+ Add"
   // is theirs to remove.
   const rawLockedRows = (element as { initialRows?: number }).initialRows;
+
   const lockedRows =
     typeof rawLockedRows === "number" && rawLockedRows > 0 ? Math.floor(rawLockedRows) : 1;
 
@@ -82,6 +91,7 @@ const RepeatableFieldBody = ({
   useEffect(() => {
     const live = arrayField.state.value;
     const liveCount = Array.isArray(live) ? live.length : 0;
+
     for (let i = liveCount; i < lockedRows; i++) {
       arrayField.pushValue(seed);
     }
@@ -94,6 +104,7 @@ const RepeatableFieldBody = ({
   // empty) shouldn't normally happen now that auto-seed guarantees ≥1 item and
   // per-item rules cover required/format. Keep the fallback for safety.
   const arrayErrors = arrayField.state.meta.errors;
+
   const arrayErrorMessage =
     arrayField.state.meta.isTouched && arrayErrors.length > 0
       ? extractErrorMessage(arrayErrors[0])
@@ -115,13 +126,13 @@ const RepeatableFieldBody = ({
               />
             </Suspense>
           </div>
-          {i >= lockedRows && (
+          {!readOnly && i >= lockedRows && (
             <button
               type="button"
               aria-label="Remove item"
               onClick={() => arrayField.removeValue(i)}
               className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-[8px]",
+                "flex size-7 shrink-0 items-center justify-center rounded-lg",
                 "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
@@ -138,16 +149,18 @@ const RepeatableFieldBody = ({
           )}
         </div>
       ))}
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={() => arrayField.pushValue(seed)}
-        className="mt-1 w-fit"
-        prefix={<span aria-hidden="true">+</span>}
-      >
-        {addLabel}
-      </Button>
+      {!readOnly && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => arrayField.pushValue(seed)}
+          className="mt-1 w-fit"
+          prefix={<span aria-hidden="true">+</span>}
+        >
+          {addLabel}
+        </Button>
+      )}
       {arrayErrorMessage && (
         <p className="mt-1.5 text-sm text-destructive" role="alert">
           {arrayErrorMessage}
@@ -172,6 +185,7 @@ export const RepeatableField = ({
   ItemComponent: ItemComponent;
 }) => {
   const AppField = form.AppField as unknown as ArrayAppField;
+
   return (
     <AppField name={element.name} mode="array">
       {(arrayField) => (

@@ -2,8 +2,11 @@
  * direction-lock + velocity-sampling + spring-release. One home prevents drift. */
 
 export const DIRECTION_LOCK_THRESHOLD_PX = 8;
+
 export const VERTICAL_DOMINANCE_RATIO = 1.2;
+
 export const SPRING_CONFIG = { type: "spring" as const, stiffness: 400, damping: 40 };
+
 export const VELOCITY_SAMPLE_MS = 80;
 
 export type GestureLock = "drawer" | "scroll" | null;
@@ -17,6 +20,7 @@ export interface VelocitySample {
 export const pushSample = (samples: VelocitySample[], x: number, now: number): void => {
   samples.push({ x, t: now });
   const cutoff = now - VELOCITY_SAMPLE_MS;
+
   while (samples.length > 2 && samples[0].t < cutoff) samples.shift();
 };
 
@@ -26,6 +30,7 @@ export const estimateVelocity = (samples: VelocitySample[]): number => {
   const first = samples[0];
   const last = samples[samples.length - 1];
   const dt = Math.max(1, last.t - first.t);
+
   return ((last.x - first.x) / dt) * 1000;
 };
 
@@ -35,6 +40,8 @@ export const classifyDirection = (dx: number, dy: number): "horizontal" | "verti
   if (Math.abs(dx) < DIRECTION_LOCK_THRESHOLD_PX && Math.abs(dy) < DIRECTION_LOCK_THRESHOLD_PX) {
     return null;
   }
+
   if (Math.abs(dy) > Math.abs(dx) * VERTICAL_DOMINANCE_RATIO) return "vertical";
+
   return "horizontal";
 };

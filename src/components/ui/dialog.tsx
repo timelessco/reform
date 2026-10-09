@@ -98,7 +98,7 @@ export const DialogFooter = ({
 export const DialogTitle = ({ className, ...props }: DialogPrimitive.Title.Props) => (
   <DialogPrimitive.Title
     data-slot="dialog-title"
-    className={cn("font-sans text-lg font-semibold text-gray-900", className)}
+    className={cn("font-sans text-lg font-semibold text-foreground", className)}
     {...props}
   />
 );
@@ -107,7 +107,7 @@ export const DialogDescription = ({ className, ...props }: DialogPrimitive.Descr
   <DialogPrimitive.Description
     data-slot="dialog-description"
     className={cn(
-      "mt-2 text-sm text-gray-600 *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+      "mt-2 text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
       className,
     )}
     {...props}

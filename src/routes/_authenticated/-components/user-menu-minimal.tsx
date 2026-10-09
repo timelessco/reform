@@ -3,6 +3,7 @@ import { useResolvedTheme, useTheme } from "@/components/theme-provider";
 import { IconSwap } from "@/components/transitions/icon-swap";
 import { auth, useSession } from "@/lib/auth/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
+import { useUserPlan } from "@/hooks/use-user-plan";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -17,11 +18,13 @@ import {
 } from "@/components/ui/icons";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Image } from "@/components/ui/image";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { formatForDisplay, HOTKEYS } from "@/lib/hotkeys";
 
 const getInitials = (name?: string | null) => {
   if (!name) return "U";
+
   return name
     .split(" ")
     .map((n) => n[0])
@@ -45,11 +48,19 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   useHotkey(HOTKEYS.TOGGLE_THEME, () => toggleTheme(), { ignoreInputs: true });
 
   const { data: session } = useSession();
+
   const { data: activeOrg } = useQuery({
     ...orgDataForLayoutQueryOptions(),
     select: (d) => d.activeOrg,
   });
-  const displayName = activeOrg?.name ?? session?.user?.name ?? "User";
+
+  // Show the user's display name (session.user.name), not the org name — the profile represents
+  // the person, so the email/org fallback must come after the user's own name.
+  const displayName = session?.user?.name ?? activeOrg?.name ?? "User";
+
+  // Was hardcoded "Free Plan" — read the active org's real subscription tier.
+  const { plan, isLoading: isPlanLoading } = useUserPlan();
+  const planLabel = { free: "Free Plan", pro: "Pro Plan", business: "Business Plan" }[plan];
 
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
@@ -92,24 +103,32 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   ];
 
   const menuItemIconClass =
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- icon stroke-width 1.6 override has no scale utility
     "size-4 shrink-0 text-foreground/80 [&_path]:stroke-[1.6] [&_path]:stroke-current";
 
   return (
-    <div className="hover:bg-sidebar-active bg-background transition-colors">
+    <div className="bg-background transition-colors hover:bg-sidebar-accent">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           render={
             <Button
               variant="ghost"
               size="md"
-              className="flex w-full min-w-0 cursor-pointer items-center justify-start gap-2 overflow-hidden rounded-lg px-1 py-[7px] transition-colors"
+              className="flex w-full min-w-0 cursor-pointer items-center justify-start gap-2 overflow-hidden rounded-lg px-1 py-1.75 transition-colors"
               aria-label="Toggle user menu"
             />
           }
         >
-          <div className="bg-sidebar-active flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full text-[10px] font-bold">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- 10px avatar initial sits below text-2xs (11px); nearest would enlarge it */}
+          <div className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-accent text-[10px] font-bold">
             {session?.user?.image ? (
-              <img src={session.user.image} alt={displayName} className="size-full object-cover" />
+              <Image
+                src={session.user.image}
+                alt={displayName}
+                width={24}
+                height={24}
+                className="size-full object-cover"
+              />
             ) : (
               getInitials(displayName)
             )}
@@ -135,11 +154,13 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
           className="w-[calc(var(--anchor-width)-16px)]"
         >
           <div className="flex items-start gap-2.5 px-2 py-1.5">
-            <div className="bg-sidebar-active flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg text-sm font-bold">
+            <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-accent text-sm font-bold">
               {session?.user?.image ? (
-                <img
+                <Image
                   src={session.user.image}
                   alt={displayName}
+                  width={32}
+                  height={32}
                   className="size-full object-cover"
                 />
               ) : (
@@ -147,8 +168,11 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
               )}
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-[13px] text-foreground">{displayName}</span>
-              <span className="text-[11px] text-muted-foreground">Free Plan</span>
+              <span className="truncate text-sm text-foreground">{displayName}</span>
+              {/* nbsp placeholder while loading — avoids flashing the wrong tier */}
+              <span className="text-2xs text-muted-foreground">
+                {isPlanLoading ? " " : planLabel}
+              </span>
             </div>
           </div>
 
@@ -158,12 +182,14 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
             <div className="rounded-lg px-2 py-1.5 text-xs text-muted-foreground">Account</div>
             {accountMenuItems.map((item) => {
               const Icon = item.icon;
+
               return (
                 <button
                   key={item.key}
                   type="button"
                   onClick={item.action}
-                  className="inline-flex h-[26px] cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2 py-[5.5px] text-[13px] text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- 5.5px vertical padding has no scale step
+                  className="inline-flex h-[26px] cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2 py-[5.5px] text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   {item.key === "theme" ? (
                     <IconSwap
@@ -176,6 +202,7 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
                   )}
                   <span className="flex-1 text-left">{item.label}</span>
                   {"shortcut" in item && item.shortcut ? (
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- 10px kbd text sits below text-2xs (11px); nearest would enlarge it
                     <kbd className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-secondary px-1 font-mono text-[10px] font-medium text-muted-foreground">
                       {formatForDisplay(item.shortcut)}
                     </kbd>
@@ -193,7 +220,8 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
               signOutMutation.mutate({});
               setIsOpen(false);
             }}
-            className="inline-flex h-[26px] cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2 py-[5.5px] text-[13px] text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- 5.5px vertical padding has no scale step
+            className="inline-flex h-[26px] cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2 py-[5.5px] text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <LogOutIcon className={menuItemIconClass} />
             <span className="flex-1 text-left">Log out</span>

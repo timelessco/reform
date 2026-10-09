@@ -1,7 +1,9 @@
 import type { formDropoffDaily, formQuestionProgress } from "@/db/schema";
+import { completionRate, dropoffRate } from "@/lib/analytics/metrics";
 import type { QuestionDropoffMetrics } from "@/types/analytics";
 
 type DropoffDailyRow = typeof formDropoffDaily.$inferSelect;
+
 type QuestionProgressRow = typeof formQuestionProgress.$inferSelect;
 
 interface FilterByCutDateInput {
@@ -20,6 +22,7 @@ interface FilterByCutDateOutput {
 export const filterByCutDate = (input: FilterByCutDateInput): FilterByCutDateOutput => {
   const cutDateKey = input.cutTs.slice(0, 10);
   const cutDate = new Date(input.cutTs);
+
   return {
     dailyRows: input.dailyRows.filter((row) => row.date >= cutDateKey),
     todayProgressRows: input.todayProgressRows.filter((row) => row.viewedAt >= cutDate),
@@ -54,9 +57,11 @@ const getOrCreateAggregate = (
   questionIndex: number,
 ): QuestionAggregate => {
   const existing = byQuestion.get(questionId);
+
   if (existing) {
     return existing;
   }
+
   const created: QuestionAggregate = {
     questionId,
     questionIndex,
@@ -67,7 +72,9 @@ const getOrCreateAggregate = (
     completeCount: 0,
     terminalDropoffCount: 0,
   };
+
   byQuestion.set(questionId, created);
+
   return created;
 };
 
@@ -82,9 +89,11 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     agg.startCount += row.startCount;
     agg.completeCount += row.completeCount;
     agg.terminalDropoffCount += row.terminalDropoffCount;
+
     if (agg.stepId === null && row.stepId !== null) {
       agg.stepId = row.stepId;
     }
+
     if (agg.stepIndex === null && row.stepIndex !== null) {
       agg.stepIndex = row.stepIndex;
     }
@@ -93,15 +102,19 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
   for (const row of todayProgressRows) {
     const agg = getOrCreateAggregate(byQuestion, row.questionId, row.questionIndex);
     agg.viewCount += 1;
+
     if (row.startedAt !== null) {
       agg.startCount += 1;
     }
+
     if (row.completedAt !== null) {
       agg.completeCount += 1;
     }
+
     if (agg.stepId === null && row.stepId !== null) {
       agg.stepId = row.stepId;
     }
+
     if (agg.stepIndex === null && row.stepIndex !== null) {
       agg.stepIndex = row.stepIndex;
     }
@@ -123,9 +136,15 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     const cohort = prev ? prev.completeCount : agg.viewCount;
     const reached = prev ? agg.viewCount : agg.completeCount;
     const dropoffCount = Math.max(0, cohort - reached);
-    const dropoffRate = cohort > 0 ? Math.round((dropoffCount / cohort) * 100) : 0;
-    const completionRate =
-      agg.viewCount > 0 ? Math.round((agg.completeCount / agg.viewCount) * 100) : 0;
+
+    const rowDropoffRate =
+      dropoffRate(
+        { viewCount: cohort, startCount: cohort, completeCount: reached },
+        "single-page",
+      ) ?? 0;
+
+    const rowCompletionRate = completionRate(agg.completeCount, agg.viewCount, false);
+
     return {
       questionId: agg.questionId,
       questionIndex: agg.questionIndex,
@@ -137,8 +156,8 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
       completeCount: agg.completeCount,
       dropoffCount,
       terminalDropoffCount: agg.terminalDropoffCount,
-      dropoffRate,
-      completionRate,
+      dropoffRate: rowDropoffRate,
+      completionRate: rowCompletionRate,
     };
   });
 
@@ -148,8 +167,7 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
   //   daily rollups, so v1 uses max questionIndex as the "last question" proxy.
   const totalStarted = questions.length > 0 ? questions[0].startCount : 0;
   const totalCompleted = questions.length > 0 ? questions[questions.length - 1].completeCount : 0;
-  const overallCompletionRate =
-    totalStarted > 0 ? Math.round((totalCompleted / totalStarted) * 100) : 0;
+  const overallCompletionRate = completionRate(totalCompleted, totalStarted, false);
 
   return {
     formId,
@@ -159,5 +177,11 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     totalStarted,
     totalCompleted,
     overallCompletionRate,
+    // Proxy default; getFormDropoffImpl overrides with the authoritative submissions-table count.
+    completedSubmissions: totalCompleted,
+    // Prior-period delta needs a second query; getFormDropoffImpl fills this in.
+    totalDropoffsDeltaPct: null,
+    // Per-question timing comes from raw progress rows; getFormDropoffImpl fills this in.
+    timePerQuestion: [],
   };
 };

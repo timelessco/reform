@@ -23,6 +23,7 @@ describe("session.create.before sets activeOrganizationId", () => {
     for (const id of createdUserIds) {
       await cleanupTestUser(id);
     }
+
     createdUserIds.length = 0;
   });
 

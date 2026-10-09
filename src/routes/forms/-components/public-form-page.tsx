@@ -6,6 +6,7 @@ import {
   SunIcon,
 } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
+import { log } from "evlog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FormPreviewRSC } from "@/components/form-components/form-preview-rsc";
 import type { FormLogicValue } from "@/lib/logic/build-form-logic";
@@ -14,18 +15,15 @@ import { BrandingFooter } from "./branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
 import { PasswordGate } from "@/routes/forms/-components/password-gate";
 import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
+import type { EmailVerificationStore } from "@/components/form-components/email-verification-context";
 import { createPublicSubmission } from "@/lib/server-fn/public-submissions";
 import { clearDraftId, readDraftId, readLocalDraft } from "@/hooks/use-draft-autosave";
 import { usePublicFormTracking } from "@/lib/analytics/use-public-form-tracking";
+import { POPUP_FORM_STYLE_VARS } from "@/lib/popup-style";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { safeStorage } from "@/lib/safe-storage";
+import { FormEmptyState } from "@/routes/forms/-components/form-empty-state";
 import { defaultPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
@@ -83,12 +81,12 @@ interface PublicFormPageProps {
     current: "light" | "dark";
     onChange: (next: "light" | "dark" | "system") => void;
   };
-  /** Resolved app theme — theme tokens for portaled popovers (Date/MultiSelect/Phone) that lose `.bf-themed` cascade via createPortal. */
+  /** Resolved app theme; supplies theme tokens to portaled popovers (Date/MultiSelect/Phone) that lose the `.bf-themed` cascade via createPortal. */
   resolvedAppTheme?: "light" | "dark";
-  // Present → renders via FormPreviewRSC: static prose server-rendered, client bundle drops platejs/static.
+  // Present → renders via FormPreviewRSC, static prose server-rendered, client bundle drops platejs/static.
   rsc?: {
     steps: StepRSC[];
-    thankYou?: unknown;
+    thankYou?: StepRSC["src"];
     stepCount: number;
     /** Pre-rendered header composite (cover + icon + title). */
     header?: unknown;
@@ -99,52 +97,92 @@ interface PublicFormPageProps {
   };
 }
 
+/** JSON-serializable answer value: the wire contract for submissions and localStorage drafts. */
+export type FormAnswerValue =
+  | string
+  | number
+  | boolean
+  | null
+  | FormAnswerValue[]
+  | { [key: string]: FormAnswerValue };
+
+export type FormAnswerData = Record<string, FormAnswerValue>;
+
+const isAnswerValue = (value: unknown): value is FormAnswerValue => {
+  if (value === null) return true;
+
+  if (Array.isArray(value)) return value.every(isAnswerValue);
+
+  const tag = Object.prototype.toString.call(value);
+
+  if (tag === "[object String]" || tag === "[object Number]" || tag === "[object Boolean]") {
+    return true;
+  }
+
+  return (
+    tag === "[object Object]" &&
+    value instanceof Object &&
+    Object.values(value).every(isAnswerValue)
+  );
+};
+
+/** Parse untyped answer bags (localStorage drafts, field callbacks) against the wire contract. */
+const parseAnswerData = (data: Record<string, unknown>): FormAnswerData => {
+  const parsed: FormAnswerData = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    if (isAnswerValue(value)) parsed[key] = value;
+  }
+
+  return parsed;
+};
+
+/** Values posted to the host frame; undefined entries vanish in JSON.stringify. */
+type PostMessagePayload = {
+  formId?: string;
+  frameRadius?: string;
+  height?: number;
+  width?: number;
+  payload?: { formId: string; formName?: string; data: FormAnswerData };
+};
+
 /** Post message to parent window (popup embeds). */
-const sendToParent = (event: string, payload?: Record<string, unknown>): void => {
+const sendToParent = (event: string, payload?: PostMessagePayload): void => {
   if (typeof window === "undefined" || window.parent === window) return;
 
   try {
     window.parent.postMessage(JSON.stringify({ event, ...payload }), "*");
   } catch (e) {
-    console.error("[Reform] Failed to send message to parent:", e);
+    log.error({ tag: "Reform", msg: "Failed to send message to parent", error: e });
   }
 };
 
 const FormNotFound = () => {
   const { t } = useTranslation();
+
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
-      <Empty className="border-none">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <FileQuestionIcon />
-          </EmptyMedia>
-          <EmptyTitle>{t("formNotFound")}</EmptyTitle>
-          <EmptyDescription>{t("formNotFoundDescription")}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    </div>
+    <FormEmptyState
+      icon={<FileQuestionIcon />}
+      title={t("formNotFound")}
+      description={t("formNotFoundDescription")}
+    />
   );
 };
 
 const FormNotPublished = () => {
   const { t } = useTranslation();
+
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
-      <Empty className="border-none">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LockIcon />
-          </EmptyMedia>
-          <EmptyTitle>{t("formNotAvailable")}</EmptyTitle>
-          <EmptyDescription>{t("formNotAvailableDescription")}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    </div>
+    <FormEmptyState
+      icon={<LockIcon />}
+      title={t("formNotAvailable")}
+      description={t("formNotAvailableDescription")}
+    />
   );
 };
 
-type DraftPayload = { data: Record<string, unknown>; lastStepReached: number | null };
+type DraftPayload = { data: FormAnswerData; lastStepReached: number | null };
+
 type DraftState =
   | { status: "loading" }
   | { status: "prompt"; draft: DraftPayload }
@@ -152,18 +190,21 @@ type DraftState =
   | { status: "dismissed" };
 
 const usePublicDraftState = (formId: string) => {
-  // Start "loading" so SSR + first client render match (no DraftResumePrompt). useEffect resolves on mount from localStorage — no roundtrip.
+  // Start "loading" so SSR + first client render match (no DraftResumePrompt). useEffect resolves on mount from localStorage, no roundtrip.
   const [draftState, setDraftState] = useState<DraftState>({ status: "loading" });
 
   useEffect(() => {
     const local = readLocalDraft(formId);
+
     if (!local) {
       setDraftState({ status: "dismissed" });
+
       return;
     }
+
     setDraftState({
       status: "prompt",
-      draft: { data: local.data, lastStepReached: local.lastStepReached },
+      draft: { data: parseAnswerData(local.data), lastStepReached: local.lastStepReached },
     });
   }, [formId]);
 
@@ -205,6 +246,7 @@ const useFieldByFieldOverflowLock = (isFieldByFieldPopup: boolean) => {
     const originalBodyOverflow = document.body.style.overflow;
     document.documentElement.style.setProperty("overflow", "hidden");
     document.body.style.setProperty("overflow", "hidden");
+
     return () => {
       document.documentElement.style.setProperty("overflow", originalHtmlOverflow);
       document.body.style.setProperty("overflow", originalBodyOverflow);
@@ -222,13 +264,22 @@ const useIframeResizeNotifier = (
     if ((!isPopup && !dynamicHeight) || typeof window === "undefined" || window.parent === window)
       return;
 
-    sendToParent("Reform.FormLoaded", { formId });
+    // Tell the host-page popup frame (popup.js) to match the form's cover radius so its rounded
+    // corners line up with the cover instead of a fixed default.
+    const frameRadius =
+      isPopup && containerRef.current
+        ? getComputedStyle(containerRef.current).getPropertyValue("--bf-cover-radius").trim() ||
+          undefined
+        : undefined;
+
+    sendToParent("Reform.FormLoaded", { formId, frameRadius });
 
     let lastHeight = 0;
     let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const sendHeight = () => {
       const container = containerRef.current;
+
       if (!container) return;
 
       const height = container.scrollHeight;
@@ -254,6 +305,7 @@ const useIframeResizeNotifier = (
 
     return () => {
       resizeObserver.disconnect();
+
       if (resizeTimeout) clearTimeout(resizeTimeout);
     };
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- ref is stable
@@ -283,26 +335,31 @@ export const PublicFormPage = ({
     form,
     resolvedAppTheme,
   );
+
   const themeCtxValue = useFormThemeContextValue({ themeVars, hasCustomization, customization });
-  // Analytics writers always run (Option B): record visits/progress so toggling analytics on later shows history, not zero. Toggle gates DISPLAY not recording. Suppress only when no form.
+  // Analytics writers always run (Option B); visits/progress get recorded so toggling analytics on later shows history, not zero. Toggle gates display, not recording. Suppressed only when no form.
   const trackingBase = usePublicFormTracking({ formId, enabled: !!form });
+
   // eslint-disable-next-line react-doctor/rerender-state-only-in-handlers -- value is read in JSX to render AlreadySubmitted
-  const [submitted, setSubmitted] = useState(() => {
-    if (form?.settings?.preventDuplicateSubmissions) {
-      try {
-        return localStorage.getItem(`bf-submitted-${formId}`) === "1";
-      } catch {
-        // localStorage unavailable
-      }
-    }
-    return false;
-  });
+  const [submitted, setSubmitted] = useState(
+    () =>
+      !!form?.settings?.preventDuplicateSubmissions &&
+      safeStorage.get(`bf-submitted-${formId}`) === "1",
+  );
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Live "Verify email" store. EmailField writes verified tokens here; submit sends them along.
+  const [emailVerification] = useState<EmailVerificationStore>(() => ({
+    mode: "live",
+    formId,
+    tokens: new Map(),
+  }));
 
   const { draftState, handleResumeDraft, handleStartOver } = usePublicDraftState(formId);
 
   const resumed = draftState.status === "resumed";
+
   const resumeProps =
     draftState.status === "resumed"
       ? {
@@ -310,21 +367,23 @@ export const PublicFormPage = ({
           initialCurrentStep: draftState.draft.lastStepReached ?? 0,
         }
       : {};
+
   const previewKey = resumed ? "resumed" : "fresh";
 
   const resolvedLanguage = form?.settings?.language ?? "English";
 
   useTransparentBackground(transparentBackground, isPopup);
 
-  // Field-by-field popups: suppress iframe scrollbars (single centered field needs none; else macOS overlay scrollbar shows).
+  // Field-by-field popups suppress iframe scrollbars (single centered field needs none; else macOS overlay scrollbar shows).
   const isFieldByFieldPopup = isPopup && form?.settings?.presentationMode === "field-by-field";
   useFieldByFieldOverflowLock(isFieldByFieldPopup);
 
   useIframeResizeNotifier(isPopup, dynamicHeight, formId, containerRef);
 
   const handleSubmit = useCallback(
-    async (values: Record<string, unknown>) => {
+    async (values: FormAnswerData) => {
       setSubmitError(null);
+
       try {
         // Carry draftId so server updates existing draft in place (keeps submissionId, notifies once).
         const draftId = readDraftId(formId) ?? undefined;
@@ -335,18 +394,20 @@ export const PublicFormPage = ({
             isCompleted: true,
             draftId,
             visitId: trackingBase.visitId ?? undefined,
+            emailVerification:
+              emailVerification.tokens.size > 0
+                ? Object.fromEntries(
+                    [...emailVerification.tokens].map(([field, entry]) => [field, entry.token]),
+                  )
+                : undefined,
           },
         });
 
-        // Completed: drop localStorage pointer so next visit starts fresh, not resuming this finalized draft.
+        // Completed, so drop the localStorage pointer; next visit starts fresh instead of resuming this finalized draft.
         clearDraftId(formId);
 
         if (form?.settings?.preventDuplicateSubmissions) {
-          try {
-            localStorage.setItem(`bf-submitted-${formId}`, "1");
-          } catch {
-            // localStorage unavailable
-          }
+          safeStorage.set(`bf-submitted-${formId}`, "1");
           setSubmitted(true);
         }
 
@@ -361,7 +422,7 @@ export const PublicFormPage = ({
           });
         }
       } catch (err) {
-        console.error("Submission error:", err);
+        log.error({ tag: "public-form-page", msg: "Submission error", error: err });
         setSubmitError(getTranslations(resolvedLanguage).submitFailed);
         throw err; // Re-throw so the form knows it failed
       }
@@ -373,10 +434,11 @@ export const PublicFormPage = ({
       form?.settings?.preventDuplicateSubmissions,
       resolvedLanguage,
       trackingBase.visitId,
+      emailVerification,
     ],
   );
 
-  // Gated states (closed/expired/limit) — check before !form (server returns null for closed).
+  // Gated states (closed/expired/limit); check before !form (server returns null for closed).
   if (gated && gated.type !== "password_required") {
     return (
       <TranslationProvider language={resolvedLanguage}>
@@ -410,7 +472,7 @@ export const PublicFormPage = ({
     );
   }
 
-  // Loader invariant: when `form` is set so is `rsc`. Defensive only.
+  // Loader invariant; when `form` is set so is `rsc`. Defensive only.
   if (!rsc) {
     return (
       <TranslationProvider language={resolvedLanguage}>
@@ -441,6 +503,7 @@ export const PublicFormPage = ({
       handleSubmit={handleSubmit}
       formId={formId}
       trackingBase={trackingBase}
+      emailVerification={emailVerification}
       resumeProps={resumeProps}
       submitError={submitError}
     />
@@ -489,7 +552,7 @@ const DraftResumePrompt = ({
   handleResumeDraft: () => void;
   handleStartOver: () => void;
 }) => (
-  // Anchored top-6: users miss bottom toasts (eyes on form), so resume sits where gaze is on first paint.
+  // Anchored top-6; users miss bottom toasts with eyes on the form, so resume sits where gaze lands on first paint.
   <div
     role="status"
     className="fixed top-6 left-1/2 z-50 w-[min(560px,90vw)] -translate-x-1/2 animate-in duration-250 ease-out fade-in slide-in-from-top-4"
@@ -533,21 +596,19 @@ interface PublicFormMainProps {
   themeToggle: ThemeToggleHandle | undefined;
   draftState:
     | { status: "loading" }
-    | { status: "prompt"; draft: { data: Record<string, unknown>; lastStepReached: number | null } }
-    | {
-        status: "resumed";
-        draft: { data: Record<string, unknown>; lastStepReached: number | null };
-      }
+    | { status: "prompt"; draft: DraftPayload }
+    | { status: "resumed"; draft: DraftPayload }
     | { status: "dismissed" };
   handleResumeDraft: () => void;
   handleStartOver: () => void;
   rsc: NonNullable<PublicFormPageProps["rsc"]>;
   previewKey: string;
   hideTitle: boolean;
-  handleSubmit: (values: Record<string, unknown>) => Promise<void>;
+  handleSubmit: (values: FormAnswerData) => Promise<void>;
   formId: string;
   trackingBase: ReturnType<typeof usePublicFormTracking>;
-  resumeProps: { initialFormData?: Record<string, unknown>; initialCurrentStep?: number };
+  emailVerification: EmailVerificationStore;
+  resumeProps: { initialFormData?: FormAnswerData; initialCurrentStep?: number };
   submitError: string | null;
 }
 
@@ -570,70 +631,84 @@ const PublicFormMain = ({
   handleSubmit,
   formId,
   trackingBase,
+  emailVerification,
   resumeProps,
   submitError,
-}: PublicFormMainProps) => (
-  <main
-    ref={containerRef}
-    id="bf-form-container"
-    className={cn(
-      "text-foreground",
-      settings.presentationMode === "field-by-field"
-        ? "relative h-screen overflow-hidden"
-        : cn("overflow-x-hidden", settings.branding ? "pb-16" : "pb-8"),
-      form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
-      // No min-h-screen for popup/dynamic-height embeds — 100vh of iframe viewport adds a second inner scrollbar over host scroll.
-      !isPopup &&
-        !dynamicHeight &&
-        settings.presentationMode !== "field-by-field" &&
-        "min-h-screen",
-      transparentBackground || isPopup ? "bg-transparent" : "bg-background",
-      alignLeft && "text-left",
-    )}
-    style={dynamicWidth ? ({ "--bf-page-width": "100%" } as React.CSSProperties) : undefined}
-    data-bf-hide-title={hideTitle ? "" : undefined}
-    aria-live="polite"
-  >
-    {themeToggle && (
-      // Toggle only matters on click/focus. Defer hydration to first interaction — icon paints from SSR HTML, handler chunk off critical path. Safe: pre-hydration script sets .dark.
-      <Hydrate when={interaction({ events: ["pointerdown", "focusin"] })}>
-        <ThemeToggleButton themeToggle={themeToggle} />
-      </Hydrate>
-    )}
-    {draftState.status === "prompt" && (
-      <DraftResumePrompt handleResumeDraft={handleResumeDraft} handleStartOver={handleStartOver} />
-    )}
-    <FormPreviewRSC
-      key={previewKey}
-      steps={rsc.steps}
-      thankYou={(rsc.thankYou as string | null) ?? null}
-      stepCount={rsc.stepCount}
-      logic={rsc.logic}
-      header={hideTitle && !(form.cover || form.icon) ? null : rsc.header}
-      onSubmit={handleSubmit}
-      settings={settings}
-      formId={formId}
-      trackingBase={trackingBase}
-      fieldByFieldMeta={
+}: PublicFormMainProps) => {
+  // Popup card gets compact title + flush cover (Figma 26883), identical to the editor preview.
+  const pageStyle: React.CSSProperties & Record<`--bf-${string}`, string | undefined> = {
+    // oxlint-disable-next-line shadcn/no-inline-styles -- runtime-composed --bf-* custom-prop map (POPUP_FORM_STYLE_VARS spread); not statically verifiable
+    ...(isPopup ? POPUP_FORM_STYLE_VARS : undefined),
+    "--bf-page-width": dynamicWidth ? "100%" : undefined,
+  };
+
+  return (
+    <main
+      ref={containerRef}
+      id="bf-form-container"
+      className={cn(
+        "text-foreground",
         settings.presentationMode === "field-by-field"
-          ? {
-              title: form.title,
-              icon: form.icon,
-              iconColor: rsc.formHeaderIconColor ?? null,
-              cover: form.cover,
-              hideTitle,
-              isPopup,
-            }
-          : undefined
-      }
-      {...resumeProps}
-    />
-    {submitError && <SubmitErrorToast submitError={submitError} />}
-    {settings.branding && (
-      // Static link, no client behavior — SSR HTML only, skip hydration.
-      <Hydrate when={never()}>
-        <BrandingFooter />
-      </Hydrate>
-    )}
-  </main>
-);
+          ? "relative h-screen overflow-hidden"
+          : cn("overflow-x-hidden", settings.branding ? "pb-16" : "pb-8"),
+        form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
+        // No min-h-screen for popup/dynamic-height embeds; 100vh of iframe viewport adds a second inner scrollbar over host scroll.
+        !isPopup &&
+          !dynamicHeight &&
+          settings.presentationMode !== "field-by-field" &&
+          "min-h-screen",
+        transparentBackground || isPopup ? "bg-transparent" : "bg-background",
+        alignLeft && "text-left",
+      )}
+      style={pageStyle}
+      data-bf-hide-title={hideTitle ? "" : undefined}
+      aria-live="polite"
+    >
+      {themeToggle && (
+        // Toggle only matters on click/focus. Defer hydration to first interaction; icon paints from SSR HTML, handler chunk off the critical path. Pre-hydration script sets .dark.
+        <Hydrate when={interaction({ events: ["pointerdown", "focusin"] })}>
+          <ThemeToggleButton themeToggle={themeToggle} />
+        </Hydrate>
+      )}
+      {draftState.status === "prompt" && (
+        <DraftResumePrompt
+          handleResumeDraft={handleResumeDraft}
+          handleStartOver={handleStartOver}
+        />
+      )}
+      <FormPreviewRSC
+        key={previewKey}
+        steps={rsc.steps}
+        thankYou={rsc.thankYou ?? null}
+        stepCount={rsc.stepCount}
+        logic={rsc.logic}
+        header={hideTitle && !(form.cover || form.icon) ? null : rsc.header}
+        onSubmit={(values) => handleSubmit(parseAnswerData(values))}
+        settings={settings}
+        formId={formId}
+        trackingBase={trackingBase}
+        emailVerification={emailVerification}
+        fieldByFieldMeta={
+          settings.presentationMode === "field-by-field"
+            ? {
+                title: form.title,
+                icon: form.icon,
+                iconColor: rsc.formHeaderIconColor ?? null,
+                cover: form.cover,
+                hideTitle,
+                isPopup,
+              }
+            : undefined
+        }
+        {...resumeProps}
+      />
+      {submitError && <SubmitErrorToast submitError={submitError} />}
+      {settings.branding && (
+        // Static link, no client behavior; SSR HTML only, skip hydration.
+        <Hydrate when={never()}>
+          <BrandingFooter />
+        </Hydrate>
+      )}
+    </main>
+  );
+};

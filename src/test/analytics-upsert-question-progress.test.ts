@@ -16,28 +16,40 @@ const calls: ChainCall[] = [];
 
 const makeInsertChain = () => {
   const state: ChainCall = { values: {}, conflict: null };
+
   const chain = {
     values(v: Record<string, unknown>) {
       state.values = v;
+
       return chain;
     },
     onConflictDoUpdate(args: { target: unknown; set: Record<string, unknown> }) {
       state.conflict = { target: args.target, set: args.set };
       calls.push(state);
+
       return Promise.resolve();
     },
   };
+
   return chain;
 };
 
 vi.mock<typeof import("@/db")>(import("@/db"), () => ({
   db: {
     insert: () => makeInsertChain(),
+    // isFormPublished()'s lookup: resolve to a published form so the ingestion gate passes and
+    // the test reaches the insert/upsert it actually asserts. (Rate limit is skipped: no request IP.)
+    select: () => ({
+      from: () => ({
+        where: () => ({ limit: () => Promise.resolve([{ status: "published" }]) }),
+      }),
+    }),
   } as unknown as (typeof import("@/db"))["db"],
 }));
 
 const { recordQuestionProgressImpl, recordQuestionProgressBatchImpl } =
   await import("@/lib/server-fn/analytics.server");
+
 const { formQuestionProgress } = await import("@/db/schema");
 
 const baseInput = {
@@ -65,6 +77,7 @@ describe("recordQuestionProgressImpl upsert", () => {
 
     expect(calls).toHaveLength(1);
     const call = calls[0];
+
     if (!call) throw new Error("expected upsert call");
 
     expect(call.values.viewedAt).toBeInstanceOf(Date);
@@ -88,6 +101,7 @@ describe("recordQuestionProgressImpl upsert", () => {
     await recordQuestionProgressImpl({ ...baseInput, event: "start" });
 
     const call = calls[0];
+
     if (!call) throw new Error("expected upsert call");
 
     expect(call.values.startedAt).toBeInstanceOf(Date);
@@ -106,6 +120,7 @@ describe("recordQuestionProgressImpl upsert", () => {
     await recordQuestionProgressImpl({ ...baseInput, event: "complete" });
 
     const call = calls[0];
+
     if (!call) throw new Error("expected upsert call");
 
     expect(call.values.completedAt).toBeInstanceOf(Date);
@@ -122,7 +137,7 @@ describe("recordQuestionProgressBatchImpl", () => {
     calls.length = 0;
   });
 
-  it("processes items sequentially and reports the count", async () => {
+  it("de-dups same (visitId, questionId) into one upsert and reports the input count", async () => {
     const result = await recordQuestionProgressBatchImpl({
       items: [
         { ...baseInput, event: "view" },
@@ -131,7 +146,8 @@ describe("recordQuestionProgressBatchImpl", () => {
       ],
     });
 
+    // 3 events for the same (visitId, questionId) collapse to a single multi-row upsert call.
     expect(result).toEqual({ ok: true, processed: 3 });
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(1);
   });
 });

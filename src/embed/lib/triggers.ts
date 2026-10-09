@@ -6,16 +6,19 @@ const parseDataAttributes = (element: HTMLElement): PopupOptions => {
   const options: PopupOptions = {};
 
   const layout = element.dataset.layout;
+
   if (layout === "modal" || layout === "default") {
     options.layout = layout;
   }
 
   const position = element.dataset.position;
+
   if (position === "bottom-right" || position === "bottom-left" || position === "center") {
     options.position = position;
   }
 
   const width = element.dataset.width;
+
   if (width) {
     options.width = parseInt(width, 10);
   }
@@ -23,15 +26,18 @@ const parseDataAttributes = (element: HTMLElement): PopupOptions => {
   if (element.dataset.alignLeft === "1") {
     options.alignLeft = true;
   }
+
   if (element.dataset.hideTitle === "1") {
     options.hideTitle = true;
   }
+
   if (element.dataset.overlay === "1") {
     options.overlay = true;
   }
 
   const emojiText = element.dataset.emojiText;
   const emojiAnimation = element.dataset.emojiAnimation as EmojiAnimation | undefined;
+
   if (emojiText) {
     options.emoji = {
       text: emojiText,
@@ -40,11 +46,13 @@ const parseDataAttributes = (element: HTMLElement): PopupOptions => {
   }
 
   const autoClose = element.dataset.autoClose;
+
   if (autoClose) {
     options.autoClose = parseInt(autoClose, 10);
   }
 
   const hiddenFields: Record<string, string> = {};
+
   for (const [key, value] of Object.entries(element.dataset)) {
     if (
       [
@@ -62,10 +70,12 @@ const parseDataAttributes = (element: HTMLElement): PopupOptions => {
     ) {
       continue;
     }
+
     if (value !== undefined) {
       hiddenFields[key] = value;
     }
   }
+
   if (Object.keys(hiddenFields).length > 0) {
     options.hiddenFields = hiddenFields;
   }
@@ -85,6 +95,7 @@ const parseHashParams = (
   const options: PopupOptions = {};
 
   const position = params.get("position");
+
   if (position === "bottom-right" || position === "bottom-left" || position === "center") {
     options.position = position;
   }
@@ -92,20 +103,24 @@ const parseHashParams = (
   if (params.get("align-left") === "1") {
     options.alignLeft = true;
   }
+
   if (params.get("hide-title") === "1") {
     options.hideTitle = true;
   }
+
   if (params.get("overlay") === "1") {
     options.overlay = true;
   }
 
   const width = params.get("width");
+
   if (width) {
     options.width = parseInt(width, 10);
   }
 
   const emojiText = params.get("emoji-text");
   const emojiAnimation = params.get("emoji-animation") as EmojiAnimation | null;
+
   if (emojiText) {
     options.emoji = {
       text: emojiText,
@@ -114,11 +129,13 @@ const parseHashParams = (
   }
 
   const autoClose = params.get("auto-close");
+
   if (autoClose) {
     options.autoClose = parseInt(autoClose, 10);
   }
 
   const hiddenFields: Record<string, string> = {};
+
   const knownParams = new Set([
     "form-open",
     "position",
@@ -130,11 +147,13 @@ const parseHashParams = (
     "emoji-animation",
     "auto-close",
   ]);
+
   params.forEach((value, key) => {
     if (!knownParams.has(key)) {
       hiddenFields[key] = value;
     }
   });
+
   if (Object.keys(hiddenFields).length > 0) {
     options.hiddenFields = hiddenFields;
   }
@@ -147,23 +166,29 @@ export const setupClickTriggers = (openPopup: OpenPopupCallback): void => {
     const target = e.target as HTMLElement;
 
     const triggerEl = target.closest("[data-form-id]") as HTMLElement | null;
+
     if (triggerEl) {
       e.preventDefault();
       const formId = triggerEl.dataset.formId;
+
       if (formId) {
         const options = parseDataAttributes(triggerEl);
         openPopup(formId, options);
       }
+
       return;
     }
 
     const linkEl = target.closest("a");
+
     if (linkEl?.href?.includes("form-open=")) {
       e.preventDefault();
       const hashIndex = linkEl.href.indexOf("#");
+
       if (hashIndex !== -1) {
         const hash = linkEl.href.substring(hashIndex);
         const { formId, options } = parseHashParams(hash);
+
         if (formId) {
           openPopup(formId, options);
         }
@@ -174,8 +199,10 @@ export const setupClickTriggers = (openPopup: OpenPopupCallback): void => {
 
 export const checkHashTrigger = (openPopup: OpenPopupCallback): void => {
   const { hash } = window.location;
+
   if (hash?.includes("form-open=")) {
     const { formId, options } = parseHashParams(hash);
+
     if (formId) {
       // Small delay to ensure DOM is ready
       setTimeout(() => {
@@ -188,8 +215,10 @@ export const checkHashTrigger = (openPopup: OpenPopupCallback): void => {
 export const setupHashChangeListener = (openPopup: OpenPopupCallback): void => {
   window.addEventListener("hashchange", () => {
     const { hash } = window.location;
+
     if (hash?.includes("form-open=")) {
       const { formId, options } = parseHashParams(hash);
+
       if (formId) {
         openPopup(formId, options);
       }

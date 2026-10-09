@@ -16,16 +16,20 @@ export interface ParsedError {
 const pickString = (value: unknown, key: string): string | undefined => {
   if (value && typeof value === "object" && key in value) {
     const x = (value as Record<string, unknown>)[key];
+
     if (typeof x === "string") return x;
   }
+
   return undefined;
 };
 
 const pickNumber = (value: unknown, key: string): number | undefined => {
   if (value && typeof value === "object" && key in value) {
     const x = (value as Record<string, unknown>)[key];
+
     if (typeof x === "number") return x;
   }
+
   return undefined;
 };
 
@@ -33,10 +37,13 @@ const pickNumber = (value: unknown, key: string): number | undefined => {
 // carry `.data`). Require a status-shaped field OR evlog envelope (string `data.code`).
 const looksLikeFetchError = (e: Record<string, unknown>): boolean => {
   if (!("data" in e)) return false;
+
   if ("statusCode" in e || "status" in e) return true;
   const data = e.data;
+
   if (!data || typeof data !== "object") return false;
   const d = data as Record<string, unknown>;
+
   return (
     "statusCode" in d ||
     "status" in d ||

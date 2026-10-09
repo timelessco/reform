@@ -15,23 +15,28 @@ const wrap = (questionId: string, child: HTMLElement): HTMLElement => {
   const div = document.createElement("div");
   div.setAttribute("data-bf-question-id", questionId);
   div.append(child);
+
   return div;
 };
 
 const nestDeeply = (depth: number, leaf: HTMLElement): HTMLElement => {
   let current: HTMLElement = leaf;
+
   for (let i = 0; i < depth; i++) {
     const parent = document.createElement("div");
     parent.append(current);
     current = parent;
   }
+
   return current;
 };
 
 const mountForm = (...children: HTMLElement[]): HTMLFormElement => {
   const form = document.createElement("form");
+
   for (const child of children) form.append(child);
   document.body.append(form);
+
   return form;
 };
 
@@ -92,10 +97,12 @@ describe("resolveQuestionFromFocus", () => {
     a.name = "q1";
     const b = document.createElement("input");
     const form = mountForm(wrap("q1", a), wrap("q2", b));
+
     const map = new Map([
       ["q1", q("q1", "Input")],
       ["q2", q("q2", "FileUpload")],
     ]);
+
     expect(resolveQuestionFromFocus(form.querySelectorAll("input")[1], map)?.questionId).toBe("q2");
   });
 });

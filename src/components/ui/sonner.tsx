@@ -14,8 +14,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
-      className="toaster group"
+      theme={theme}
+      className="group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -24,6 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       style={
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",

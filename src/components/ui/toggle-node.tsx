@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export const ToggleElement = (props: PlateElementProps) => {
   const element = props.element;
+  // SAFETY: Plate assigns every block element a string id at creation
   const state = useToggleButtonState(element.id as string);
   const { buttonProps, open } = useToggleButton(state);
 
@@ -15,7 +16,7 @@ export const ToggleElement = (props: PlateElementProps) => {
       <Button
         size="icon"
         variant="ghost"
-        className="absolute top-0 -left-0.5 size-6 cursor-pointer items-center justify-center rounded-md p-px text-muted-foreground transition-colors select-none hover:bg-accent [&_svg]:size-4"
+        className="absolute top-0 -left-0.5 size-6 cursor-pointer items-center justify-center rounded-md p-px text-muted-foreground transition-colors select-none hover:bg-secondary [&_svg]:size-4"
         contentEditable={false}
         {...buttonProps}
       >

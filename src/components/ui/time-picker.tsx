@@ -1,9 +1,7 @@
 import * as React from "react";
 
-import { useReanchorThemeProps } from "@/hooks/use-form-theme";
 import { cn } from "@/lib/utils";
-import { ChevronSelectIcon, ClockLineIcon } from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronSelectIcon } from "@/components/ui/icons";
 
 export interface TimePickerProps {
   /** Stored value — 24-hour "HH:MM" (matches the old native input), or "" when unset. */
@@ -11,8 +9,8 @@ export interface TimePickerProps {
   onChange?: (value: string) => void;
   onBlur?: () => void;
   className?: string;
-  /** Trigger label shown when no time is selected. */
-  placeholder?: string;
+  /** Railway/24-hour mode: hour spinner 0–23, no AM/PM, "HH:MM" display. Default 12-hour. */
+  use24Hour?: boolean;
   id?: string;
   name?: string;
   "aria-label"?: string;
@@ -21,37 +19,48 @@ export interface TimePickerProps {
 }
 
 type Period = "AM" | "PM";
+
 type TimeParts = { hour12: number; minute: number; period: Period };
 
 const DEFAULT_PARTS: TimeParts = { hour12: 12, minute: 0, period: "AM" };
 
-// "HH:MM" (24h) → 12h parts. Returns null for empty/malformed so the trigger shows the placeholder.
+// Each box carries the same subtle border shadow as the other form inputs (elevation-sm). On the
+// invalid group EVERY box shows its OWN red ring (group-aria-invalid) — not one ring wrapping the
+// whole group. Mirrors form-input-error's red-ring + drop-shadow so it matches the other fields.
+const BOX_BORDER =
+  "elevation-sm group-aria-invalid:shadow-[0_0_0_1px_var(--destructive),0_1px_1px_rgba(0,0,0,0.06)]";
+
+// "HH:MM" (24h) → 12h parts. Returns null for empty/malformed so segments fall back to defaults.
 const parse = (value: string | undefined): TimeParts | null => {
   if (!value) return null;
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+
   if (!match) return null;
   const h24 = Number(match[1]);
   const minute = Number(match[2]);
+
   if (h24 > 23 || minute > 59) return null;
   const period: Period = h24 >= 12 ? "PM" : "AM";
   const hour12 = h24 % 12 === 0 ? 12 : h24 % 12;
+
   return { hour12, minute, period };
 };
 
 // 12h parts → "HH:MM" (24h), zero-padded.
 const serialize = ({ hour12, minute, period }: TimeParts): string => {
   let h24 = hour12 % 12; // 12 → 0
+
   if (period === "PM") h24 += 12;
+
   return `${String(h24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 };
-
-const formatDisplay = (parts: TimeParts): string =>
-  `${parts.hour12}:${String(parts.minute).padStart(2, "0")} ${parts.period}`;
 
 // Step with wrap-around within [min, max].
 const wrap = (n: number, min: number, max: number): number => {
   if (n > max) return min;
+
   if (n < min) return max;
+
   return n;
 };
 
@@ -60,14 +69,20 @@ type SegmentProps = {
   min: number;
   max: number;
   ariaLabel: string;
+  inputId?: string;
+  /** Field is empty — show `value` as muted placeholder instead of a committed value. */
+  unset?: boolean;
   onCommit: (n: number) => void;
 };
 
-// Figma "input-select" segment: gray-100 box, typeable value, ChevronSelect up/down stepper.
-const TimeSegment = ({ value, min, max, ariaLabel, onCommit }: SegmentProps) => {
+// Figma "input-select" box: gray-100 fill, typeable value, ChevronSelect up/down stepper.
+const TimeSegment = ({ value, min, max, ariaLabel, inputId, unset, onCommit }: SegmentProps) => {
   // Local draft so partial typing isn't fought by the controlled, zero-padded display.
   const [draft, setDraft] = React.useState<string | null>(null);
-  const display = draft ?? String(value).padStart(2, "0");
+  const padded = String(value).padStart(2, "0");
+  // While unset (and not mid-type) show the native placeholder; first edit fills the value.
+  const showPlaceholder = unset && draft === null;
+  const display = showPlaceholder ? "" : (draft ?? padded);
 
   const step = (delta: number) => {
     setDraft(null);
@@ -75,15 +90,23 @@ const TimeSegment = ({ value, min, max, ariaLabel, onCommit }: SegmentProps) => 
   };
 
   return (
-    <div className="flex min-w-px flex-[1_0_0] items-center gap-2 rounded-lg bg-(--color-gray-alpha-100) px-2 py-1.5">
+    <div
+      className={cn(
+        "flex min-w-px flex-[1_0_0] items-center gap-2 rounded-lg bg-[var(--form-input-bg,var(--color-gray-100))] px-2 py-1.5",
+        BOX_BORDER,
+      )}
+    >
       <input
+        id={inputId}
         type="text"
         inputMode="numeric"
         aria-label={ariaLabel}
         value={display}
+        placeholder={padded}
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "").slice(-2);
           setDraft(digits);
+
           if (digits !== "") onCommit(Math.min(max, Math.max(min, Number(digits))));
         }}
         onFocus={(e) => e.currentTarget.select()}
@@ -97,19 +120,21 @@ const TimeSegment = ({ value, min, max, ariaLabel, onCommit }: SegmentProps) => 
             step(-1);
           }
         }}
-        className="min-w-0 flex-1 [appearance:textfield] bg-transparent text-[14px] tracking-[0.28px] text-foreground tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="min-w-0 flex-1 [appearance:textfield] bg-transparent text-base tracking-[0.28px] text-[var(--bf-input-foreground,var(--color-gray-800))] outline-none placeholder:text-[var(--bf-input-foreground,var(--color-gray-800))]/70 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       {/* Single Figma icon/line/select glyph; transparent top/bottom halves drive ±1. */}
-      <div className="relative flex h-4 w-3 shrink-0 flex-col text-muted-foreground">
+      <div className="relative flex h-4 w-3 shrink-0 flex-col text-[var(--bf-input-foreground,var(--color-muted-foreground))]">
         <ChevronSelectIcon className="pointer-events-none absolute inset-0 m-auto size-3" />
         <button
           type="button"
+          tabIndex={-1}
           aria-label={`Increase ${ariaLabel}`}
           onClick={() => step(1)}
           className="flex-1"
         />
         <button
           type="button"
+          tabIndex={-1}
           aria-label={`Decrease ${ariaLabel}`}
           onClick={() => step(-1)}
           className="flex-1"
@@ -124,85 +149,86 @@ export const TimePicker = ({
   onChange,
   onBlur,
   className,
-  placeholder = "Choose time",
+  use24Hour = false,
   id,
   name,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
   "aria-invalid": ariaInvalid,
 }: TimePickerProps) => {
-  const [open, setOpen] = React.useState(false);
   const parts = parse(value);
-  // Popover edits operate on the parsed value, falling back to a sensible default when unset.
+  // Segments are always populated; unset shows the default but the stored value stays "" until edited.
   const view = parts ?? DEFAULT_PARTS;
+  const hour24 = view.period === "PM" ? (view.hour12 % 12) + 12 : view.hour12 % 12;
 
   const emit = (next: Partial<TimeParts>) => onChange?.(serialize({ ...view, ...next }));
 
-  // PopoverContent portals to body, breaking .bf-themed CSS-var inheritance — re-anchor on the popup.
-  const themeReanchor = useReanchorThemeProps();
+  // Fire field blur only when focus leaves the whole group, not when tabbing between segments.
+  const groupRef = React.useRef<HTMLDivElement>(null);
+
+  const handleGroupBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    // SAFETY: relatedTarget is a Node when focus stays in the document; null when it leaves
+    if (!groupRef.current?.contains(e.relatedTarget as Node | null)) onBlur?.();
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <button
-            type="button"
-            id={id}
-            name={name}
-            aria-label={ariaLabel}
-            aria-labelledby={ariaLabelledBy}
-            aria-invalid={ariaInvalid}
-            data-empty={!parts}
-            onBlur={onBlur}
-            className={cn(
-              "inline-flex h-7 w-full items-center justify-between gap-1 rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-2.5 text-left text-sm font-normal elevation-sm",
-              "aria-invalid:form-input-error",
-              // Foreground (not muted token) so custom themes can't drop placeholder below WCAG AA.
-              !parts && "text-foreground/70",
-              className,
-            )}
-          >
-            <span className="min-w-0 flex-1 truncate">
-              {parts ? formatDisplay(parts) : placeholder}
-            </span>
-            <ClockLineIcon className="size-4 shrink-0 text-muted-foreground" />
-          </button>
-        }
+    <div
+      ref={groupRef}
+      role="group"
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
+      aria-invalid={ariaInvalid}
+      onBlur={handleGroupBlur}
+      data-name={name}
+      className={cn("group flex items-center gap-2", className)}
+    >
+      {use24Hour ? (
+        <TimeSegment
+          value={hour24}
+          min={0}
+          max={23}
+          ariaLabel="Hours"
+          inputId={id}
+          unset={!parts}
+          onCommit={(h24) =>
+            emit({ hour12: h24 % 12 === 0 ? 12 : h24 % 12, period: h24 >= 12 ? "PM" : "AM" })
+          }
+        />
+      ) : (
+        <TimeSegment
+          value={view.hour12}
+          min={1}
+          max={12}
+          ariaLabel="Hours"
+          inputId={id}
+          unset={!parts}
+          onCommit={(hour12) => emit({ hour12 })}
+        />
+      )}
+      <TimeSegment
+        value={view.minute}
+        min={0}
+        max={59}
+        ariaLabel="Minutes"
+        unset={!parts}
+        onCommit={(minute) => emit({ minute })}
       />
-      <PopoverContent
-        align="start"
-        className={cn(
-          "flex w-[320px] flex-col gap-2.5 rounded-[12px] bg-popover px-3.5 py-4 elevation-xl",
-          themeReanchor.className,
-        )}
-        style={themeReanchor.style}
-      >
-        <span className="text-[14px] font-medium text-foreground">Time</span>
-        <div className="flex items-center gap-2">
-          <TimeSegment
-            value={view.hour12}
-            min={1}
-            max={12}
-            ariaLabel="Hours"
-            onCommit={(hour12) => emit({ hour12 })}
-          />
-          <TimeSegment
-            value={view.minute}
-            min={0}
-            max={59}
-            ariaLabel="Minutes"
-            onCommit={(minute) => emit({ minute })}
-          />
-          <button
-            type="button"
-            aria-label="Toggle AM or PM"
-            onClick={() => emit({ period: view.period === "AM" ? "PM" : "AM" })}
-            className="flex shrink-0 items-center rounded-lg bg-(--color-gray-alpha-100) px-2.5 py-1.5 text-[14px] tracking-[0.28px] text-foreground tabular-nums"
-          >
-            {view.period}
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
+      {!use24Hour && (
+        <button
+          type="button"
+          aria-label="Toggle AM or PM"
+          onClick={() => emit({ period: view.period === "AM" ? "PM" : "AM" })}
+          className={cn(
+            "flex shrink-0 items-center rounded-lg bg-[var(--form-input-bg,var(--color-gray-100))] px-2.5 py-1.5 text-base tracking-[0.28px]",
+            BOX_BORDER,
+            parts
+              ? "text-[var(--bf-input-foreground,var(--color-gray-800))]"
+              : "text-[var(--bf-input-foreground,var(--color-gray-800))]/70",
+          )}
+        >
+          {view.period}
+        </button>
+      )}
+    </div>
   );
 };

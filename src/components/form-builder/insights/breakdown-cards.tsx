@@ -33,7 +33,8 @@ interface BreakdownDatum extends Record<string, unknown> {
   value: number;
 }
 
-// Fixed OKLCH palette — `--chart-N` tokens flip dark-blue in dark mode (dark blobs on dark card). These hold luminance across themes.
+// Fixed OKLCH palette. `--chart-N` tokens flip dark-blue in dark mode (dark blobs on dark card);
+// these hold luminance across themes.
 const PALETTE: string[] = [
   "oklch(0.62 0.18 250)", // blue
   "oklch(0.7 0.18 145)", // green
@@ -46,8 +47,11 @@ const MAX_TABLE_ROWS = 10;
 
 // Country breakdown keys are ISO-3166 alpha-2 codes (e.g. "IN", "NL").
 const REGION_CODE_RE = /^[A-Za-z]{2}$/;
+
 const REGIONAL_INDICATOR_BASE = 0x1f1e6; // 🇦
+
 const ASCII_A = 65;
+
 const countryDisplayNames =
   typeof Intl !== "undefined" && "DisplayNames" in Intl
     ? new Intl.DisplayNames(undefined, { type: "region" })
@@ -58,6 +62,7 @@ const countryFlag = (code: string): string => {
   if (!REGION_CODE_RE.test(code)) {
     return "";
   }
+
   return String.fromCodePoint(
     ...[...code.toUpperCase()].map((ch) => REGIONAL_INDICATOR_BASE + ch.charCodeAt(0) - ASCII_A),
   );
@@ -68,6 +73,7 @@ const countryLabel = (code: string): string => {
   if (!REGION_CODE_RE.test(code)) {
     return code;
   }
+
   try {
     return countryDisplayNames?.of(code.toUpperCase()) ?? code;
   } catch {
@@ -93,6 +99,7 @@ const buildPerSliceConfig = (entries: BreakdownDatum[]): ChartConfig => {
       colors: { light: [color], dark: [color] },
     };
   });
+
   return config;
 };
 
@@ -102,8 +109,8 @@ interface EmptyMessageProps {
 
 const EmptyMessage = ({ height = 180 }: EmptyMessageProps) => (
   <div
-    className="flex items-center justify-center text-sm text-muted-foreground"
-    style={{ height }}
+    className="flex h-[var(--empty-height)] items-center justify-center text-sm text-muted-foreground"
+    style={{ "--empty-height": `${height}px` } as React.CSSProperties}
   >
     No data yet
   </div>
@@ -117,9 +124,11 @@ const PieBreakdown = ({ data }: PieBreakdownProps) => {
   if (data.length === 0) {
     return <EmptyMessage height={200} />;
   }
+
   const config = buildPerSliceConfig(data);
-  // Tighter ring + sliceless single-category case still reads as a stat.
+  // Single category drops the ring so the lone slice still reads as a stat.
   const isSingleSlice = data.length === 1;
+
   return (
     <EvilPieChart
       className="h-[200px] w-full"
@@ -148,7 +157,9 @@ const BreakdownTable = ({ data, columnLabel, renderName }: BreakdownTableProps) 
   if (data.length === 0) {
     return <EmptyMessage height={200} />;
   }
+
   const top = data.slice(0, MAX_TABLE_ROWS);
+
   return (
     <div className="max-h-[220px] overflow-y-auto">
       <Table>
@@ -164,9 +175,7 @@ const BreakdownTable = ({ data, columnLabel, renderName }: BreakdownTableProps) 
               <TableCell className="font-medium">
                 {renderName ? renderName(entry.name) : entry.name}
               </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {numberFormatter.format(entry.value)}
-              </TableCell>
+              <TableCell className="text-right">{numberFormatter.format(entry.value)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -177,6 +186,7 @@ const BreakdownTable = ({ data, columnLabel, renderName }: BreakdownTableProps) 
 
 const renderCountryName = (code: string): React.ReactNode => {
   const flag = countryFlag(code);
+
   return (
     <span className="flex items-center gap-2">
       {flag ? (
@@ -202,6 +212,7 @@ const SOURCE_ICONS: Record<string, LucideIcon> = {
 
 const renderSourceName = (name: string): React.ReactNode => {
   const Icon = SOURCE_ICONS[name] ?? (name === "direct" ? Globe : Link2);
+
   return (
     <span className="flex items-center gap-2">
       <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

@@ -1,9 +1,12 @@
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useCallback } from "react";
+import { flushSync } from "react-dom";
 import { editorUICollection } from "@/collections/local/editor-ui";
 import type { SettingsTab, ShareTab, SidebarType } from "@/collections/local/editor-ui";
+import { closeOpenBlockMenu } from "@/lib/editor/block-menu-close";
 
 export type { SettingsTab, SidebarType };
+
 export type EmbedType = "standard" | "popup" | "fullpage";
 
 const useEditorUIState = () => {
@@ -11,6 +14,7 @@ const useEditorUIState = () => {
     (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
     [],
   );
+
   return (
     data?.[0] ?? {
       activeSidebar: null,
@@ -27,8 +31,10 @@ export const useEditorSidebar = () => {
 
   const openSettings = useCallback((tab?: SettingsTab) => {
     editorUICollection.update("editor-ui", (draft) => {
+      if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "settings";
       draft.selectedVersionId = null;
+
       if (tab) draft.settingsTab = tab;
     });
   }, []);
@@ -37,19 +43,24 @@ export const useEditorSidebar = () => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "share";
       draft.selectedVersionId = null;
+
       if (tab) draft.shareTab = tab;
     });
   }, []);
 
   const openVersionHistory = useCallback((versionId?: string) => {
     editorUICollection.update("editor-ui", (draft) => {
+      // Leaving Share drops its inline preview — else previewMode leaks into the drawer preview.
+      if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "history";
+
       if (versionId) draft.selectedVersionId = versionId;
     });
   }, []);
 
   const openCustomize = useCallback(() => {
     editorUICollection.update("editor-ui", (draft) => {
+      if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "customize";
       draft.selectedVersionId = null;
     });
@@ -57,6 +68,7 @@ export const useEditorSidebar = () => {
 
   const openAbout = useCallback(() => {
     editorUICollection.update("editor-ui", (draft) => {
+      if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "about";
       draft.selectedVersionId = null;
     });
@@ -67,6 +79,7 @@ export const useEditorSidebar = () => {
       const wasShareOpen = draft.activeSidebar === "share";
       draft.activeSidebar = null;
       draft.selectedVersionId = null;
+
       if (wasShareOpen) {
         draft.previewMode = false;
       }
@@ -86,6 +99,7 @@ export const useEditorSidebar = () => {
   const toggleSidebar = useCallback((sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
     editorUICollection.update("editor-ui", (draft) => {
       const isAlreadyOpen = draft.activeSidebar === sidebar;
+
       const isSwitchingTab =
         isAlreadyOpen &&
         tab &&
@@ -93,6 +107,12 @@ export const useEditorSidebar = () => {
           (sidebar === "share" && draft.shareTab !== tab));
 
       const nextSidebar = isAlreadyOpen && !isSwitchingTab ? null : sidebar;
+
+      // Switching from Share to a different sidebar drops its inline preview — otherwise the
+      // leftover previewMode satisfies isDrawerPreview and the full-page drawer pops open.
+      if (draft.activeSidebar === "share" && nextSidebar !== "share") {
+        draft.previewMode = false;
+      }
 
       draft.activeSidebar = nextSidebar;
 
@@ -129,6 +149,10 @@ export const useEditorSidebar = () => {
   }, []);
 
   const enterPreview = useCallback(() => {
+    // Close any open block menu BEFORE hiding the editor. flushSync commits the close while the
+    // editor is still visible — otherwise React batches it with the previewMode flip and <Activity>
+    // freezes the (now-hidden) menu component before it re-renders to closed, leaving the portal.
+    flushSync(() => closeOpenBlockMenu());
     editorUICollection.update("editor-ui", (draft) => {
       draft.previewMode = true;
     });
@@ -141,6 +165,7 @@ export const useEditorSidebar = () => {
   }, []);
 
   const togglePreview = useCallback(() => {
+    flushSync(() => closeOpenBlockMenu());
     editorUICollection.update("editor-ui", (draft) => {
       draft.previewMode = !draft.previewMode;
     });

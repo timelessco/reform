@@ -1,9 +1,12 @@
 import { bumpKey } from "@/lib/analytics/aggregate-utils";
+import { cappedDurationMs } from "@/lib/analytics/duration";
+import { median, weightedMedianDuration } from "@/lib/analytics/metrics";
 import { resolveSource } from "@/lib/analytics/source";
 import type { formAnalyticsDaily, formVisits } from "@/db/schema";
 import type { CountBreakdown, FormInsightsMetrics } from "@/types/analytics";
 
 type DailyRow = typeof formAnalyticsDaily.$inferSelect;
+
 type RawVisitRow = typeof formVisits.$inferSelect;
 
 interface MergeArgs {
@@ -16,6 +19,7 @@ interface MergeArgs {
 }
 
 const KNOWN_BROWSERS = new Set(["Chrome", "Firefox", "Safari", "Edge"]);
+
 const KNOWN_OS = new Set(["Windows", "macOS", "iOS", "Android", "Linux"]);
 
 // Mutates `target` in place (avoids O(N × distinct) spread-clones per row);
@@ -24,6 +28,7 @@ const addBreakdowns = (target: CountBreakdown, source: CountBreakdown): CountBre
   for (const [key, value] of Object.entries(source)) {
     target[key] = (target[key] ?? 0) + value;
   }
+
   return target;
 };
 
@@ -31,6 +36,7 @@ const bucketBrowser = (name: string | null | undefined): string => {
   if (name && KNOWN_BROWSERS.has(name)) {
     return name;
   }
+
   return "Other";
 };
 
@@ -38,6 +44,7 @@ const bucketOs = (name: string | null | undefined): string => {
   if (name && KNOWN_OS.has(name)) {
     return name;
   }
+
   return "Other";
 };
 
@@ -46,8 +53,6 @@ interface DailyAggregate {
   uniqueVisitors: number;
   totalSubmissions: number;
   uniqueRespondents: number;
-  durationSumWeighted: number;
-  durationVisitsWeight: number;
   sources: CountBreakdown;
   devices: CountBreakdown;
   countries: CountBreakdown;
@@ -61,8 +66,6 @@ const emptyAggregate = (): DailyAggregate => ({
   uniqueVisitors: 0,
   totalSubmissions: 0,
   uniqueRespondents: 0,
-  durationSumWeighted: 0,
-  durationVisitsWeight: 0,
   sources: {},
   devices: {},
   countries: {},
@@ -73,17 +76,13 @@ const emptyAggregate = (): DailyAggregate => ({
 
 const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
   const agg = emptyAggregate();
+
   for (const row of rows) {
     agg.totalVisits += row.totalVisits;
     // NOTE: summing uniqueVisitors over-counts multi-day visitors (once/day). v1 approximation.
     agg.uniqueVisitors += row.uniqueVisitors;
     agg.totalSubmissions += row.totalSubmissions;
     agg.uniqueRespondents += row.uniqueSubmitters;
-
-    if (row.avgDurationMs !== null && row.totalVisits > 0) {
-      agg.durationSumWeighted += row.avgDurationMs * row.totalVisits;
-      agg.durationVisitsWeight += row.totalVisits;
-    }
 
     agg.devices = addBreakdowns(agg.devices, (row.deviceBreakdown ?? {}) as CountBreakdown);
     agg.browsers = addBreakdowns(agg.browsers, (row.browserBreakdown ?? {}) as CountBreakdown);
@@ -95,12 +94,13 @@ const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
     agg.cities = addBreakdowns(agg.cities, (row.cityBreakdown ?? {}) as CountBreakdown);
     agg.sources = addBreakdowns(agg.sources, (row.sourceBreakdown ?? {}) as CountBreakdown);
   }
+
   return agg;
 };
 
 interface RawAggregate extends DailyAggregate {
-  durationSum: number;
   durationCount: number;
+  medianDurationMs: number | null;
 }
 
 const aggregateRawRows = (rows: RawVisitRow[]): RawAggregate => {
@@ -108,8 +108,7 @@ const aggregateRawRows = (rows: RawVisitRow[]): RawAggregate => {
   const respondentHashes = new Set<string>();
   let totalVisits = 0;
   let totalSubmissions = 0;
-  let durationSum = 0;
-  let durationCount = 0;
+  const durations: number[] = [];
   const sources: CountBreakdown = {};
   const devices: CountBreakdown = {};
   const countries: CountBreakdown = {};
@@ -120,13 +119,15 @@ const aggregateRawRows = (rows: RawVisitRow[]): RawAggregate => {
   for (const row of rows) {
     totalVisits += 1;
     visitorHashes.add(row.visitorHash);
+
     if (row.didSubmit) {
       totalSubmissions += 1;
       respondentHashes.add(row.visitorHash);
     }
-    if (row.durationMs !== null && row.durationMs !== undefined) {
-      durationSum += row.durationMs;
-      durationCount += 1;
+
+    // Completion time = server-written durationMs snapshot; submitted visits only, capped.
+    if (row.didSubmit && row.durationMs !== null) {
+      durations.push(cappedDurationMs(row.durationMs));
     }
 
     bumpKey(devices, row.deviceType);
@@ -137,15 +138,19 @@ const aggregateRawRows = (rows: RawVisitRow[]): RawAggregate => {
     bumpKey(operatingSystems, bucketOs(row.os));
   }
 
+  // Today's typical completion time = median of today's submitters (outlier-resistant); durationCount
+  // is its sample weight so it blends with the daily medians in the same sample-weighted average.
+  const durationCount = durations.length;
+  // `?? 0` preserves the prior empty→0 shape; only read when durationCount > 0 anyway.
+  const medianMs = median(durations) ?? 0;
+
   return {
     totalVisits,
     uniqueVisitors: visitorHashes.size,
     totalSubmissions,
     uniqueRespondents: respondentHashes.size,
-    durationSumWeighted: durationSum,
-    durationVisitsWeight: durationCount,
-    durationSum,
     durationCount,
+    medianDurationMs: durationCount > 0 ? medianMs : null,
     sources,
     devices,
     countries,
@@ -165,19 +170,25 @@ const buildDailyEntry = (
     const visitorHashes = new Set<string>();
     let visits = 0;
     let submissions = 0;
+
     for (const row of rawRows) {
       visits += 1;
       visitorHashes.add(row.visitorHash);
+
       if (row.didSubmit) {
         submissions += 1;
       }
     }
+
     return { date, visits, uniqueVisitors: visitorHashes.size, submissions };
   }
+
   const row = dailyByDate.get(date);
+
   if (!row) {
     return { date, visits: 0, uniqueVisitors: 0, submissions: 0 };
   }
+
   return {
     date,
     visits: row.totalVisits,
@@ -197,11 +208,16 @@ export const mergeInsightsMetrics = (args: MergeArgs): FormInsightsMetrics => {
   const totalSubmissions = dailyAgg.totalSubmissions + rawAgg.totalSubmissions;
   const uniqueRespondents = dailyAgg.uniqueRespondents + rawAgg.uniqueRespondents;
 
-  // Weighted avg across daily + raw pools
-  const totalDurationSum = dailyAgg.durationSumWeighted + rawAgg.durationSum;
-  const totalDurationWeight = dailyAgg.durationVisitsWeight + rawAgg.durationCount;
+  // Weight each day's median by its submitted-visit count (totalSubmissions): after backfill a day's
+  // duration samples are exactly its submitters. Today's raw entry weights by its own sample count.
   const avgVisitDurationMs =
-    totalDurationWeight > 0 ? Math.round(totalDurationSum / totalDurationWeight) : 0;
+    weightedMedianDuration([
+      ...dailyRows.map((row) => ({
+        medianDurationMs: row.medianDurationMs,
+        sampleCount: row.totalSubmissions,
+      })),
+      { medianDurationMs: rawAgg.medianDurationMs, sampleCount: rawAgg.durationCount },
+    ]) ?? 0;
 
   const sources = addBreakdowns(dailyAgg.sources, rawAgg.sources);
   const devices = addBreakdowns(dailyAgg.devices, rawAgg.devices);
@@ -211,9 +227,11 @@ export const mergeInsightsMetrics = (args: MergeArgs): FormInsightsMetrics => {
   const operatingSystems = addBreakdowns(dailyAgg.operatingSystems, rawAgg.operatingSystems);
 
   const dailyByDate = new Map<string, DailyRow>();
+
   for (const row of dailyRows) {
     dailyByDate.set(row.date, row);
   }
+
   const dailyData = days.map((date) => buildDailyEntry(date, dailyByDate, todayKey, todayRawRows));
 
   return {
@@ -222,8 +240,15 @@ export const mergeInsightsMetrics = (args: MergeArgs): FormInsightsMetrics => {
     totalVisits,
     uniqueVisitors,
     totalSubmissions,
+    // Proxy default; getFormInsightsImpl overrides with the authoritative submissions-table count.
+    completedSubmissions: totalSubmissions,
     uniqueRespondents,
     avgVisitDurationMs,
+    // Prior-period deltas need a second query; getFormInsightsImpl fills these in.
+    visitsDeltaPct: null,
+    submissionsDeltaPct: null,
+    completionRateDeltaPts: null,
+    avgDurationDeltaMs: null,
     sources,
     devices,
     countries,

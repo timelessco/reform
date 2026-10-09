@@ -54,10 +54,12 @@ describe("freeThemeSchema", () => {
 describe("themeTokensSchema", () => {
   const fullTokens = (() => {
     const out: Record<string, string> = {};
+
     for (const key of AI_THEME_TOKEN_KEYS) {
       out[`light:${key}`] = "#ffffff";
       out[`dark:${key}`] = "#000000";
     }
+
     return out;
   })();
 
@@ -67,9 +69,11 @@ describe("themeTokensSchema", () => {
 
   it("rejects a partial payload (15 keys missing)", () => {
     const half: Record<string, string> = {};
+
     for (const key of AI_THEME_TOKEN_KEYS) {
       half[`light:${key}`] = "#ffffff";
     }
+
     expect(v.safeParse(themeTokensSchema, half).success).toBeFalsy();
   });
 

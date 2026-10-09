@@ -1,24 +1,50 @@
-import type { TElement } from "platejs";
+import type { Descendant } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { DndPlugin } from "@platejs/dnd";
-import { PlateElement, useEditorRef, useEditorSelector, usePluginOption } from "platejs/react";
-import { useLayoutEffect } from "react";
+import {
+  PlateElement,
+  useEditorRef,
+  useEditorSelector,
+  useEditorVersion,
+  useFocused,
+  usePluginOption,
+} from "platejs/react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import * as v from "valibot";
 
+import {
+  findNextFocusTarget,
+  findPrevFocusTarget,
+  findPrevNonButtonPath,
+  goToFocusTarget,
+  moveToPath,
+} from "@/components/editor/plugins/form-blocks-utils";
+import { BlockSelection } from "@/components/ui/block-selection";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCheckIcon, ChevronDownIcon } from "@/components/ui/icons";
+import {
+  CheckCheckIcon,
+  ChevronDownIcon,
+  Loader2Icon,
+  PhotoIcon,
+  RankDragHandleIcon,
+  XIcon,
+} from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUploadFile } from "@/hooks/use-upload-file";
 import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { cn } from "@/lib/utils";
 
-type OptionVariant = "checkbox" | "multiChoice" | "multiSelect" | "dropdown";
+type OptionVariant = "checkbox" | "multiChoice" | "ranking";
 
-import { getMultiSelectColor, getOptionOrdinal } from "@/components/ui/form-option-item-constants";
+import { getOptionOrdinal } from "@/components/ui/form-option-item-constants";
 import type { OptionLabelStyle } from "@/components/ui/form-option-item-constants";
-import { useFormIsDark } from "@/hooks/use-form-theme";
 
-// Letters/Numbers labels: an ordinal badge in a gray box (Figma nodes 25578:9710 / 25578:9688).
+// Letters/Numbers labels: an ordinal badge (Figma nodes 25578:9710 / 25578:9688), 12px Medium, flat.
+// Fill/ink derived from the Input color (--bf-badge/-foreground, auto-contrast; falls back to
+// secondary) so the badge follows form customization and stays legible on any input color.
 const OptionLabelBadge = ({ text }: { text: string }) => (
-  <span className="flex size-4 min-w-4 shrink-0 items-center justify-center rounded-[4px] bg-(--form-input-bg,var(--color-gray-50)) px-0.5 text-[9px] font-semibold text-muted-foreground elevation-sm">
+  <span className="flex size-4 min-w-4 shrink-0 items-center justify-center rounded-[4px] bg-[var(--bf-badge,var(--color-secondary))] px-0.5 text-[12px] font-medium text-[var(--bf-badge-foreground,var(--color-secondary-foreground))]">
     {text}
   </span>
 );
@@ -32,8 +58,6 @@ const OptionIcon = ({
   index: number;
   optionLabel: OptionLabelStyle;
 }) => {
-  const isDark = useFormIsDark();
-
   // Letters/Numbers override the native control with an ordinal badge, regardless of variant.
   if (optionLabel === "letters" || optionLabel === "numbers") {
     return <OptionLabelBadge text={getOptionOrdinal(optionLabel, index)} />;
@@ -46,66 +70,533 @@ const OptionIcon = ({
           <Checkbox disabled className="pointer-events-none after:hidden" />
         </span>
       );
-    case "dropdown":
+    case "ranking":
+      // Reorder handle (Figma 26153-13884): "=" two-bar drag glyph left of each rankable option.
+      // Figma default is gray/500; themed forms derive a muted foreground from customization
+      // (--bf-muted-foreground). NOT --bf-input — that's the input BG, so it vanished on dark forms.
       return (
-        <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
-          <ChevronDownIcon className="size-3" />
+        <span className="flex size-4 shrink-0 items-center justify-center text-[var(--bf-muted-foreground,var(--color-gray-500))]">
+          <RankDragHandleIcon className="size-4" />
         </span>
       );
     case "multiChoice":
-      // Labels "None" → the radio control (Figma node 25458:16773).
+      // Labels "None" → the radio control (Figma node 25458:16773). size-4 to match the
+      // letter/number badge column (and the published OptionRadioMark), so the label x stays
+      // put when the label style changes between None and Letters/Numbers.
       return (
         <span className="flex size-4 shrink-0 rounded-full border border-input bg-card elevation-sm" />
       );
-    case "multiSelect": {
-      const color = getMultiSelectColor(index, isDark);
-      return (
-        <span
-          className={cn(
-            "flex size-4 shrink-0 items-center justify-center rounded-[4px]",
-            color.bg,
-            color.text,
-          )}
-        >
-          <CheckCheckIcon className="size-3" />
-        </span>
-      );
-    }
     default:
       return null;
   }
 };
 
+// Per-option image (Figma 25755:3987): 144×60 rounded thumbnail below the label. Empty slot uploads
+// on click; filled slot offers replace/remove on hover.
+const OptionImageSlot = ({
+  image,
+  uploading,
+  onPick,
+  onRemove,
+}: {
+  image?: string;
+  uploading: boolean;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const open = () => inputRef.current?.click();
+
+  return (
+    <div contentEditable={false} className="mt-1.5 pl-6 select-none">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+
+          if (file) onPick(file);
+          e.target.value = "";
+        }}
+      />
+      {image ? (
+        <div className="group/img relative aspect-[4/3] w-[200px] overflow-hidden rounded-lg bg-muted">
+          {/* Fixed-aspect cover crop — matches the live picture-choice tile, so a tall screenshot
+              renders as a clean thumbnail instead of a 280px-wide column. */}
+          <img src={image} alt="" className="absolute inset-0 size-full object-cover" />
+          <div className="absolute inset-0 hidden items-center justify-center gap-1 bg-black/50 text-xs text-white group-hover/img:flex">
+            <button
+              type="button"
+              onClick={open}
+              className="rounded px-1.5 py-0.5 hover:bg-white/20"
+            >
+              Replace
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="rounded px-1.5 py-0.5 hover:bg-white/20"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={open}
+          disabled={uploading}
+          className="flex aspect-[4/3] w-[200px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-muted text-xs text-muted-foreground hover:bg-accent disabled:opacity-60"
+        >
+          {uploading ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            <>
+              <PhotoIcon className="size-4" />
+              Add image
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const nodeText = (node: { children?: Descendant[] } | undefined): string =>
+  (node?.children ?? []).map((c) => ("text" in c ? c.text : "")).join("");
+
+/** Editor control for an option group with "Show as dropdown" on — the chips input (revived from
+ * the old formMultiSelectInput node). Chips mirror the sibling option nodes: × or Backspace
+ * removes a node, Enter in the inline input appends one. Group flags (showAsDropdown, required,
+ * selection limits…) live on the FIRST option node, so removing chip 0 pulls the next text up and
+ * drops the next node instead of removing the flag-holder. Both dropdown kinds get neutral gray
+ * chips; the trailing badge tells them apart — a double-tick for checkbox groups (multi answer),
+ * a chevron for multiChoice groups (single answer). */
+const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
+  const { attributes, element, ...rest } = props;
+  const editor = useEditorRef();
+
+  // element is the group's first node — its variant decides the chip treatment.
+  const variant =
+    v.is(v.string(), element.variant) && element.variant ? element.variant : "checkbox";
+
+  const colored = variant === "checkbox";
+  // Re-render on every content change so chips track sibling node edits/removals.
+  useEditorVersion();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [focusedChipIndex, setFocusedChipIndex] = useState<number | null>(null);
+
+  // Fresh group span + chips on every call — node indices shift under edits.
+  const collect = useCallback(() => {
+    const nodes = editor.children;
+    const start = nodes.indexOf(element);
+    let end = start;
+
+    while (end >= 0 && nodes[end + 1]?.type === "formOptionItem") end++;
+    const chips: { text: string; nodeIdx: number }[] = [];
+
+    if (start >= 0) {
+      for (let i = start; i <= end; i++) {
+        const t = nodeText(nodes[i]).trim();
+
+        if (t) chips.push({ text: t, nodeIdx: i });
+      }
+    }
+
+    return { nodes, start, end, chips };
+  }, [editor, element]);
+
+  const focused = useFocused();
+
+  const isSelected = useEditorSelector(
+    (ed) => {
+      if (!ed.selection) return false;
+      const path = ed.api.findPath(element);
+
+      if (!path) return false;
+      const focusPath = ed.selection.focus.path;
+
+      if (focusPath.length < path.length) return false;
+
+      for (let i = 0; i < path.length; i++) {
+        if (focusPath[i] !== path[i]) return false;
+      }
+
+      return true;
+    },
+    [element.id],
+  );
+
+  // Caret landing in this block (its text is hidden) → hand focus to the inline input.
+  useEffect(() => {
+    if (isSelected && focused) inputRef.current?.focus();
+  }, [isSelected, focused]); // Empty sibling nodes render no chip and would be unreachable (and emit phantom "Option N"
+  // entries in the live dropdown) — drop them. The first node may stay empty: it holds the flags.
+  useEffect(() => {
+    const { nodes, start, end } = collect();
+
+    if (start < 0 || end === start) return;
+    const empties: number[] = [];
+
+    for (let i = end; i > start; i--) {
+      if (!nodeText(nodes[i]).trim()) empties.push(i);
+    }
+
+    if (empties.length === 0) return;
+    editor.tf.withoutNormalizing(() => {
+      for (const i of empties) editor.tf.removeNodes({ at: [i] });
+    });
+  });
+
+  // Replace a node's text in place, preserving every other prop (the first node carries the flags).
+  const setNodeTextAt = useCallback(
+    (at: number, text: string) => {
+      const node = editor.children[at];
+
+      if (!node) return;
+      const { children: _children, ...nodeProps } = node;
+      editor.tf.withoutNormalizing(() => {
+        editor.tf.removeNodes({ at: [at] });
+        editor.tf.insertNodes({ ...nodeProps, children: [{ text }] }, { at: [at] });
+      });
+    },
+    [editor],
+  );
+
+  const addOption = (text: string) => {
+    const { nodes, start, end } = collect();
+
+    if (start < 0) return;
+
+    // Fresh group: a single empty node — fill it instead of appending a phantom sibling.
+    if (end === start && !nodeText(nodes[start]).trim()) {
+      setNodeTextAt(start, text);
+
+      return;
+    }
+
+    editor.tf.insertNodes(
+      { type: "formOptionItem", variant, children: [{ text }] },
+      {
+        at: [end + 1],
+      },
+    );
+  };
+
+  const removeOption = (chipIdx: number) => {
+    const { nodes, start, chips } = collect();
+    const target = chips[chipIdx];
+
+    if (!target) return;
+
+    if (target.nodeIdx !== start) {
+      editor.tf.removeNodes({ at: [target.nodeIdx] });
+
+      return;
+    }
+
+    const next = nodes[start + 1];
+
+    if (next?.type === "formOptionItem") {
+      setNodeTextAt(start, nodeText(next));
+      editor.tf.removeNodes({ at: [start + 1] });
+    } else {
+      setNodeTextAt(start, "");
+    }
+  };
+
+  // Backspace on an empty input with no chips → delete the whole field, caret to previous block.
+  const deleteGroup = () => {
+    const { start, end } = collect();
+
+    if (start < 0) return;
+    inputRef.current?.blur();
+    editor.tf.withoutNormalizing(() => {
+      for (let i = end; i >= start; i--) editor.tf.removeNodes({ at: [i] });
+    });
+
+    if (start > 0) {
+      const prevPath = findPrevNonButtonPath(editor, [start]);
+
+      if (prevPath) {
+        const edges = editor.api.edges(prevPath);
+
+        if (edges?.[1]) editor.tf.select(edges[1]);
+        editor.tf.focus();
+      }
+    }
+  };
+
+  const bridgeToBlock = (goPrev: boolean) => {
+    const { start, end } = collect();
+
+    if (start < 0) return;
+    inputRef.current?.blur();
+    // Focus targets include the page's buttons (editable label) now.
+    const target = goPrev ? findPrevFocusTarget(editor, start) : findNextFocusTarget(editor, end);
+
+    if (target) goToFocusTarget(editor, target, goPrev);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const { chips, end } = collect();
+
+    // Chip-navigation mode: arrows move between chips, Backspace/Delete removes focused chip.
+    if (focusedChipIndex !== null) {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setFocusedChipIndex(Math.max(0, focusedChipIndex - 1));
+
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setFocusedChipIndex(focusedChipIndex >= chips.length - 1 ? null : focusedChipIndex + 1);
+
+        return;
+      }
+
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        removeOption(focusedChipIndex);
+        const remaining = chips.length - 1;
+        setFocusedChipIndex(remaining <= 0 ? null : Math.min(focusedChipIndex, remaining - 1));
+
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setFocusedChipIndex(null);
+
+        return;
+      }
+
+      // Any other key — exit chip-nav mode and let the input process it
+      setFocusedChipIndex(null);
+    }
+
+    // ArrowLeft at input start with existing chips → enter chip-navigation mode
+    if (
+      e.key === "ArrowLeft" &&
+      inputRef.current?.selectionStart === 0 &&
+      inputRef.current?.selectionEnd === 0 &&
+      chips.length > 0
+    ) {
+      e.preventDefault();
+      setFocusedChipIndex(chips.length - 1);
+
+      return;
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      const trimmed = inputValue.trim();
+
+      // Empty input → create a new paragraph below (same as Enter on any form field)
+      if (!trimmed) {
+        inputRef.current?.blur();
+        const at = [end + 1];
+        editor.tf.insertNodes({ type: "p", children: [{ text: "" }] }, { at });
+        moveToPath(editor, at);
+        editor.tf.focus();
+
+        return;
+      }
+
+      if (chips.some((c) => c.text === trimmed)) return;
+      addOption(trimmed);
+      setInputValue("");
+    } else if (e.key === "Backspace" && inputValue === "") {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+
+      if (chips.length > 0) removeOption(chips.length - 1);
+      else deleteGroup();
+    } else if (e.key === "Tab" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+      // Left/Right navigate the input natively; Up/Down and Tab bridge to block navigation.
+      e.preventDefault();
+      e.stopPropagation();
+      bridgeToBlock(e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey));
+    }
+  };
+
+  const { chips } = collect();
+
+  return (
+    <PlateElement
+      attributes={{ ...attributes, "data-bf-input": "true" }}
+      className={cn(
+        "relative flex min-h-7 w-full max-w-116 cursor-default items-center rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] px-2 py-1 text-sm elevation-sm",
+      )}
+      element={element}
+      {...rest}
+    >
+      {/* This node's own text is chip 0 — rendered via the chips below, kept here for Slate. */}
+      <div className="hidden">{children}</div>
+      <div
+        contentEditable={false}
+        role="group"
+        className="flex flex-1 flex-wrap items-center gap-1"
+        onClick={() => inputRef.current?.focus()}
+        onKeyDownCapture={(e) => {
+          // Catch Tab from any child (including chip × buttons) before browser moves focus
+          if (e.key === "Tab") {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            bridgeToBlock(e.shiftKey);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") inputRef.current?.focus();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {chips.map((chip, chipIdx) => {
+          // Chips derive fill/ink from the Input color (--bf-badge/-foreground, auto-contrast; falls
+          // back to secondary); the trailing icon (double-tick vs chevron) tells the kinds apart.
+          const color = {
+            bg: "bg-[var(--bf-badge,var(--color-secondary))]",
+            text: "text-[var(--bf-badge-foreground,var(--color-secondary-foreground))]",
+          };
+
+          const isChipFocused = focusedChipIndex === chipIdx;
+
+          return (
+            <span
+              key={`${chip.nodeIdx}-${chip.text}`}
+              className={cn(
+                "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium",
+                color.bg,
+                color.text,
+                isChipFocused && "ring-2 ring-ring",
+              )}
+            >
+              {chip.text}
+              <button
+                type="button"
+                tabIndex={-1}
+                className="ml-1 inline-flex size-3 items-center justify-center rounded-full hover:bg-black/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeOption(chipIdx);
+                }}
+                aria-label={`Remove ${chip.text}`}
+              >
+                <XIcon className="size-2.5" />
+              </button>
+            </span>
+          );
+        })}
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setFocusedChipIndex(null)}
+          onBlur={(e) => {
+            const next = e.relatedTarget;
+
+            if (next && e.currentTarget.closest('[data-bf-input="true"]')?.contains(next)) {
+              return;
+            }
+
+            if (editor.selection) {
+              editor.tf.deselect();
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          placeholder={chips.length === 0 ? "Type and press Enter to add options" : "Add option..."}
+          className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+        />
+      </div>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              contentEditable={false}
+              className="mr-1 ml-1 flex shrink-0 items-center justify-center text-muted-foreground select-none"
+            />
+          }
+        >
+          {colored ? (
+            <CheckCheckIcon className="size-3.5" />
+          ) : (
+            <ChevronDownIcon className="size-3.5" />
+          )}
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          {colored ? "Multi-select dropdown" : "Dropdown"}
+        </TooltipContent>
+      </Tooltip>
+      {/* Plate passes BelowRootNodes (which includes BlockSelection) as a sibling of `children`,
+          so wrapping {children} in `display:none` above also hides the highlight. Render it
+          explicitly instead. */}
+      <BlockSelection {...props} />
+      <RequiredBadgeButton required={Boolean(element.required)} path={props.path} />
+    </PlateElement>
+  );
+};
+
 export const FormOptionItemElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
-  const variant = (element.variant as OptionVariant) || "checkbox";
-  // Default preserves today's look: multiChoice → letter badges, all others → native control.
-  const optionLabel =
-    (element.optionLabel as OptionLabelStyle | undefined) ??
-    (variant === "multiChoice" ? "letters" : "none");
-  const editor = useEditorRef();
-  const isDark = useFormIsDark();
 
-  // Narrow subscription: re-render only when this option's derived state changes, not on every
-  // keystroke. Index by node identity since props.path (useNodePath) doesn't update on reorder
-  // (slate-react memoizes by identity). Shallow equality skips re-renders when all 4 are unchanged.
-  const { optionIndex, isLastInGroup, isGroupFocused, isStandalone } = useEditorSelector(
+  const variant = v.is(v.picklist(["checkbox", "multiChoice", "ranking"]), element.variant)
+    ? element.variant
+    : "checkbox";
+
+  // Default preserves today's look: multiChoice → letter badges, all others → native control.
+  const optionLabel = v.is(v.picklist(["none", "letters", "numbers"]), element.optionLabel)
+    ? element.optionLabel
+    : variant === "multiChoice"
+      ? "letters"
+      : "none";
+
+  const editor = useEditorRef();
+
+  const { optionIndex, isLastInGroup, isGroupFocused, isStandalone, chipsMode } = useEditorSelector(
     (ed) => {
-      const nodes = ed.children as TElement[];
+      const nodes = ed.children;
       const pathIdx = nodes.indexOf(element);
+
       if (pathIdx < 0)
         return {
           optionIndex: 0,
           isLastInGroup: false,
           isGroupFocused: false,
           isStandalone: false,
+          chipsMode: false,
         };
 
       let idx = 0;
+
       for (let i = pathIdx - 1; i >= 0; i--) {
         if (nodes[i]?.type === "formOptionItem") idx++;
         else break;
       }
+
+      // Group shown as dropdown → the whole group collapses into the chips control
+      // (flags live on the group's first node; ranking has no dropdown mode).
+      const first = nodes[pathIdx - idx];
+
+      const rawVariant = first && "variant" in first ? first.variant : undefined;
+
+      const firstVariant = v.is(v.string(), rawVariant) && rawVariant ? rawVariant : "checkbox";
+
+      const chips =
+        first?.type === "formOptionItem" &&
+        (firstVariant === "checkbox" || firstVariant === "multiChoice") &&
+        "showAsDropdown" in first &&
+        first.showAsDropdown === true;
 
       const nextNode = nodes[pathIdx + 1];
       const isLast = !nextNode || nextNode.type !== "formOptionItem";
@@ -116,13 +607,18 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
       const standalone = idx === 0 && isLast && prevNode?.type !== "formLabel";
 
       let groupFocused = false;
+
       const focusIndex = ed.selection?.focus.path[0];
+
       if (focusIndex !== undefined) {
         const focusNode = nodes[focusIndex];
+
         if (focusNode?.type === "formOptionItem") {
           let groupStart = pathIdx;
+
           while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
           let groupEnd = pathIdx;
+
           while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
             groupEnd++;
           groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
@@ -134,6 +630,7 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
         isLastInGroup: isLast,
         isGroupFocused: groupFocused,
         isStandalone: standalone,
+        chipsMode: chips,
       };
     },
     [element],
@@ -142,52 +639,117 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
         a.optionIndex === b.optionIndex &&
         a.isLastInGroup === b.isLastInGroup &&
         a.isGroupFocused === b.isGroupFocused &&
-        a.isStandalone === b.isStandalone,
+        a.isStandalone === b.isStandalone &&
+        a.chipsMode === b.chipsMode,
     },
   );
 
   // Suppress "Add option" ghost during any drag — Plate snapshots the option DOM for the
   // preview and would capture a visible ghost row alongside it.
-  const draggingId = usePluginOption(DndPlugin, "draggingId") as string | string[] | undefined;
+  const draggingId: string | string[] | null | undefined = usePluginOption(DndPlugin, "draggingId");
   const isAnyDragging = Array.isArray(draggingId) ? draggingId.length > 0 : Boolean(draggingId);
-  const showGhost = isLastInGroup && isGroupFocused && !isAnyDragging;
+  const showGhost = isLastInGroup && isGroupFocused && !isAnyDragging && !chipsMode;
 
-  // When ghost is visible, push the next block down so it doesn't overlap. Add margin-top to the
+  // When ghost is visible, push the next block down so it doesn't overlap. Reserve space on the
   // block-draggable wrapper's next sibling, not this element — expanding here displaces the gutter.
+  // Use padding-top, not margin-top: margins collapse (max with the option's own block-margin) so a
+  // small needed gap gets swallowed, and a fixed constant can't know the next block's margin (e.g.
+  // the logic block tucks up via a -16px margin-top). Measure the ghost's real bottom against the
+  // next block's real content top and reserve exactly the overflow + a 4px gap.
   useLayoutEffect(() => {
     let domNode: HTMLElement | null = null;
+
     try {
-      // eslint-disable-next-line typescript-eslint/no-explicit-any
-      domNode = (editor.api as any).toDOMNode?.(element) ?? null;
+      domNode = editor.api.toDOMNode(element) ?? null;
     } catch {
       domNode = null;
     }
-    if (!domNode) return;
-    const blockWrapper = domNode.closest(".slate-blockWrapper");
-    const draggableWrapper = blockWrapper?.parentElement;
-    const nextSibling = draggableWrapper?.nextElementSibling as HTMLElement | null;
-    if (!nextSibling) return;
-    if (showGhost) {
-      // Ghost is 30px tall, offset 4px below option (top-[calc(100%+4px)]),
-      // plus another 4px gap after the ghost → total 38px margin.
-      nextSibling.style.marginTop = "38px";
-    } else {
-      nextSibling.style.marginTop = "";
-    }
-    return () => {
-      nextSibling.style.marginTop = "";
+
+    const blockWrapper = domNode?.closest(".slate-blockWrapper");
+    const rawSibling = blockWrapper?.parentElement?.nextElementSibling;
+    const nextSibling = rawSibling instanceof HTMLElement ? rawSibling : null;
+
+    const clear = () => {
+      if (nextSibling) nextSibling.style.paddingTop = "";
     };
+
+    if (!domNode || !nextSibling) return;
+
+    if (!showGhost) {
+      clear();
+
+      return;
+    }
+
+    const ghost = domNode.querySelector<HTMLElement>("[data-bf-ghost-row]");
+
+    if (!ghost) {
+      clear();
+
+      return clear;
+    }
+
+    // Reset to the natural layout, then reserve exactly the overflow. Measure the next block's first
+    // rendered element (not its wrapper) — wrappers whose inner node uses a negative margin-top
+    // report a misleading box.
+    nextSibling.style.paddingTop = "";
+
+    const nextContent =
+      nextSibling.querySelector<HTMLElement>('[data-slate-node="element"]') ?? nextSibling;
+
+    const overflow =
+      ghost.getBoundingClientRect().bottom + 4 - nextContent.getBoundingClientRect().top;
+
+    nextSibling.style.paddingTop = overflow > 0 ? `${Math.ceil(overflow)}px` : "";
+
+    return clear;
   }, [editor, element, showGhost]);
 
-  const colorStyle = variant === "multiSelect" ? getMultiSelectColor(optionIndex, isDark) : null;
+  // Per-option image (group "Image" toggle sets showImage on every sibling). Upload via the shared
+  // editor-media uploader, then store the URL on this option node.
+  const showImage = element.showImage === true;
+  const image = v.is(v.string(), element.image) ? element.image : undefined;
+  const { uploadFile, isUploading } = useUploadFile();
+
+  const handleImagePick = useCallback(
+    async (file: File) => {
+      const uploaded = await uploadFile(file);
+
+      if (!uploaded?.url) return;
+      const idx = editor.children.indexOf(element);
+
+      if (idx >= 0) editor.tf.setNodes({ image: uploaded.url }, { at: [idx] });
+    },
+    [uploadFile, editor, element],
+  );
+
+  const handleImageRemove = useCallback(() => {
+    const idx = editor.children.indexOf(element);
+
+    if (idx >= 0) editor.tf.unsetNodes(["image"], { at: [idx] });
+  }, [editor, element]);
+
+  // Checkbox-as-dropdown group: first node renders the chips control, siblings collapse
+  // (their text still mounts for Slate, just invisible).
+  if (chipsMode) {
+    if (optionIndex === 0) return <OptionChipsRow {...props}>{children}</OptionChipsRow>;
+
+    return (
+      <PlateElement
+        attributes={{ ...attributes, "aria-hidden": "true" }}
+        className="h-0 overflow-hidden"
+        element={element}
+        {...rest}
+      >
+        {children}
+      </PlateElement>
+    );
+  }
 
   return (
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
-      className={cn(
-        "relative w-full max-w-116 cursor-text rounded-md caret-current before:top-3.5 before:left-7.5 before:-translate-y-1/2 before:text-sm",
-        colorStyle && cn(colorStyle.bg, colorStyle.text),
-      )}
+      className="relative w-full max-w-116 cursor-text rounded-md caret-current before:top-3.5 before:left-6.5 before:-translate-y-1/2 before:text-base"
       element={element}
       {...rest}
     >
@@ -195,17 +757,27 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
         <span contentEditable={false} className="pointer-events-none shrink-0 select-none">
           <OptionIcon variant={variant} index={optionIndex} optionLabel={optionLabel} />
         </span>
-        <span className="min-w-0 flex-1 text-sm outline-none">{children}</span>
+        <span className="min-w-0 flex-1 text-base outline-none">{children}</span>
       </div>
+
+      {showImage && (
+        <OptionImageSlot
+          image={image}
+          uploading={isUploading}
+          onPick={handleImagePick}
+          onRemove={handleImageRemove}
+        />
+      )}
 
       {showGhost && (
         <div
           contentEditable={false}
           data-bf-drag-ignore="true"
+          data-bf-ghost-row="true"
           className="pointer-events-none absolute top-[calc(100%+4px)] right-0 left-0 flex h-[30px] items-center gap-2 pl-0.5 opacity-40 select-none"
         >
           <OptionIcon variant={variant} index={optionIndex + 1} optionLabel={optionLabel} />
-          <span className="text-sm text-muted-foreground">Add option</span>
+          <span className="text-base text-muted-foreground">Add option</span>
         </div>
       )}
       <RequiredBadgeButton

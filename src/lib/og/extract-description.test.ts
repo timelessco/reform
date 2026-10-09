@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { extractOgDescription } from "@/lib/og/extract-description";
 
 const p = (text: string) => ({ type: "p", children: [{ text }] });
+
 const h1 = (text: string) => ({ type: "h1", children: [{ text }] });
+
 const formHeader = () => ({ type: "formHeader", children: [{ text: "" }] });
+
 const formInput = () => ({ type: "formInput", children: [{ text: "" }] });
 
 describe("extractOgDescription", () => {

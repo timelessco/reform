@@ -19,6 +19,7 @@ const fileToBase64 = (file: File): Promise<string> =>
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       const result = reader.result;
+
       if (typeof result === "string") resolve(result);
       else reject(new Error("Failed to read file"));
     });
@@ -64,6 +65,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
       ),
     [element.allowedFileTypes, element.allowedFileExtensions],
   );
+
   const maxFileSizeMb = element.maxFileSize ?? DEFAULT_MAX_FILE_SIZE_MB;
   const maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
 
@@ -87,6 +89,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
   ) => {
     const isImage = picked.type.startsWith("image/");
     const localPreview = isImage ? URL.createObjectURL(picked) : null;
+
     if (activePreviewRef.current) URL.revokeObjectURL(activePreviewRef.current);
     activePreviewRef.current = localPreview;
 
@@ -98,8 +101,10 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
         type: picked.type || "application/octet-stream",
         size: picked.size,
       };
+
       setUploadState({ status: "done", value: previewValue, localPreview });
       setValue(previewValue);
+
       return;
     }
 
@@ -107,6 +112,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
 
     try {
       const base64 = await fileToBase64(picked);
+
       const uploaded = await uploadFormFile({
         data: {
           formId,
@@ -117,6 +123,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
           base64,
         },
       });
+
       setUploadState({ status: "done", value: uploaded, localPreview });
       setValue(uploaded);
     } catch (err) {
@@ -128,6 +135,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
         status: "error",
         message: friendly ?? parsed.message ?? "Upload failed. Please try again.",
       });
+
       if (localPreview) URL.revokeObjectURL(localPreview);
       activePreviewRef.current = null;
       setValue("");
@@ -142,6 +150,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
     maxSize: maxFileSizeBytes,
     onFilesChange: (updatedFiles) => {
       const picked = updatedFiles[0]?.file;
+
       if (picked instanceof File) {
         // Route raw File through field onChange — the one place binary→URL happens.
         form.setFieldValue(element.name, picked);
@@ -154,10 +163,12 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
       URL.revokeObjectURL(activePreviewRef.current);
       activePreviewRef.current = null;
     }
+
     setUploadState({ status: "idle" });
   };
 
   const hasFile = uploadState.status === "uploading" || uploadState.status === "done";
+
   const previewUrl =
     uploadState.status === "done"
       ? uploadState.value.type.startsWith("image/")
@@ -166,6 +177,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
       : uploadState.status === "uploading"
         ? uploadState.localPreview
         : null;
+
   const fileName =
     uploadState.status === "done"
       ? uploadState.value.name
@@ -198,8 +210,8 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
               id={element.name}
               aria-invalid={showError}
               className={cn(
-                "relative flex min-h-[100px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] p-4 elevation-sm transition-colors hover:bg-accent/50",
-                showError && "ring-1 ring-destructive",
+                "relative flex min-h-[100px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-0 bg-(--form-input-bg,var(--color-gray-50)) p-4 elevation-sm transition-colors hover:bg-accent/50",
+                showError && "form-input-error",
               )}
               onClick={!hasFile ? openFileDialog : undefined}
               onDragEnter={handleDragEnter}
@@ -247,9 +259,11 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground select-none">
                   <div className="flex items-center gap-1.5">
                     <UploadLineIcon className="size-4" />
-                    <span className="text-sm">Click to choose a file or drag here</span>
+                    <span className="text-sm" data-bf-upload-primary>
+                      Click to choose a file or drag here
+                    </span>
                   </div>
-                  <span className="text-[13px] text-[color:var(--color-gray-500)]">
+                  <span className="text-sm text-(--color-gray-500)" data-bf-upload-secondary>
                     Max file up to {maxFileSizeMb}MB
                   </span>
                 </div>

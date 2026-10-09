@@ -49,12 +49,15 @@ const rawValue = (metric: WebVitalName, row: VitalsRawRow): number | null =>
 /** Non-null raw samples for a metric across rows. */
 const rawSamples = (metric: WebVitalName, rows: VitalsRawRow[]): number[] => {
   const values: number[] = [];
+
   for (const row of rows) {
     const value = rawValue(metric, row);
+
     if (value !== null && value !== undefined) {
       values.push(value);
     }
   }
+
   return values;
 };
 
@@ -67,6 +70,7 @@ const rangeHistogram = (
   const key = histogramKey(metric);
   const dailyHistograms = dailyRows.map((row) => row[key] as VitalHistogram);
   const todayHistogram = buildHistogram(metric, rawSamples(metric, todayRawRows));
+
   return mergeHistograms(...dailyHistograms, todayHistogram);
 };
 
@@ -77,6 +81,7 @@ const summarizeMetric = (
 ): VitalMetricSummary => {
   const p75 = p75FromHistogram(metric, current);
   const priorP75 = p75FromHistogram(metric, prior);
+
   return {
     p75,
     rating: p75 === null ? null : rateVital(metric, p75),
@@ -91,6 +96,7 @@ export const buildVitalsMetrics = (args: BuildVitalsArgs): FormVitalsMetrics => 
   const dailyByDate = new Map(dailyRows.map((row) => [row.date, row]));
 
   const summaries = {} as Record<WebVitalName, VitalMetricSummary>;
+
   for (const metric of METRICS) {
     const current = rangeHistogram(metric, dailyRows, todayRawRows);
     const key = histogramKey(metric);
@@ -100,13 +106,17 @@ export const buildVitalsMetrics = (args: BuildVitalsArgs): FormVitalsMetrics => 
 
   const series = days.map((date) => {
     const isToday = date === todayKey;
+
     const dayHistogram = (metric: WebVitalName): VitalHistogram => {
       if (isToday) {
         return buildHistogram(metric, rawSamples(metric, todayRawRows));
       }
+
       const row = dailyByDate.get(date);
+
       return row ? (row[histogramKey(metric)] as VitalHistogram) : {};
     };
+
     return {
       date,
       lcpP75: p75FromHistogram("lcp", dayHistogram("lcp")),

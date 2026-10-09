@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
-import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EDITABLE_FIELD_TYPES } from "@/lib/editor/transform-plate-for-preview";
@@ -32,31 +32,71 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type {
-  Cell,
-  ColumnDef,
-  ColumnPinningState,
-  ColumnVisibilityState as VisibilityState,
-  Row,
-  RowSelectionState,
-  SortingState,
-} from "@tanstack/table-core";
+import type { ColumnDef, Row, RowSelectionState } from "@tanstack/table-core";
+import { useTanStackTableDevtools } from "@tanstack/react-table-devtools";
 import { createAppColumnHelper, SelectionCheckbox, useAppTable } from "@/components/ui/data-grid";
 import type { DataGridApi, DataGridFeatures } from "@/components/ui/data-grid";
 
-import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
-import { NumberPopIn } from "@/components/transitions/number-pop-in";
-import { TextSwap } from "@/components/transitions/text-swap";
-import { Columns, Download, ExternalLink, FileText, Paperclip, Search } from "lucide-react";
+import {
+  CardsViewIcon,
+  CheckIcon,
+  FilterIcon,
+  ListViewIcon,
+  StarEmptyIcon,
+  StarFilledIcon,
+  Trash2Icon,
+  XIcon,
+} from "@/components/ui/icons";
+import { FigFilterIcon, FigSmallDownIcon } from "@/components/dashboard/dashboard-icons";
+import { ExportMenu, ToolbarPill, ToolbarSearch, ViewToggle } from "@/components/ui/route-toolbar";
+import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import type { PublicFormSettings } from "@/types/form-settings";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  ExternalLink,
+  FileText,
+  Paperclip,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Value } from "platejs";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 
 type FieldStatus = "current" | "deleted";
+
 const EMPTY_LABELS: Record<string, string> = {};
+
+// Built-in column ids; payload keys colliding would construct duplicate columns silently.
+const RESERVED_COLUMN_IDS = new Set([
+  "select",
+  "submitted_at",
+  "status",
+  "last_step_reached",
+  "is_completed",
+]);
+
+// Header labels: gray-600 (Figma) for normal fields; deleted/orphaned fields go red so removed
+// fields read clearly (replaces the old green/red status dots).
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em header tracking has no scale equivalent
+const HEADER_LABEL_CLS = "text-muted-foreground tracking-[0.02em]";
+
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em header tracking has no scale equivalent
+const HEADER_LABEL_DELETED_CLS = "text-destructive tracking-[0.02em]";
 
 const SUBMITTED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -75,6 +115,14 @@ const formatDateCellValue = (text: string): string => {
 
 const formatSubmittedAt = (value: string | Date): string =>
   SUBMITTED_AT_FORMATTER.format(new Date(value));
+
+// Single-view header date (Figma 27015:20854), "Jun 2, 2026".
+const SUBMISSION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
 type PaginatedSubmissionsPage = {
   submissions: SerializedSubmission[];
   nextCursor?: SubmissionCursor;
@@ -127,26 +175,31 @@ const isUploadedFileValue = (value: unknown): value is UploadedFileValue =>
 
 const FileTypeIcon = ({ type, className }: { type: string; className?: string }) => {
   if (type === "application/pdf") {
-    return <FileText className={cn("text-red-500", className)} />;
+    return <FileText className={cn("text-destructive", className)} />;
   }
+
   if (
     type === "application/msword" ||
     type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
-    return <FileText className={cn("text-blue-500", className)} />;
+    return <FileText className={cn("text-chart-2", className)} />;
   }
+
   return <Paperclip className={cn("text-muted-foreground", className)} />;
 };
 
 const csvFormat = (value: unknown): string => {
   if (isUploadedFileValue(value)) return value.url;
+
   if (value === null || value === undefined) return "";
+
   if (Array.isArray(value)) {
     return value
       .map((v) => csvFormat(v))
       .filter((s) => s !== "")
       .join("; ");
   }
+
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
@@ -154,11 +207,12 @@ const csvFormat = (value: unknown): string => {
       return "";
     }
   }
+
   return String(value);
 };
 
-// Field types eligible for the Repeatable toggle — used to gate the
-// scalar-array chip renderer so we don't disturb MultiSelect's colored chips.
+// Field types eligible for the Repeatable toggle; gates the
+// scalar-array chip renderer so MultiSelect's colored chips stay untouched.
 const SCALAR_CELL_TYPES = new Set([
   "Input",
   "Textarea",
@@ -185,42 +239,42 @@ const SubmissionCell = ({
 }) => {
   const labelFor = (raw: unknown): string => {
     const s = String(raw);
+
     if (!options) return s;
     const match = options.find((o) => o.value === s);
+
     return match?.label ?? s;
   };
+
   const text = formatSubmissionValue(value);
+
   if (text === "-") {
-    return <span className="text-[13px] text-muted-foreground">-</span>;
+    return <span className="text-base text-muted-foreground">-</span>;
   }
 
-  // Repeatable scalar fields land here as arrays — render as chips before
-  // hitting the per-type renderers below (a single mailto: for two emails or
+  // Repeatable scalar fields land here as arrays; flatten to comma-separated text
+  // (Figma) before the per-type renderers below (a single mailto: for two emails or
   // an "Invalid Date" for an array of dates would otherwise be wrong).
   if (Array.isArray(value) && SCALAR_CELL_TYPES.has(fieldType)) {
     const arr = value.filter((v) => v !== "" && v != null);
-    if (arr.length === 0) return <span className="text-[13px] text-muted-foreground">-</span>;
-    return (
-      <div className="flex max-w-[300px] flex-wrap gap-1">
-        {arr.map((item, i) => (
-          <span
-            // eslint-disable-next-line @eslint-react/no-array-index-key
-            key={i}
-            className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
-          >
-            {labelFor(item)}
-          </span>
-        ))}
-      </div>
-    );
+
+    if (arr.length === 0) return <span className="text-base text-muted-foreground">-</span>;
+
+    const joined = arr
+      .map((item) => (fieldType === "Date" ? formatDateCellValue(String(item)) : labelFor(item)))
+      .join(", ");
+
+    return <span className="block max-w-[300px] truncate text-base">{joined}</span>;
   }
 
   switch (fieldType) {
+    // Email/Link stay clickable (mailto / new-tab) but inherit the same cell color as every other
+    // type; Figma renders all answer values in one uniform color (no link tint). Underline on hover is the only affordance.
     case "Email":
       return (
         <a
           href={`mailto:${text}`}
-          className="block max-w-[300px] truncate text-[13px] text-primary hover:underline"
+          className="block max-w-[300px] truncate text-base hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {text}
@@ -232,7 +286,7 @@ const SubmissionCell = ({
           href={text.startsWith("http") ? text : `https://${text}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block max-w-[300px] truncate text-[13px] text-primary hover:underline"
+          className="block max-w-[300px] truncate text-base hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {text}
@@ -240,59 +294,69 @@ const SubmissionCell = ({
       );
     case "Date":
       return (
-        <span className="block max-w-[300px] truncate text-[13px] tabular-nums">
-          {formatDateCellValue(text)}
-        </span>
+        <span className="block max-w-[300px] truncate text-base">{formatDateCellValue(text)}</span>
       );
     case "Time":
     case "Phone":
     case "Number":
-      return <span className="block max-w-[300px] truncate text-[13px] tabular-nums">{text}</span>;
-    case "Checkbox":
-    case "MultiChoice":
-    case "MultiSelect":
-    case "Ranking":
-    default: {
-      const items = Array.isArray(value) ? value : null;
-      if (!items) {
-        return <span className="block max-w-[300px] truncate text-[13px]">{labelFor(value)}</span>;
-      }
-      const useColors = fieldType === "MultiSelect" && options;
+      return <span className="block max-w-[300px] truncate text-base">{text}</span>;
+    case "Rating": {
+      // Figma 26566:46117, 5 × 20px stars, gap 1px; filled (gold) up to the value, rest empty outline.
+      const rating = Math.max(0, Math.min(5, Math.round(Number(text) || 0)));
+
+      if (!rating) return <span className="text-base text-muted-foreground">-</span>;
+
       return (
-        <div className="flex max-w-[300px] flex-wrap gap-1">
-          {items.map((item) => {
-            const colorIdx = useColors ? options.findIndex((o) => o.value === String(item)) : -1;
-            const color =
-              colorIdx >= 0 ? MULTI_SELECT_COLORS[colorIdx % MULTI_SELECT_COLORS.length] : null;
-            return (
-              <span
-                key={String(item)}
-                className={cn(
-                  "inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px]",
-                  color ? cn(color.bg, color.text) : "bg-secondary text-secondary-foreground",
-                )}
-              >
-                {labelFor(item)}
-              </span>
-            );
-          })}
+        <div className="flex items-center gap-px" aria-label={`${rating} out of 5`}>
+          {Array.from({ length: 5 }, (_, i) =>
+            i < rating ? (
+              <StarFilledIcon key={i} className="size-5 shrink-0" />
+            ) : (
+              <StarEmptyIcon key={i} className="size-5 shrink-0" />
+            ),
+          )}
         </div>
       );
     }
+
+    case "Signature":
+      return typeof value === "string" && value.startsWith("data:image") ? (
+        <img
+          src={value}
+          alt="Signature"
+          className="h-8 max-w-[160px] rounded border border-border bg-white object-contain"
+        />
+      ) : (
+        <span className="text-base text-muted-foreground">-</span>
+      );
+    case "Checkbox":
+    case "MultiChoice":
+    case "Ranking":
+    default: {
+      // Multi-value answers render as comma-separated text (Figma), not pill chips.
+      const items = Array.isArray(value) ? value : null;
+      const display = items ? items.map((item) => labelFor(item)).join(", ") : labelFor(value);
+
+      return <span className="block max-w-[300px] truncate text-base">{display}</span>;
+    }
+
     case "FileUpload": {
       // Legacy: bare string filename from old submissions
       if (typeof value === "string") {
         return (
-          <span className="block max-w-[180px] truncate text-[13px] text-muted-foreground italic">
+          <span className="block max-w-[180px] truncate text-base text-muted-foreground italic">
             {value}
           </span>
         );
       }
+
       if (!isUploadedFileValue(value)) {
-        return <span className="text-[13px] text-muted-foreground">-</span>;
+        return <span className="text-base text-muted-foreground">-</span>;
       }
+
       const file = value;
       const isImage = file.type.startsWith("image/");
+
       return (
         <button
           type="button"
@@ -314,10 +378,11 @@ const SubmissionCell = ({
               className="h-8 w-auto max-w-[64px] shrink-0 rounded border border-border/40 object-contain"
             />
           ) : (
-            <FileTypeIcon type={file.type} className="size-4 shrink-0" />
+            // Figma 26566:46132 document glyph (exact asset).
+            <img src="/icons/file-doc.svg" alt="" className="h-5 w-auto shrink-0" />
           )}
           {!isImage && (
-            <span className="truncate text-[13px] text-muted-foreground group-hover:text-foreground">
+            <span className="truncate text-base text-foreground group-hover:text-foreground">
               {file.name}
             </span>
           )}
@@ -355,20 +420,25 @@ const buildSubmissionColumns = ({
   const baseColumns: ColumnDef<DataGridFeatures, SerializedSubmission>[] = [
     columnHelper.display({
       id: "select",
+      // all-rows APIs walk the filtered model; correct for infinite scroll, respects tab/search filters
       header: ({ table }) => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          checked={table.getIsAllRowsSelected()}
+          indeterminate={table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
           aria-label="Select all"
           className="translate-y-[2px]"
         />
       ),
-      cell: ({ row }) => <SelectionCheckbox row={row} />,
+      cell: ({ row }) => (
+        <SelectionCheckbox
+          row={row}
+          ariaLabel={`Select submission from ${formatSubmittedAt(row.original.createdAt)}`}
+        />
+      ),
       size: 48,
       minSize: 48,
       maxSize: 48,
-      meta: {},
       enableSorting: false,
       enableHiding: false,
       enablePinning: false,
@@ -376,18 +446,15 @@ const buildSubmissionColumns = ({
     }),
     toSubmissionColumn(
       columnHelper.accessor("createdAt", {
-        header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Submitted at" className={HEADER_LABEL_CLS} />
+        ),
         cell: (info) => (
           <div className="group/row flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="min-w-0 truncate text-[13px]">
+              <span className="min-w-0 truncate text-base">
                 {formatSubmittedAt(info.getValue())}
               </span>
-              {!info.row.original.isCompleted && (
-                <span className="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 uppercase dark:text-amber-400">
-                  Drop-off
-                </span>
-              )}
             </div>
             <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100">
               <Button
@@ -406,21 +473,72 @@ const buildSubmissionColumns = ({
           </div>
         ),
         id: "submitted_at",
+        // ISO strings compare correctly under datetime sortFn
+        sortFn: "datetime",
+        sortDescFirst: true,
         size: 200,
         minSize: 140,
+        meta: { headerTitle: "Submitted at" },
       }),
     ),
     toSubmissionColumn(
-      columnHelper.accessor("lastStepReached", {
+      // Status pill (Figma 26566:46099), Complete green / Partial yellow.
+      columnHelper.accessor((row) => row.isCompleted, {
+        id: "status",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Status" className={HEADER_LABEL_CLS} />
+        ),
+        cell: (info) => {
+          const done = info.getValue();
+
+          return (
+            <span
+              className={cn(
+                // Figma 27015:17561/17488 (light) + 27015:17706/17633 (dark): 12px / Medium(450) /
+                // 0.24px (0.02em) / lh1.15, 6×3 pad, pill.
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma pill type (450 weight, lh 1.15, 0.02em tracking) has no scale equivalent
+                "inline-flex items-center rounded-full px-1.5 py-0.75 text-xs leading-[1.15] font-[450] tracking-[0.02em]",
+                done
+                  ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
+                  : "bg-(--color-partial-soft) text-(--color-partial-on-soft)",
+              )}
+            >
+              {done ? "Complete" : "Partial"}
+            </span>
+          );
+        },
+        enableSorting: false,
+        size: 96,
+        minSize: 84,
+        meta: { headerTitle: "Status" },
+      }),
+    ),
+    toSubmissionColumn(
+      // null coerced to undefined; sortUndefined only checks === undefined (createSortedRowModel)
+      columnHelper.accessor((row) => row.lastStepReached ?? undefined, {
         id: "last_step_reached",
-        header: ({ column }) => <DataGridColumnHeader column={column} title="Last step" />,
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Last step" className={HEADER_LABEL_CLS} />
+        ),
         cell: (info) => {
           const step = info.getValue();
-          if (step == null) return <span className="text-muted-foreground">-</span>;
-          return <span className="text-[13px]">Step {step + 1}</span>;
+
+          if (step === undefined) return <span className="text-muted-foreground">-</span>;
+
+          return <span className="text-base">Step {step + 1}</span>;
         },
+        sortUndefined: "last",
         size: 120,
         meta: { headerTitle: "Last step" },
+      }),
+    ),
+    toSubmissionColumn(
+      // hidden filter target for tabs; enableHiding:false keeps it out of the visibility dropdown
+      // while initialState columnVisibility still hides it (getIsVisible reads state, canHide only gates toggling)
+      columnHelper.accessor((row) => row.isCompleted, {
+        id: "is_completed",
+        enableHiding: false,
+        enableSorting: false,
       }),
     ),
   ];
@@ -436,15 +554,15 @@ const buildSubmissionColumns = ({
       if (fieldStatusFilter.has(status)) {
         baseColumns.push(
           toSubmissionColumn(
-            columnHelper.accessor((row) => row.data?.[field.name], {
+            // null → undefined so sortUndefined applies (sorter only special-cases === undefined)
+            columnHelper.accessor((row) => row.data?.[field.name] ?? undefined, {
               id: field.name,
               header: ({ column }) => (
                 <DataGridColumnHeader
                   column={column}
                   title={("label" in field ? field.label : "") || field.name}
-                  icon={
-                    <span className="block size-2.5 rounded-full border-[1.5px] border-emerald-500" />
-                  }
+                  className={HEADER_LABEL_CLS}
+                  searchable
                 />
               ),
               cell: (info) => (
@@ -455,6 +573,16 @@ const buildSubmissionColumns = ({
                   options={"options" in field ? (field.options as FieldOption[]) : undefined}
                 />
               ),
+              // Per-column header search; substring match against the rendered cell text.
+              enableColumnFilter: true,
+              filterFn: (row, columnId, value) =>
+                formatSubmissionValue(row.getValue(columnId))
+                  .toLowerCase()
+                  .includes(String(value).toLowerCase()),
+              // sparse column; empties last (numeric default 1 flips with desc putting empties first)
+              sortUndefined: "last",
+              // object values produce inconsistent comparators
+              enableSorting: field.fieldType !== "FileUpload" && field.fieldType !== "Signature",
               size: 150,
               meta: {
                 headerTitle: ("label" in field ? field.label : "") || field.name,
@@ -480,9 +608,7 @@ const buildSubmissionColumns = ({
               <DataGridColumnHeader
                 column={column}
                 title={resolvedLabel}
-                icon={
-                  <span className="block size-2.5 rounded-full border-[1.5px] border-red-500" />
-                }
+                className={HEADER_LABEL_DELETED_CLS}
               />
             ),
             cell: (info) => (
@@ -492,6 +618,9 @@ const buildSubmissionColumns = ({
                 onPreview={onPreview}
               />
             ),
+            // deleted-field data has unknown shapes; object values produce inconsistent comparators
+            sortUndefined: "last",
+            enableSorting: false,
             size: 150,
             meta: {
               headerTitle: resolvedLabel,
@@ -505,7 +634,7 @@ const buildSubmissionColumns = ({
   return { columns: baseColumns, fieldCounts: counts };
 };
 
-// Shared query defs — loader + component can't drift on key/queryFn/options.
+// Shared query defs; loader + component can't drift on key/queryFn/options.
 const submissionsBootstrapQueryOptions = (formId: string) =>
   queryOptions({
     queryKey: ["submissionsBootstrap", formId],
@@ -520,39 +649,34 @@ const submissionsInfiniteQueryOptions = (formId: string) =>
       getPaginatedSubmissionsPage(formId, pageParam),
     initialPageParam: undefined as SubmissionCursor | undefined,
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
-    // Inbox — fresh on refocus. Explicit 0 overrides global 60s default that would suppress refetchOnWindowFocus in the first minute.
+    // Inbox; fresh on refocus. Explicit 0 overrides global 60s default that would suppress refetchOnWindowFocus in the first minute.
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
+  const { bootstrapQueryOptions, submissionsQueryOptions } = Route.useRouteContext();
   const queryClient = useQueryClient();
   Route.useLoaderData(); // ensure loader has primed the query cache
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
-  const [sorting, setSorting] = useState<SortingState>([]);
+  // sorting/visibility/pinning/order live table-internal; only shared slices stay controlled
   const [globalFilter, setGlobalFilter] = useState("");
   const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    last_step_reached: false,
-  });
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
-  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<UploadedFileValue | null>(null);
   const openPreview = useCallback((file: UploadedFileValue) => setPreviewFile(file), []);
   const closePreview = useCallback(() => setPreviewFile(null), []);
-  const handleSetActiveTabAll = useCallback(() => setActiveTab("all"), []);
-  const handleSetActiveTabCompleted = useCallback(() => setActiveTab("completed"), []);
-  const handleSetActiveTabPartial = useCallback(() => setActiveTab("partial"), []);
+
   const handleGlobalFilterChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value),
     [],
   );
+
   const handleClearSelection = useCallback(() => setRowSelection({}), []);
 
   // Bootstrap (published content + count + historical labels): blocking suspense data. Loader awaits ensureQueryData → cache primed, pendingComponent covers first load. 10min staleTime → rarely refetches, low error-boundary risk.
-  const { data: bootstrapData } = useSuspenseQuery(submissionsBootstrapQueryOptions(formId));
+  const { data: bootstrapData } = useSuspenseQuery(bootstrapQueryOptions);
   const publishedContent = bootstrapData?.form?.content;
   const totalCount = bootstrapData?.totalCount ?? 0;
   const historicalLabels = bootstrapData?.fieldLabels ?? EMPTY_LABELS;
@@ -564,34 +688,35 @@ const SubmissionsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: isLoadingSubmissions,
-  } = useInfiniteQuery(submissionsInfiniteQueryOptions(formId));
+  } = useInfiniteQuery(submissionsQueryOptions);
 
   const allSubmissions: SerializedSubmission[] = useMemo(
     () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
     [submissionsData],
   );
 
-  const { completedCount, partialCount } = useMemo(() => {
-    let completed = 0;
-    for (const s of allSubmissions) {
-      if (s.isCompleted) completed++;
+  // Intersect with loaded ids; stale keys from refetch/delete never drive bulk actions/hotkeys.
+  const effectiveRowSelection = useMemo(() => {
+    const loadedIds = new Set(allSubmissions.map((s) => s.id));
+    const next: RowSelectionState = {};
+
+    for (const id of Object.keys(rowSelection)) {
+      if (loadedIds.has(id)) next[id] = true;
     }
-    return {
-      completedCount: completed,
-      partialCount: allSubmissions.length - completed,
-    };
-  }, [allSubmissions]);
-  const submissions = useMemo(() => {
-    if (activeTab === "completed")
-      return allSubmissions.filter((s: SerializedSubmission) => s.isCompleted);
-    if (activeTab === "partial")
-      return allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted);
-    return allSubmissions;
-  }, [allSubmissions, activeTab]);
+
+    return next;
+  }, [allSubmissions, rowSelection]);
 
   const handleDelete = useCallback(
     async (submissionId: string) => {
       await deleteSubmission({ data: { id: submissionId, formId } });
+      // drop deleted id from selection so a stale key can't act
+      setRowSelection((prev) => {
+        if (!prev[submissionId]) return prev;
+        const { [submissionId]: _removed, ...rest } = prev;
+
+        return rest;
+      });
       void queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
     },
     [formId, queryClient],
@@ -599,15 +724,18 @@ const SubmissionsPage = () => {
 
   const formElements = useMemo(() => {
     if (!publishedContent) return null;
+
     return transformPlateStateToFormElements(publishedContent as Value);
   }, [publishedContent]);
 
-  // Stable orphaned field names — prevents column rebuild on submission-data ref change.
-  const orphanedFieldNamesRef = useRef<Set<string>>(new Set());
-  const orphanedFieldNames = useMemo(() => {
+  // Stable orphaned field names; keyed on a sorted join so identity only changes when the SET's
+  // contents change, not on every submissions ref change (avoids needless column rebuilds).
+  const orphanedKey = useMemo(() => {
     const currentFieldNames = new Set<string>();
+
     if (formElements) {
       const editableFields = getEditableFields(formElements);
+
       for (const field of editableFields) {
         if (EDITABLE_FIELD_TYPES.has(field.fieldType)) {
           currentFieldNames.add(field.name);
@@ -619,21 +747,22 @@ const SubmissionsPage = () => {
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
         Object.keys(submission.data).forEach((key) => {
-          if (!currentFieldNames.has(key)) {
+          // payload key colliding w/ built-in column id would construct a duplicate id silently
+          if (!currentFieldNames.has(key) && !RESERVED_COLUMN_IDS.has(key)) {
             orphaned.add(key);
           }
         });
       }
     });
 
-    // Only update ref if the set actually changed
-    const prevKeys = [...orphanedFieldNamesRef.current].toSorted().join(",");
-    const nextKeys = [...orphaned].toSorted().join(",");
-    if (prevKeys !== nextKeys) {
-      orphanedFieldNamesRef.current = orphaned;
-    }
-    return orphanedFieldNamesRef.current;
+    return [...orphaned].toSorted().join(",");
   }, [allSubmissions, formElements]);
+
+  // New Set only when the sorted key changes → stable identity for the columns memo below.
+  const orphanedFieldNames = useMemo(
+    () => new Set(orphanedKey ? orphanedKey.split(",") : []),
+    [orphanedKey],
+  );
 
   // Derive Columns from PUBLISHED Form Content (not draft)
   const { columns } = useMemo(
@@ -657,70 +786,169 @@ const SubmissionsPage = () => {
   );
 
   const table = useAppTable({
-    data: submissions,
+    key: "submissions",
+    data: allSubmissions,
     columns,
     state: {
-      sorting,
       globalFilter,
-      rowSelection,
-      columnVisibility,
-      columnPinning,
-      columnOrder,
+      rowSelection: effectiveRowSelection,
+    },
+    initialState: {
+      columnVisibility: { last_step_reached: false, is_completed: false },
     },
     enableRowSelection: true,
+    enableColumnPinning: false,
     onRowSelectionChange: setRowSelection,
-    onColumnVisibilityChange: setColumnVisibility,
-    onColumnPinningChange: setColumnPinning,
-    onColumnOrderChange: setColumnOrder,
-    onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
-    autoResetPageIndex: false,
+    // infinite scroll; server pages, table must not slice rows
+    manualPagination: true,
+    rowCount: totalCount,
+    getColumnCanGlobalFilter: (column) =>
+      !["submitted_at", "last_step_reached", "is_completed"].includes(column.id),
+    globalFilterFn: (row, columnId, value) => {
+      const raw = row.getValue(columnId);
+
+      // empty cells render "-"; without this, hyphen searches match every blank cell
+      if (raw == null || raw === "") return false;
+
+      return formatSubmissionValue(raw).toLowerCase().includes(String(value).toLowerCase());
+    },
     columnResizeMode: "onChange",
     getRowId: (row) => row.id,
   });
 
-  const { handleBulkDelete, handleExportSelected, handleDownloadCSV } =
-    useSubmissionExportAndDelete({
-      formId,
-      queryClient,
-      columns,
-      table,
-      rowSelection,
-      setRowSelection,
-    });
+  // tab = column filter on hidden is_completed; needs `table`, so defined after useAppTable
+  const setTab = useCallback(
+    (tab: "all" | "completed" | "partial") => {
+      // re-clicking the active tab must not wipe an in-progress selection
+      if (tab === activeTab) return;
+      setActiveTab(tab);
+      table.setColumnFilters(
+        tab === "all" ? [] : [{ id: "is_completed", value: tab === "completed" }],
+      );
+      setRowSelection({});
+    },
+    [table, activeTab],
+  );
+
+  const handleSetActiveTabAll = useCallback(() => setTab("all"), [setTab]);
+  const handleSetActiveTabCompleted = useCallback(() => setTab("completed"), [setTab]);
+  const handleSetActiveTabPartial = useCallback(() => setTab("partial"), [setTab]);
+
+  // Registers the table with TanStack Devtools; no-op when no devtools listening.
+  useTanStackTableDevtools(table);
+
+  const {
+    handleBulkDelete,
+    handleExportSelected,
+    handleExport,
+    bulkDeleteOpen,
+    setBulkDeleteOpen,
+    bulkDeleteCount,
+    confirmBulkDelete,
+  } = useSubmissionExportAndDelete({
+    formId,
+    queryClient,
+    table,
+    setRowSelection,
+  });
 
   useSubmissionsHotkeys({
     table,
-    rowSelection,
+    rowSelection: effectiveRowSelection,
     setRowSelection,
     onExport: handleExportSelected,
     onBulkDelete: handleBulkDelete,
   });
 
+  // Figma 26595-31672: list = the data-grid table; single = one submission rendered read-only.
+  const [view, setView] = useState<"table" | "single">("table");
+
+  // Single-view cursor lifted to the page so the toolbar renders prev/next + "X of N" (Figma
+  // 27015:20773); the per-submission nav no longer lives inside the record card.
+  const singleRows = table.getRowModel().rows;
+  const [singleIndex, setSingleIndex] = useState(0);
+  const safeSingleIndex = Math.min(singleIndex, Math.max(0, singleRows.length - 1));
+
+  // Slide between submissions via the View Transitions API; it snapshots the record and animates on the compositor, so the swap stays smooth across the heavy form remount.
+  // dir drives the slide direction in CSS (styles.css [data-bf-subnav]); falls back to instant.
+  const runSubmissionNav = (dir: "prev" | "next", apply: () => void) => {
+    const doc = document as Document & {
+      startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+    };
+
+    if (typeof doc.startViewTransition !== "function") {
+      apply();
+
+      return;
+    }
+
+    doc.documentElement.dataset.bfSubnav = dir;
+    const transition = doc.startViewTransition(() => flushSync(apply));
+    void transition.finished.finally(() => {
+      delete doc.documentElement.dataset.bfSubnav;
+    });
+  };
+
+  const goPrevSubmission = () =>
+    runSubmissionNav("prev", () => setSingleIndex(Math.max(0, safeSingleIndex - 1)));
+
+  const goNextSubmission = () => {
+    if (hasNextPage && safeSingleIndex >= singleRows.length - 2) void fetchNextPage();
+    runSubmissionNav("next", () =>
+      setSingleIndex(Math.min(safeSingleIndex + 1, singleRows.length)),
+    );
+  };
+
   return (
     <table.AppTable>
-      <div className="flex h-full min-h-0 min-w-0 flex-col bg-background">
+      <div className="flex h-full min-h-0 min-w-0 flex-col bg-background pl-5">
         <SubmissionsToolbar
           activeTab={activeTab}
-          allCount={allSubmissions.length}
-          completedCount={completedCount}
-          partialCount={partialCount}
           globalFilter={globalFilter}
-          table={table}
+          view={view}
+          onViewChange={setView}
           onSetTabAll={handleSetActiveTabAll}
           onSetTabCompleted={handleSetActiveTabCompleted}
           onSetTabPartial={handleSetActiveTabPartial}
           onGlobalFilterChange={handleGlobalFilterChange}
-          onDownloadCSV={handleDownloadCSV}
+          onExport={handleExport}
+          totalCount={totalCount}
+          singleCurrent={Math.min(safeSingleIndex + 1, totalCount)}
+          onPrevSubmission={goPrevSubmission}
+          onNextSubmission={goNextSubmission}
+          canPrevSubmission={safeSingleIndex > 0}
+          canNextSubmission={safeSingleIndex < singleRows.length - 1 || hasNextPage}
         />
 
         <SubmissionPreviewDialog file={previewFile} onClose={closePreview} />
 
+        <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete submissions</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {bulkDeleteCount} submission
+                {bulkDeleteCount > 1 ? "s" : ""}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmBulkDelete}
+                className="bg-destructive text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <AnimatePresence>
-            {Object.keys(rowSelection).length > 0 && (
+            {Object.keys(effectiveRowSelection).length > 0 && (
               <SubmissionBulkActionBar
-                count={Object.keys(rowSelection).length}
+                count={Object.keys(effectiveRowSelection).length}
                 onExport={handleExportSelected}
                 onDelete={handleBulkDelete}
                 onClear={handleClearSelection}
@@ -728,50 +956,74 @@ const SubmissionsPage = () => {
             )}
           </AnimatePresence>
 
-          <table.DataGrid
-            recordCount={totalCount}
-            isLoading={isLoadingSubmissions}
-            tableLayout={{
-              dense: true,
-              columnsResizable: true,
-              columnsPinnable: false,
-              columnsVisibility: true,
-              columnsMovable: true,
-              headerSticky: true,
-              headerBackground: false,
-              headerBorder: true,
-              rowBorder: true,
-            }}
-            emptyMessage={
-              <div className="flex flex-col items-center justify-center gap-y-3 py-16 opacity-50">
-                <div className="rounded-full bg-muted p-3">
-                  <FilterIcon className="size-6" />
+          {view === "single" ? (
+            <SubmissionSingleView
+              rows={singleRows}
+              index={safeSingleIndex}
+              form={bootstrapData?.form ?? null}
+              formId={formId}
+            />
+          ) : (
+            <table.DataGrid
+              recordCount={totalCount}
+              className=""
+              isLoading={isLoadingSubmissions}
+              tableLayout={{
+                dense: true,
+                columnsResizable: true,
+                columnsPinnable: false,
+                columnsVisibility: true,
+                columnsMovable: true,
+                headerSticky: true,
+                headerBackground: false,
+                headerBorder: true,
+                rowBorder: true,
+              }}
+              // Figma 26566:45584 scoped typography: header labels gray-500/0.02em (descendant
+              // selector out-specificities the shared header color), body cells gray-700.
+              tableClassNames={{
+                // Header divider = gray-100 (Figma 26566:46076 border-b gray/100); resize handle
+                // line hidden so there are no column dividers. Label colors are set per-header.
+                headerRow: "[&>th]:border-(--color-gray-100)",
+                header: "[&_.cursor-col-resize]:before:bg-transparent",
+                // Row = exactly 44px (Figma): the height-adding border-b is removed and the divider
+                // is drawn as a zero-height inset shadow in gray-100 (matches Figma's border-b
+                // gray/100, 1px). Body text gray-700.
+                bodyRow:
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- zero-height inset-shadow divider replaces the height-adding border; no utility equivalent
+                  "[&>td]:text-foreground [&:not(:last-child)>td]:border-b-0! [&:not(:last-child)>td]:shadow-[inset_0_-1px_0_var(--color-gray-100)]",
+              }}
+              emptyMessage={
+                <div className="flex flex-col items-center justify-center gap-y-3 py-16 opacity-50">
+                  <div className="rounded-full bg-muted p-3">
+                    <FilterIcon className="size-6" />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p>No results found</p>
+                    <p className="text-xs text-muted-foreground">
+                      {globalFilter
+                        ? "Try adjusting your search query."
+                        : "When people fill out your form, their responses will appear here."}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1 text-center">
-                  <p>No results found</p>
-                  <p className="text-xs text-muted-foreground">
-                    {globalFilter
-                      ? "Try adjusting your search query."
-                      : "When people fill out your form, their responses will appear here."}
-                  </p>
-                </div>
+              }
+            >
+              <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+                <table.DataGridContainer
+                  border={false}
+                  className="min-h-0 flex-1 content-start overflow-x-auto overflow-y-hidden border-b border-border pr-6"
+                >
+                  <table.DataGridVirtualTable
+                    onFetchMore={fetchNextPage}
+                    hasMore={hasNextPage}
+                    isFetchingMore={isFetchingNextPage}
+                    fetchMoreOffset={5}
+                  />
+                </table.DataGridContainer>
               </div>
-            }
-          >
-            <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-              <table.DataGridContainer
-                border={false}
-                className="min-h-0 flex-1 content-start overflow-x-auto overflow-y-hidden border-b border-border"
-              >
-                <table.DataGridVirtualTable
-                  onFetchMore={fetchNextPage}
-                  hasMore={hasNextPage}
-                  isFetchingMore={isFetchingNextPage}
-                  fetchMoreOffset={5}
-                />
-              </table.DataGridContainer>
-            </div>
-          </table.DataGrid>
+            </table.DataGrid>
+          )}
         </div>
       </div>
     </table.AppTable>
@@ -781,86 +1033,167 @@ const SubmissionsPage = () => {
 interface UseSubmissionExportAndDeleteOptions {
   formId: string;
   queryClient: ReturnType<typeof useQueryClient>;
-  columns: ColumnDef<DataGridFeatures, SerializedSubmission>[];
   table: DataGridApi<SerializedSubmission>;
-  rowSelection: RowSelectionState;
   setRowSelection: (selection: RowSelectionState) => void;
 }
 
 const useSubmissionExportAndDelete = ({
   formId,
   queryClient,
-  columns,
   table,
-  rowSelection,
   setRowSelection,
 }: UseSubmissionExportAndDeleteOptions) => {
-  const handleBulkDelete = useCallback(async () => {
-    const selectedIds = Object.keys(rowSelection);
-    if (selectedIds.length === 0) return;
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedIds.length} submission${selectedIds.length > 1 ? "s" : ""}?`,
-    );
-    if (!confirmed) return;
+  // Opens the confirm dialog (AlertDialog pattern) instead of a native window.confirm.
+  const handleBulkDelete = useCallback(() => {
+    const count = table.getSelectedRowModel().rows.length;
+
+    if (count === 0) return;
+    setBulkDeleteCount(count);
+    setBulkDeleteOpen(true);
+  }, [table]);
+
+  const confirmBulkDelete = useCallback(async () => {
+    // fresh selection at confirm time; same source export reads, never stale selection keys
+    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.id);
+    setBulkDeleteOpen(false);
+
+    if (selectedIds.length === 0) return;
 
     await deleteSubmissionsBulk({
       data: { formId, submissionIds: selectedIds },
     });
     void queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
     setRowSelection({});
-  }, [formId, queryClient, rowSelection, setRowSelection]);
+  }, [formId, queryClient, table, setRowSelection]);
+
+  // Headers + string cells from the same visible-column source; no header/cell drift.
+  const getExportData = useCallback(
+    (rows: Row<DataGridFeatures, SerializedSubmission>[]) => {
+      const exportColumns = table.getVisibleLeafColumns().filter((c) => c.id !== "select");
+
+      const headers = exportColumns.map(
+        (c) =>
+          c.columnDef.meta?.headerTitle ??
+          (typeof c.columnDef.header === "string" ? c.columnDef.header : c.id),
+      );
+
+      const data = rows.map((row) => exportColumns.map((c) => csvFormat(row.getValue(c.id))));
+
+      return { headers, data };
+    },
+    [table],
+  );
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.setAttribute("hidden", "");
+    a.setAttribute("href", url);
+    a.setAttribute("download", filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   const downloadCSV = useCallback(
     (rows: Row<DataGridFeatures, SerializedSubmission>[], filename: string) => {
       if (rows.length === 0) return;
-
-      const headers = columns
-        .flatMap((col) => {
-          if (col.id === "select") return [];
-          if (typeof col.header === "string") return [col.header];
-          if (col.id === "submitted_at") return ["Submitted At"];
-          return [col.id || "Field"];
-        })
-        .join(",");
-
-      const csvRows = rows
-        .map((row) =>
-          row
-            .getVisibleCells()
-            .flatMap((cell: Cell<DataGridFeatures, SerializedSubmission, unknown>) => {
-              if (cell.column.id === "select") return [];
-              const formatted = csvFormat(cell.getValue()).replaceAll('"', '""');
-              return [`"${formatted}"`];
-            })
-            .join(","),
-        )
-        .join("\n");
-
-      const csv = `${headers}\n${csvRows}`;
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.setAttribute("hidden", "");
-      a.setAttribute("href", url);
-      a.setAttribute("download", filename);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const { headers, data } = getExportData(rows);
+      const escapeCSV = (s: string) => `"${s.replaceAll('"', '""')}"`;
+      const csv = [headers, ...data].map((r) => r.map(escapeCSV).join(",")).join("\n");
+      triggerDownload(new Blob([csv], { type: "text/csv" }), filename);
     },
-    [columns],
+    [getExportData],
+  );
+
+  // Excel: HTML table with the .xls/ms-excel mime; opens natively, no dependency.
+  const downloadExcel = useCallback(
+    (rows: Row<DataGridFeatures, SerializedSubmission>[], filename: string) => {
+      if (rows.length === 0) return;
+      const { headers, data } = getExportData(rows);
+
+      const esc = (s: string) =>
+        s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+      const thead = `<tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>`;
+
+      const tbody = data
+        .map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`)
+        .join("");
+
+      const html = `﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"/></head><body><table border="1">${thead}${tbody}</table></body></html>`;
+      triggerDownload(new Blob([html], { type: "application/vnd.ms-excel" }), filename);
+    },
+    [getExportData],
+  );
+
+  // PDF: print window with a styled table; the browser's "Save as PDF" handles the file.
+  // Built via DOM + textContent (no document.write / innerHTML) so cell values are inert.
+  const printPDF = useCallback(
+    (rows: Row<DataGridFeatures, SerializedSubmission>[]) => {
+      if (rows.length === 0) return;
+      const { headers, data } = getExportData(rows);
+      const win = window.open("", "_blank");
+
+      if (!win) return;
+      const doc = win.document;
+      doc.title = "Submissions";
+      const style = doc.createElement("style");
+      style.textContent =
+        "body{font-family:system-ui,sans-serif;padding:24px;color:#141414}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e0e0e0;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}";
+      doc.head.appendChild(style);
+      const table = doc.createElement("table");
+
+      const addRow = (cells: string[], tag: "th" | "td") => {
+        const tr = doc.createElement("tr");
+
+        for (const cell of cells) {
+          const el = doc.createElement(tag);
+          el.textContent = cell;
+          tr.appendChild(el);
+        }
+
+        table.appendChild(tr);
+      };
+
+      addRow(headers, "th");
+
+      for (const row of data) addRow(row, "td");
+      doc.body.appendChild(table);
+      win.focus();
+      win.print();
+    },
+    [getExportData],
   );
 
   const handleExportSelected = useCallback(() => {
     downloadCSV(table.getSelectedRowModel().rows, `submissions-selected-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
-  const handleDownloadCSV = useCallback(() => {
-    downloadCSV(table.getRowModel().rows, `submissions-${formId}.csv`);
-  }, [downloadCSV, formId, table]);
+  const handleExport = useCallback(
+    (format: "csv" | "pdf" | "excel") => {
+      const rows = table.getRowModel().rows;
 
-  return { handleBulkDelete, handleExportSelected, handleDownloadCSV };
+      if (format === "excel") downloadExcel(rows, `submissions-${formId}.xls`);
+      else if (format === "pdf") printPDF(rows);
+      else downloadCSV(rows, `submissions-${formId}.csv`);
+    },
+    [downloadCSV, downloadExcel, printPDF, formId, table],
+  );
+
+  return {
+    handleBulkDelete,
+    handleExportSelected,
+    handleExport,
+    bulkDeleteOpen,
+    setBulkDeleteOpen,
+    bulkDeleteCount,
+    confirmBulkDelete,
+  };
 };
 
 interface UseSubmissionsHotkeysOptions {
@@ -883,7 +1216,8 @@ const useSubmissionsHotkeys = ({
   useHotkey(
     HOTKEYS.SUBMISSIONS_SELECT_ALL,
     () => {
-      table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
+      // all-rows APIs walk the filtered model; correct for infinite scroll + tab/search filters
+      table.toggleAllRowsSelected(!table.getIsAllRowsSelected());
     },
     { conflictBehavior: "replace", ignoreInputs: true },
   );
@@ -908,118 +1242,261 @@ const useSubmissionsHotkeys = ({
   });
 };
 
-interface SubmissionsToolbarProps {
-  activeTab: "all" | "completed" | "partial";
-  allCount: number;
-  completedCount: number;
-  partialCount: number;
-  globalFilter: string;
-  table: DataGridApi<SerializedSubmission>;
-  onSetTabAll: () => void;
-  onSetTabCompleted: () => void;
-  onSetTabPartial: () => void;
-  onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDownloadCSV: () => void;
-}
+// Individual-submission view (Figma 27015:20852): borderless record, a date + status-badge header
+// rule over the read-only form. Nav lives in the toolbar. Form subtree is `inert` (no interactive fields).
+const SubmissionSingleView = ({
+  rows,
+  index,
+  form,
+  formId,
+}: {
+  rows: Row<DataGridFeatures, SerializedSubmission>[];
+  index: number;
+  form: {
+    content: unknown;
+    title: string;
+    icon: string | null;
+    cover: string | null;
+    settings: unknown;
+    customization: Record<string, string>;
+  } | null;
+  formId: string;
+}) => {
+  const safeIndex = Math.min(index, Math.max(0, rows.length - 1));
+  const submission = rows[safeIndex]?.original;
 
-const SubmissionsToolbar = ({
-  activeTab,
-  allCount,
-  completedCount,
-  partialCount,
-  globalFilter,
-  table,
-  onSetTabAll,
-  onSetTabCompleted,
-  onSetTabPartial,
-  onGlobalFilterChange,
-  onDownloadCSV,
-}: SubmissionsToolbarProps) => {
-  const activeCount =
-    activeTab === "all" ? allCount : activeTab === "completed" ? completedCount : partialCount;
-  const activeLabel =
-    activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial";
+  // Single-submission view shows only the answered fields (Figma 27015:20852); strip the
+  // formHeader node (cover/icon/title) so the record opens straight on the first field.
+  const bodyContent = useMemo(
+    () => ((form?.content as Value | undefined) ?? []).filter((node) => node.type !== "formHeader"),
+    [form],
+  );
+
+  if (!form || !submission) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        No submission to display
+      </div>
+    );
+  }
+
+  const done = submission.isCompleted;
+
   return (
-    <div className="shrink-0 border-border px-5 pt-2.5 pb-4.5">
-      <div className="flex items-center justify-between">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2 rounded-lg bg-accent/60 font-normal hover:bg-accent"
-              />
-            }
-          >
-            <TextSwap key={activeLabel}>{activeLabel}</TextSwap>
-            <span className="opacity-60">
-              <NumberPopIn value={activeCount} />
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      {/* The record (header + form) carries a view-transition-name so prev/next slides it as a GPU
+          snapshot, smooth across the heavy form remount (page wraps the index change in a document view transition; see goPrev/goNextSubmission). */}
+      <div className="flex flex-col [view-transition-name:bf-submission-record]">
+        {/* Header (Figma 27015:20853): submission date + status badge, bottom rule. Same container
+            (mx-auto, --bf-page-width) as the form body below so the date aligns with the fields. */}
+        <div className="mx-auto w-full max-w-[var(--bf-page-width,700px)] px-8 pt-1 md:px-0">
+          <div className="flex items-center gap-3 border-b border-border pb-3">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
+            <span className="min-w-0 flex-1 truncate text-base tracking-[0.28px] text-foreground">
+              {SUBMISSION_DATE_FORMATTER.format(new Date(submission.createdAt))}
             </span>
-            <ChevronDownIcon className="size-2.5 shrink-0 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-36">
-            <DropdownMenuItem onClick={onSetTabAll} className="gap-2">
-              All
-              <span className="ml-auto text-xs text-muted-foreground">{allCount}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSetTabCompleted} className="gap-2">
-              Completed
-              <span className="ml-auto text-xs text-muted-foreground">{completedCount}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSetTabPartial} className="gap-2">
-              Partial
-              <span className="ml-auto text-xs text-muted-foreground">{partialCount}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <span
+              className={cn(
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em badge tracking has no scale equivalent
+                "inline-flex items-center rounded-full px-1.5 py-0.75 text-xs font-medium tracking-[0.02em]",
+                // Figma 27015:20855, Completed green-soft pair; Partial amber pair.
+                done
+                  ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
+                  : "bg-(--color-partial-soft) text-(--color-partial-on-soft)",
+              )}
+            >
+              {done ? "Completed" : "Partial"}
+            </span>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-1.5">
-          <ButtonGroup className="w-[180px] rounded-lg border-none transition-[width] duration-200 ease-out focus-within:w-[240px]">
-            <ButtonGroupText className="h-7 w-full gap-1.5 rounded-lg border border-transparent bg-accent/60 px-2.5 text-[13px]">
-              <Search className="size-4" strokeWidth={2} color="var(--color-gray-alpha-600)" />
-              <input
-                placeholder="Search responses..."
-                className="placeholder:text-normal min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] outline-none placeholder:text-[0.8rem] placeholder:text-(--color-gray-alpha-600)"
-                value={globalFilter}
-                onChange={onGlobalFilterChange}
-                aria-label="Search responses"
-                name="search"
-              />
-            </ButtonGroupText>
-          </ButtonGroup>
-          <table.DataGridColumnVisibility
-            trigger={
-              <Button
-                variant="ghost"
-                size="sm"
-                prefix={
-                  <Columns className="size-4" strokeWidth="2" color="var(--color-gray-alpha-600)" />
-                }
-                suffix={<ChevronDownIcon className="size-2.5 shrink-0 text-muted-foreground" />}
-                className="text-normal inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg rounded-md bg-accent/60 px-2.5 text-[0.8rem] text-(--color-gray-alpha-600) transition-colors hover:bg-accent"
-              >
-                Columns
-              </Button>
-            }
+        {/* Body; read-only preview populated with this submission's values. */}
+        {/* `inert` (React 19) makes the whole form non-interactive; read-only submission view. */}
+        <div inert>
+          <FormPreviewFromPlate
+            key={submission.id}
+            content={bodyContent}
+            // Force card presentation: a submission record reads as one flat scroll, never
+            // field-by-field. readOnly stacks all steps and hides nav + repeatable add/remove.
+            settings={{
+              ...((form.settings ?? {}) as PublicFormSettings),
+              presentationMode: "card",
+            }}
+            customization={form.customization}
+            formId={formId}
+            initialFormData={(submission.data ?? {}) as Record<string, unknown>}
+            layout="editor"
+            hideTitle
+            readOnly
           />
-
-          <Button
-            variant="ghost"
-            size="sm"
-            prefix={
-              <Download strokeWidth={2} color="var(--color-gray-alpha-600)" className="size-4" />
-            }
-            className="text-normal inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg rounded-md bg-accent/60 px-2.5 text-[0.8rem] text-(--color-gray-alpha-600) transition-colors hover:bg-accent"
-            onClick={onDownloadCSV}
-          >
-            Download CSV
-          </Button>
         </div>
       </div>
     </div>
   );
 };
+
+interface SubmissionsToolbarProps {
+  activeTab: "all" | "completed" | "partial";
+  globalFilter: string;
+  view: "table" | "single";
+  onViewChange: (view: "table" | "single") => void;
+  onSetTabAll: () => void;
+  onSetTabCompleted: () => void;
+  onSetTabPartial: () => void;
+  onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onExport: (format: "csv" | "pdf" | "excel") => void;
+  /** Total submissions, shown as a count badge beside the title. */
+  totalCount: number;
+  /** Single-view cursor (1-based) + nav, rendered as a "X of N" pill in single view. */
+  singleCurrent: number;
+  onPrevSubmission: () => void;
+  onNextSubmission: () => void;
+  canPrevSubmission: boolean;
+  canNextSubmission: boolean;
+}
+
+const SubmissionsToolbar = ({
+  activeTab,
+  globalFilter,
+  view,
+  onViewChange,
+  onSetTabAll,
+  onSetTabCompleted,
+  onSetTabPartial,
+  onGlobalFilterChange,
+  onExport,
+  totalCount,
+  singleCurrent,
+  onPrevSubmission,
+  onNextSubmission,
+  canPrevSubmission,
+  canNextSubmission,
+}: SubmissionsToolbarProps) => (
+  <div className="shrink-0 border-border pt-8 pr-6 pb-5">
+    <div className="flex items-center gap-3">
+      {/* Figma 27015:20774: title + total-count badge on the left, controls on the right. */}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.015em tracking have no scale equivalent */}
+        <h2 className="truncate text-[15px] font-semibold tracking-[0.015em] text-foreground">
+          Submissions
+        </h2>
+        {totalCount > 0 && (
+          // Inverted chip (Figma gray/950 + white): bg-foreground/text-background stays a dark
+          // pill with light text in light mode and flips legibly in dark mode.
+          <span className="inline-flex shrink-0 items-center rounded-full bg-foreground px-1.25 py-px text-xs text-background tabular-nums">
+            {totalCount}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {/* Search / pager / Download / Filter all show in both views (Figma 27015:20773). */}
+        {/* Search; matches the dashboard toolbar pill (gray/100 surface, search-alt icon). */}
+        {/* Figma 27015:16994, 170×28, gray/100, pl-8 pr-10 gap-6, 8px radius; expands on focus. */}
+        <ToolbarSearch
+          value={globalFilter}
+          onChange={onGlobalFilterChange}
+          aria-label="Search responses"
+          name="search"
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- focus-expand width transition has no plain-utility equivalent
+          className="transition-[width] duration-200 ease-out focus-within:w-[260px]"
+        />
+
+        {/* Per-submission pager (Figma 27015:20788); single view only, nav moved out of the card. */}
+        {view === "single" && (
+          <div className="flex h-7 items-center gap-1.5 rounded-lg bg-secondary pr-1.5 pl-1">
+            <button
+              type="button"
+              onClick={onPrevSubmission}
+              disabled={!canPrevSubmission}
+              aria-label="Previous submission"
+              className="flex size-5 items-center justify-center rounded-md text-foreground transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.14px tracking have no scale equivalent */}
+            <span className="font-case text-base font-[450] tracking-[0.14px] text-foreground tabular-nums">
+              {singleCurrent} of {totalCount}
+            </span>
+            <button
+              type="button"
+              onClick={onNextSubmission}
+              disabled={!canNextSubmission}
+              aria-label="Next submission"
+              className="flex size-5 items-center justify-center rounded-md text-foreground transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Download (Figma 27015:21450), pill with chevron; CSV / PDF / Excel. */}
+        <ExportMenu
+          onExport={onExport}
+          contentClassName="w-40"
+          trigger={
+            <ToolbarPill
+              variant="ghost"
+              prefix={<Download className="size-4 shrink-0" strokeWidth={2} />}
+              suffix={<FigSmallDownIcon className="size-4 shrink-0" />}
+            />
+          }
+        >
+          Download
+        </ExportMenu>
+
+        {/* Filter (status); static "Filter" title, the active tab is ticked in the dropdown
+              (matches the dashboard FilterMenu). */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <ToolbarPill
+                variant="ghost"
+                prefix={<FigFilterIcon className="size-4 shrink-0" />}
+                suffix={<FigSmallDownIcon className="size-4 shrink-0" />}
+              />
+            }
+          >
+            Filter
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Filter</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onSetTabAll}>
+                <span className="flex-1 text-left">All</span>
+                {activeTab === "all" && <CheckIcon className="size-4" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onSetTabCompleted}>
+                <span className="flex-1 text-left">Completed</span>
+                {activeTab === "completed" && <CheckIcon className="size-4" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onSetTabPartial}>
+                <span className="flex-1 text-left">Partial</span>
+                {activeTab === "partial" && <CheckIcon className="size-4" />}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* View toggle (Figma 26586:29914): list | board segmented control. Shared animated
+              ViewToggle so the active pill slides, matching the share-sidebar tabs. */}
+        <ViewToggle
+          value={view}
+          onValueChange={onViewChange}
+          listClassName="bg-muted"
+          options={[
+            { value: "table", icon: <ListViewIcon className="size-4" />, label: "Table view" },
+            {
+              value: "single",
+              icon: <CardsViewIcon className="size-4" />,
+              label: "Submission view",
+            },
+          ]}
+        />
+      </div>
+    </div>
+  </div>
+);
 
 const SubmissionPreviewDialog = ({
   file,
@@ -1156,13 +1633,19 @@ export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
   ssr: "data-only",
-  loader: async ({ context, params }) => {
+  // Loader and component share these objects; a second call site would silently warm one key
+  // while the component fetches another. Pinned by src/test/route-query-prefetch.test.ts.
+  context: ({ params }) => ({
+    bootstrapQueryOptions: submissionsBootstrapQueryOptions(params.formId),
+    submissionsQueryOptions: submissionsInfiniteQueryOptions(params.formId),
+  }),
+  loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData({
-        ...submissionsBootstrapQueryOptions(params.formId),
+        ...context.bootstrapQueryOptions,
         revalidateIfStale: true,
       }),
-      context.queryClient.ensureInfiniteQueryData(submissionsInfiniteQueryOptions(params.formId)),
+      context.queryClient.ensureInfiniteQueryData(context.submissionsQueryOptions),
     ]);
   },
   staleTime: 30_000,

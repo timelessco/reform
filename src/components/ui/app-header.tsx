@@ -9,7 +9,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Loader2Icon, MoreHorizontalIcon, PaletteIcon, PencilIcon } from "@/components/ui/icons";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  EditLineSmIcon,
+  FolderIcon,
+  Loader2Icon,
+  MoreHorizontalIcon,
+  PlayIcon,
+} from "@/components/ui/icons";
+import { FigAddSmIcon } from "@/components/dashboard/dashboard-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,26 +36,48 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextSwap } from "@/components/transitions/text-swap";
-import { toggleFavoriteLocal, updateFormStatus } from "@/collections";
+import { useProPublishGate } from "@/components/form-builder/pro-publish-gate";
+import type { PublishOptions } from "@/components/form-builder/pro-publish-gate";
+import { toggleFavoriteLocal, createFormLocal, updateFormStatus } from "@/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
-import { useFormMeta, useWorkspace } from "@/hooks/use-live-hooks";
+import { orgDataForLayoutQueryOptions } from "@/lib/server-fn/org";
+import { sortByManualOrder } from "@/lib/sort-utils";
+import {
+  discardChanges,
+  publishForm,
+  publishFormSettings,
+  useFormPublishStatus,
+  useHasUnpublishedChanges,
+} from "@/hooks/use-form-versions";
+import { parseError } from "@/lib/errors/parse";
+import { useFormMeta, useOrgWorkspaces, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
+import { log } from "evlog";
+import { useGlimm } from "glimm/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { LogoToggle } from "./logo";
 import { useSidebarSafe } from "./sidebar";
+import { useCreateFromTemplate } from "@/hooks/use-create-from-template";
+import { findTemplateMeta } from "@/lib/form-templates";
+import type { FormTemplateId } from "@/lib/form-templates";
 
 interface AppHeaderProps {
   isDistractionHidden?: boolean;
 }
 
+// Header icon buttons (⋯, preview, edit): 28×28, 5px padding, 8px radius, gray-800 icon (Figma system-flat).
+// Color lives here so hover:text-foreground reaches the icon via currentColor — icons must NOT pin their own color.
+const HEADER_ICON_BUTTON_CLS = "size-7 rounded-lg p-1.25 text-foreground hover:text-foreground";
+
 export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const { formId, workspaceId } = useParams({ strict: false });
+
   const {
     state,
     toggleSidebar: toggleMainSidebar,
@@ -49,11 +87,20 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     toggleSidebar: () => {},
     isMobile: false,
   };
+
   const pathname = useLocation({ select: (s) => s.pathname });
   const isDashboard = pathname === "/dashboard";
+  const isTemplatesIndex = pathname === "/templates";
+  const isTemplateDetail = pathname.startsWith("/templates/") && pathname !== "/templates";
+  const isTemplatesRoute = isTemplatesIndex || isTemplateDetail;
+  const templateIdFromPath = isTemplateDetail ? pathname.split("/")[2] : undefined;
+  const templateMeta = templateIdFromPath ? findTemplateMeta(templateIdFromPath) : undefined;
   const isLandingPage = pathname === "/";
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
+  const isSettingsRoute = pathname.endsWith("/settings");
+  const isSubmissionsRoute = pathname.endsWith("/submissions");
+  const isAnalyticsRoute = pathname.endsWith("/analytics");
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
@@ -74,8 +121,15 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const toggleVersionHistory = () => {
     toggleEditorSidebar("history");
   };
+
+  // Form-level settings is a full page (not the right sidebar). Navigate there.
   const toggleSettingsSidebar = () => {
-    toggleEditorSidebar("settings");
+    if (workspaceId && formId) {
+      void navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/settings",
+        params: { workspaceId, formId },
+      });
+    }
   };
 
   const toggleCustomizeSidebar = () => {
@@ -89,8 +143,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const toggleShareSidebar = () => {
     if (isShareSidebarOpen) {
       closeSidebar();
+
       return;
     }
+
     if (!isEditRoute && workspaceId && formId) {
       openShare();
       enterPreview();
@@ -99,8 +155,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         params: { workspaceId, formId },
         search: { force: true },
       });
+
       return;
     }
+
     enterPreview();
     openShare();
   };
@@ -113,6 +171,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const canShare = savedDocs?.[0]?.status === "published" || hasPublishedVersion;
 
   type WorkflowState = "idle" | "publishing" | "discarding";
+
   const [workflowState, setWorkflowState] = useState<WorkflowState>("idle");
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
@@ -126,6 +185,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     handleToggleFavorite,
     handleDeleteForm,
     handlePublish,
+    proPublishDialog,
     handleDiscardChanges,
     handleEditForm,
     handleDismissSidebars,
@@ -136,7 +196,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     isEditorSidebarOpen,
     isLeftSidebarOpen,
     navigate,
-    openShare,
     handleCloseSidebar,
     toggleMainSidebar,
     toggleShareSidebar,
@@ -164,24 +223,40 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     handleDismissSidebars,
   });
 
+  // Preview (▷) is always shown. On /edit it toggles the inline preview drawer; elsewhere
+  // (e.g. submissions) there's no drawer, so it enters preview and navigates into the editor.
+  const handlePreviewForm = () => {
+    if (isEditRoute) {
+      togglePreview();
+
+      return;
+    }
+
+    if (workspaceId && formId) {
+      enterPreview();
+      void navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+        params: { workspaceId, formId },
+        search: { force: true },
+      });
+    }
+  };
+
   const menuItems = buildFormBuilderMenuItems({
     isEditRoute,
     hasPublishedVersion,
-    hasUnpublishedChanges,
-    canShare,
     workspaceId,
     formId,
-    onToggleFavorite: handleToggleFavorite,
     onNavigateInsights: () => {
       if (workspaceId && formId) {
         void navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/insights",
+          to: "/workspace/$workspaceId/form-builder/$formId/analytics",
           params: { workspaceId, formId },
         });
       }
     },
     onToggleVersionHistory: toggleVersionHistory,
-    onToggleShareSidebar: toggleShareSidebar,
+    onToggleCustomizeSidebar: toggleCustomizeSidebar,
     onToggleSettingsSidebar: toggleSettingsSidebar,
     onSetActiveDialog: setActiveDialog,
   });
@@ -190,7 +265,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     <>
       <header
         className={cn(
-          "group/header -z-10 flex h-10 w-full shrink-0 items-center justify-between bg-background px-2 text-[13px] transition-opacity duration-150 select-none",
+          "group/header -z-10 flex h-11 w-full shrink-0 items-center justify-between bg-background pr-2 pl-4 text-[13px] transition-opacity duration-150 select-none",
           isDistractionHidden && "pointer-events-none opacity-0",
         )}
       >
@@ -221,6 +296,44 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
               </TooltipContent>
             </Tooltip>
           )}
+          {isDashboard && (
+            <span className="inline-flex items-center rounded-lg p-1 text-base font-[450] tracking-[0.14px] text-foreground">
+              Home
+            </span>
+          )}
+          {isTemplatesRoute && (
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center text-base">
+              <Link
+                to="/dashboard"
+                className="rounded-lg p-1 font-[450] tracking-[0.14px] text-muted-foreground hover:text-foreground"
+              >
+                Home
+              </Link>
+              <span aria-hidden className="shrink-0 px-0.5 text-muted-foreground">
+                /
+              </span>
+              {isTemplateDetail ? (
+                <>
+                  <Link
+                    to="/templates"
+                    className="rounded-lg p-1 font-[450] tracking-[0.14px] text-muted-foreground hover:text-foreground"
+                  >
+                    All Templates
+                  </Link>
+                  <span aria-hidden className="shrink-0 px-0.5 text-muted-foreground">
+                    /
+                  </span>
+                  <span className="truncate rounded-lg p-1 font-[450] tracking-[0.14px] text-foreground">
+                    {templateMeta?.label ?? "Template"}
+                  </span>
+                </>
+              ) : (
+                <span className="rounded-lg p-1 font-[450] tracking-[0.14px] text-foreground">
+                  All Templates
+                </span>
+              )}
+            </nav>
+          )}
           {isFormBuilder && savedDocs?.[0] && (
             <HeaderBreadcrumb
               workspace={workspace}
@@ -228,29 +341,25 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
               workspaceId={workspaceId}
               formId={formId}
               isEditRoute={isEditRoute}
+              isSettingsRoute={isSettingsRoute}
+              isSubmissionsRoute={isSubmissionsRoute}
+              isAnalyticsRoute={isAnalyticsRoute}
             />
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
-          {isDashboard && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "px-2.5 font-normal text-gray-700 hover:text-foreground",
-                activeSidebar === "about" && "bg-accent/50 text-foreground",
-              )}
-              onClick={() => toggleEditorSidebar("about")}
-            >
-              About
-            </Button>
+        {/* Header stays constant — preview now lives in its own full-page drawer, so the
+            Share sidebar no longer collapses it to a "Preview" label or hides actions. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {isDashboard && <DashboardHeaderActions />}
+
+          {isTemplateDetail && templateMeta && (
+            <TemplateHeaderActions templateId={templateMeta.id} />
           )}
 
           {isLandingPage && (
             <LandingPageActions
               previewMode={previewMode}
-              activeSidebar={activeSidebar}
               activeMenu={activeMenu}
               onTogglePreview={togglePreview}
               onToggleEditorSidebar={toggleEditorSidebar}
@@ -259,30 +368,33 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             />
           )}
 
-          {isFormBuilder && (
-            <FormBuilderHeaderActions
-              flags={{
-                isEditRoute,
-                hasUnpublishedChanges,
-                isDiscarding,
-                isPublishing,
-                previewMode,
-                canShare,
-                isShareSidebarOpen,
-                isLoadingSavedDocs,
-              }}
-              activeSidebar={activeSidebar}
-              activeMenu={activeMenu}
-              workspaceId={workspaceId}
-              formId={formId}
-              savedDocs={savedDocs}
-              menuItems={menuItems}
-              onTogglePreview={togglePreview}
-              onToggleCustomizeSidebar={toggleCustomizeSidebar}
-              onPublish={handlePublish}
-              onSetActiveMenu={setActiveMenu}
-            />
-          )}
+          {isFormBuilder &&
+            (isSettingsRoute ? (
+              // Settings page: hide editor actions, show only a settings-only Save (Figma 26095-19007).
+              <SettingsHeaderActions formId={formId} />
+            ) : (
+              <FormBuilderHeaderActions
+                flags={{
+                  isEditRoute,
+                  hasUnpublishedChanges,
+                  isDiscarding,
+                  isPublishing,
+                  previewMode,
+                  canShare,
+                  isShareSidebarOpen,
+                  isLoadingSavedDocs,
+                }}
+                activeMenu={activeMenu}
+                workspaceId={workspaceId}
+                formId={formId}
+                savedDocs={savedDocs}
+                menuItems={menuItems}
+                onTogglePreview={handlePreviewForm}
+                onToggleShareSidebar={toggleShareSidebar}
+                onPublish={handlePublish}
+                onSetActiveMenu={setActiveMenu}
+              />
+            ))}
         </div>
       </header>
 
@@ -292,11 +404,13 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         onDeleteForm={handleDeleteForm}
         onDiscardChanges={handleDiscardChanges}
       />
+      {proPublishDialog}
     </>
   );
 };
 
 type ActiveDialog = "delete" | "discard" | null;
+
 type ActiveMenu = "main" | "local" | null;
 
 interface UseAppHeaderFormActionsOptions {
@@ -306,12 +420,23 @@ interface UseAppHeaderFormActionsOptions {
   isEditorSidebarOpen: boolean;
   isLeftSidebarOpen: boolean;
   navigate: ReturnType<typeof useNavigate>;
-  openShare: () => void;
   handleCloseSidebar: () => void;
   toggleMainSidebar: () => void;
   toggleShareSidebar: () => void;
   setWorkflowState: (state: "idle" | "publishing" | "discarding") => void;
 }
+
+// Figma `system-flat` 26701:11571 — dark pill toast, centered along the bottom.
+const showPublishedToast = () =>
+  toast.custom(
+    () => (
+      <div className="flex items-center gap-1.5 rounded-[8px] bg-[#171717] py-2 pr-3 pl-2.5 text-white elevation-md">
+        <CheckIcon className="size-4" />
+        <span className="text-base">Changes Published</span>
+      </div>
+    ),
+    { position: "bottom-center" },
+  );
 
 const useAppHeaderFormActions = ({
   formId,
@@ -320,12 +445,13 @@ const useAppHeaderFormActions = ({
   isEditorSidebarOpen,
   isLeftSidebarOpen,
   navigate,
-  openShare,
   handleCloseSidebar,
   toggleMainSidebar,
   toggleShareSidebar,
   setWorkflowState,
 }: UseAppHeaderFormActionsOptions) => {
+  const { sweep } = useGlimm();
+
   const handleToggleFavorite = async () => {
     if (!sessionUserId || !formId) return;
     await toggleFavoriteLocal(sessionUserId, formId);
@@ -333,6 +459,7 @@ const useAppHeaderFormActions = ({
 
   const handleDeleteForm = async () => {
     if (!formId) return;
+
     try {
       await updateFormStatus(formId, "archived");
       toast.success("Form moved to trash");
@@ -342,36 +469,61 @@ const useAppHeaderFormActions = ({
     }
   };
 
-  const handlePublish = async () => {
-    if (formId && workspaceId) {
-      setWorkflowState("publishing");
-      try {
-        const tx = publishForm(formId);
-        await tx.isPersisted.promise;
-        toast.success("Form published");
-        openShare();
-        void navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/submissions",
-          params: { workspaceId, formId },
-        });
-      } catch (error) {
-        toast.error("Failed to publish form");
-        console.error(error);
-      } finally {
-        setWorkflowState("idle");
-      }
+  // Soft Pro gate: free drafts can hold Pro styles; publishing asks upgrade-or-strip first.
+  const { guardPublish, proPublishDialog } = useProPublishGate(formId);
+
+  const performPublish = async ({ stripProStyles }: PublishOptions) => {
+    if (!formId || !workspaceId) return;
+    setWorkflowState("publishing");
+
+    // Sweep fires on click for instant feedback; glimm awaits the midpoint
+    // callback, so the band holds at peak coverage until publish resolves,
+    // then fades out — no navigation, stay on the editor.
+    const handle = sweep(
+      async () => {
+        try {
+          const tx = publishForm(formId, { stripProStyles });
+
+          // Capture the content thumbnail during the publish round-trip; canvas stays mounted (no
+          // nav). Dynamic import keeps the browser-only capture lib + its server-fn out of SSR.
+          const previewPromise = import("@/lib/og/capture-form-preview")
+            .then((m) => m.captureAndUploadFormPreview(formId))
+            .catch((error) =>
+              log.error({ tag: "app-header", msg: "preview capture failed", error }),
+            );
+
+          await tx.isPersisted.promise;
+          showPublishedToast();
+          // Best-effort: thumbnail (card preview + OG) finishes in the background. Never faults publish.
+          void previewPromise;
+        } catch (error) {
+          toast.error("Failed to publish form");
+          log.error({ tag: "app-header", msg: "publish form failed", error });
+        }
+      },
+      { palette: "prism" },
+    );
+
+    try {
+      await handle.done;
+    } finally {
+      // Always clear the spinner, even if the sweep promise rejects/never settles cleanly.
+      setWorkflowState("idle");
     }
   };
+
+  const handlePublish = () => guardPublish((opts) => void performPublish(opts));
 
   const handleDiscardChanges = async () => {
     if (formId) {
       setWorkflowState("discarding");
+
       try {
         await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");
-        console.error(error);
+        log.error({ tag: "app-header", msg: "discard changes failed", error });
       } finally {
         setWorkflowState("idle");
       }
@@ -383,7 +535,7 @@ const useAppHeaderFormActions = ({
       void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
-        search: (prev: Record<string, unknown>) => ({ ...prev, force: true }),
+        search: (prev) => ({ ...prev, force: true }),
       });
     }
   };
@@ -406,6 +558,7 @@ const useAppHeaderFormActions = ({
     handleToggleFavorite,
     handleDeleteForm,
     handlePublish,
+    proPublishDialog,
     handleDiscardChanges,
     handleEditForm,
     handleDismissSidebars,
@@ -415,60 +568,28 @@ const useAppHeaderFormActions = ({
 interface BuildFormBuilderMenuItemsOptions {
   isEditRoute: boolean;
   hasPublishedVersion: boolean;
-  hasUnpublishedChanges: boolean;
-  canShare: boolean;
   workspaceId: string | undefined;
   formId: string | undefined;
-  onToggleFavorite: () => Promise<void> | void;
   onNavigateInsights: () => void;
   onToggleVersionHistory: () => void;
-  onToggleShareSidebar: () => void;
+  onToggleCustomizeSidebar: () => void;
   onToggleSettingsSidebar: () => void;
   onSetActiveDialog: (dialog: ActiveDialog) => void;
 }
 
-// Overflow menu for the form-builder header (the ⋯ button). Customization lives on the
-// dedicated palette button now, so it isn't repeated here. Share/Settings are always
-// listed (no longer mobile-only) since their standalone header buttons were removed.
+// Overflow menu for the form-builder header (the ⋯ button). Customize lives here now
+// (palette button removed); Share moved out to a standalone header text button.
 const buildFormBuilderMenuItems = ({
   isEditRoute,
   hasPublishedVersion,
-  hasUnpublishedChanges,
-  canShare,
-  onToggleFavorite,
   onNavigateInsights,
   onToggleVersionHistory,
-  onToggleShareSidebar,
+  onToggleCustomizeSidebar,
   onToggleSettingsSidebar,
   onSetActiveDialog,
 }: BuildFormBuilderMenuItemsOptions): MenuItem[] =>
+  // Order follows Figma (node 25300-1772): Analytics · Settings · Customize · Version history · Delete.
   [
-    {
-      key: "share",
-      label: "Share",
-      shortcut: formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR),
-      onClick: onToggleShareSidebar,
-      show: canShare,
-    },
-    {
-      key: "settings",
-      label: "Settings",
-      shortcut: formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR),
-      onClick: onToggleSettingsSidebar,
-    },
-    {
-      key: "versionHistory",
-      label: "Version history",
-      shortcut: formatForDisplay(HOTKEYS.TOGGLE_VERSION_HISTORY),
-      onClick: onToggleVersionHistory,
-      show: isEditRoute && hasPublishedVersion,
-    },
-    {
-      key: "favorite",
-      label: "Favorite",
-      shortcut: formatForDisplay(HOTKEYS.TOGGLE_FAVORITE),
-      onClick: () => onToggleFavorite(),
-    },
     {
       key: "analytics",
       label: "Analytics",
@@ -478,10 +599,21 @@ const buildFormBuilderMenuItems = ({
       show: hasPublishedVersion,
     },
     {
-      key: "discard",
-      label: "Discard changes",
-      onClick: () => onSetActiveDialog("discard"),
-      show: hasUnpublishedChanges,
+      key: "settings",
+      label: "Settings",
+      onClick: onToggleSettingsSidebar,
+    },
+    {
+      key: "customize",
+      label: "Customize",
+      onClick: onToggleCustomizeSidebar,
+      show: isEditRoute,
+    },
+    {
+      key: "versionHistory",
+      label: "Version history",
+      onClick: onToggleVersionHistory,
+      show: isEditRoute && hasPublishedVersion,
     },
     {
       key: "delete",
@@ -496,6 +628,9 @@ interface HeaderBreadcrumbProps {
   workspaceId: string | undefined;
   formId: string | undefined;
   isEditRoute: boolean;
+  isSettingsRoute?: boolean;
+  isSubmissionsRoute?: boolean;
+  isAnalyticsRoute?: boolean;
 }
 
 const HeaderBreadcrumb = ({
@@ -504,12 +639,17 @@ const HeaderBreadcrumb = ({
   workspaceId,
   formId,
   isEditRoute,
+  isSettingsRoute,
+  isSubmissionsRoute,
+  isAnalyticsRoute,
 }: HeaderBreadcrumbProps) => {
   const titleText = savedDoc.title || "Untitled";
+
   const linkClassName = cn(
     buttonVariants({ variant: "ghost", size: "sm" }),
-    "max-w-[140px] min-w-0 shrink justify-start px-1.5 text-[14px] font-medium text-gray-800 hover:bg-accent/60 sm:max-w-[200px]",
+    "max-w-[140px] min-w-0 shrink justify-start px-1.5 text-[14px] font-medium text-foreground hover:bg-accent/60 sm:max-w-[200px]",
   );
+
   const isPublished = savedDoc.status === "published" && workspaceId && formId;
 
   return (
@@ -520,14 +660,14 @@ const HeaderBreadcrumb = ({
             to="/dashboard"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "hidden max-w-[150px] shrink truncate px-1.5 text-[14px] font-medium text-gray-500 hover:bg-accent/60 hover:text-foreground md:inline-flex",
+              "hidden max-w-[150px] shrink truncate px-1.5 text-[14px] font-medium text-muted-foreground hover:bg-accent/60 hover:text-foreground md:inline-flex",
             )}
           >
             <span className="truncate">{workspace.name}</span>
           </Link>
           <span
             aria-hidden="true"
-            className="hidden shrink-0 px-0.5 text-[16px] text-gray-500 md:inline"
+            className="hidden shrink-0 px-0.5 text-[16px] text-muted-foreground md:inline"
           >
             /
           </span>
@@ -556,11 +696,30 @@ const HeaderBreadcrumb = ({
         <span
           className={cn(
             buttonVariants({ variant: "ghost", size: "sm" }),
-            "max-w-[140px] min-w-0 shrink cursor-default justify-start px-1.5 text-[14px] font-medium text-gray-800 hover:bg-transparent sm:max-w-[200px]",
+            "max-w-[140px] min-w-0 shrink cursor-default justify-start px-1.5 text-[14px] font-medium text-foreground hover:bg-transparent sm:max-w-[200px]",
           )}
         >
           <span className="truncate">{titleText}</span>
         </span>
+      )}
+      {(isSettingsRoute || isSubmissionsRoute || isAnalyticsRoute) && (
+        <>
+          <span
+            aria-hidden="true"
+            className="hidden shrink-0 px-0.5 text-[16px] text-muted-foreground sm:inline"
+          >
+            /
+          </span>
+          <span
+            aria-current="page"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "hidden shrink-0 cursor-default px-1.5 text-[14px] font-medium text-foreground hover:bg-transparent sm:inline-flex",
+            )}
+          >
+            {isSettingsRoute ? "Settings" : isSubmissionsRoute ? "Submissions" : "Analytics"}
+          </span>
+        </>
       )}
     </nav>
   );
@@ -568,7 +727,6 @@ const HeaderBreadcrumb = ({
 
 interface LandingPageActionsProps {
   previewMode: boolean;
-  activeSidebar: string | null;
   activeMenu: ActiveMenu;
   onTogglePreview: () => void;
   onToggleEditorSidebar: (id: "about" | "settings" | "customize") => void;
@@ -576,9 +734,42 @@ interface LandingPageActionsProps {
   onSignIn: () => void;
 }
 
+// Settings-route header: a single settings-only Save (commits draftSettings → live form_settings
+// without publishing content). Disabled when nothing changed — dirty via the same flag the global
+// Publish uses (now reliable: _getFormById carries liveSettings, so no listing load-order race).
+const SettingsHeaderActions = ({ formId }: { formId: string | undefined }) => {
+  const { hasSettingsChanges } = useFormPublishStatus(formId);
+  const [saving, setSaving] = useState(false);
+
+  const onSave = async () => {
+    if (!formId || !hasSettingsChanges || saving) return;
+    setSaving(true);
+
+    try {
+      const tx = publishFormSettings(formId);
+      await tx.isPersisted.promise;
+      toast.success("Settings saved");
+    } catch (error) {
+      toast.error(parseError(error).message || "Couldn't save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      disabled={!hasSettingsChanges || saving}
+      onClick={onSave}
+      className="rounded-[8px] border-none bg-primary py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-primary/80"
+    >
+      {saving ? <Loader2Icon className="size-4 animate-spin" /> : "Save"}
+    </Button>
+  );
+};
+
 const LandingPageActions = ({
   previewMode,
-  activeSidebar,
   activeMenu,
   onTogglePreview,
   onToggleEditorSidebar,
@@ -586,7 +777,7 @@ const LandingPageActions = ({
   onSignIn,
 }: LandingPageActionsProps) => (
   <>
-    {/* ⋯ overflow menu — houses About + Settings (Figma layout: ⋯ · palette · Preview · Publish) */}
+    {/* ⋯ overflow menu — houses About + Settings + Customize (Figma layout: ⋯ · ▷ · Publish) */}
     <DropdownMenu
       open={activeMenu === "local"}
       onOpenChange={(open) => onSetActiveMenu(open ? "local" : null)}
@@ -594,14 +785,14 @@ const LandingPageActions = ({
       <DropdownMenuTrigger
         render={
           <Button
-            variant="ghost"
+            variant="ghost-flat"
             size="sm"
-            className="h-7 w-[30px] rounded-lg px-1.5 text-gray-700 hover:text-foreground"
+            className={HEADER_ICON_BUTTON_CLS}
             aria-label="More options"
           />
         }
       >
-        <MoreHorizontalIcon className="size-[18px] text-gray-700" strokeWidth={1.5} />
+        <MoreHorizontalIcon className="size-[18px]" strokeWidth={1.5} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48" sideOffset={4}>
         <DropdownMenuItem onClick={() => onToggleEditorSidebar("about")}>
@@ -613,69 +804,159 @@ const LandingPageActions = ({
             {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
           </DropdownMenuShortcut>
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onToggleEditorSidebar("customize")}>
+          <span className="flex-1 text-left">Customize</span>
+          <DropdownMenuShortcut>
+            {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
+          </DropdownMenuShortcut>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignIn}>
           <span className="flex-1 text-left">Sign in</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    {/* Palette — Customize toggle */}
+    {/* Preview — play icon (Figma system-flat) */}
     <Tooltip>
       <TooltipTrigger
         render={
           <Button
-            variant="ghost"
+            variant="ghost-flat"
             size="sm"
-            className={cn(
-              "h-7 w-[30px] rounded-lg px-1.5 text-gray-700 hover:text-foreground",
-              activeSidebar === "customize" && "bg-accent/50 text-foreground",
-            )}
-            onClick={() => onToggleEditorSidebar("customize")}
-            aria-label="Customize"
-          />
-        }
-      >
-        <PaletteIcon className="size-[18px] text-gray-700" />
-      </TooltipTrigger>
-      <TooltipContent side="bottom" align="end">
-        <p>Customize</p>
-        <p className="text-xs text-muted-foreground">
-          {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
-        </p>
-      </TooltipContent>
-    </Tooltip>
-    {/* Preview */}
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "rounded-lg pr-2 pl-2.5 text-[14px] font-medium text-gray-700 hover:text-foreground",
-              previewMode && "bg-accent/50 text-foreground",
-            )}
+            className={cn(HEADER_ICON_BUTTON_CLS, previewMode && "bg-secondary text-foreground")}
             onClick={onTogglePreview}
+            aria-label={previewMode ? "Back to Editor" : "Preview Form"}
           />
         }
       >
-        {previewMode ? "Editor" : "Preview"}
+        <PlayIcon className="size-[18px]" />
       </TooltipTrigger>
       <TooltipContent side="bottom" align="end">
         <p>{previewMode ? "Back to Editor" : "Preview Form"}</p>
-        <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}</p>
       </TooltipContent>
     </Tooltip>
     {/* Publish */}
     <Button
       size="sm"
-      className="rounded-[8px] border-none bg-neutral-950 py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200"
+      className="rounded-[8px] border-none bg-primary py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 dark:bg-white dark:text-black dark:hover:bg-primary/80"
       onClick={onSignIn}
     >
       Publish
     </Button>
   </>
 );
+
+// Dashboard header actions (Figma 26208:8017): Search field (writes /dashboard?q=, debounced) +
+// New Form button (Figma 26247:7573). One simple button: with a single workspace it creates
+// straight in the default (top) workspace; with multiple it opens a picker dialog first.
+// Renders only on /dashboard.
+// Figma 27189:13108 — template detail header CTA: black pill, 14/450, same chrome as Publish.
+const TemplateHeaderActions = ({ templateId }: { templateId: FormTemplateId }) => {
+  const { createFromTemplate, isCreating, hasWorkspace } = useCreateFromTemplate();
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      disabled={isCreating || !hasWorkspace}
+      onClick={() => createFromTemplate(templateId)}
+      className="h-7 rounded-[min(var(--radius-md),10px)] border-none bg-primary px-2.5 py-1.5 text-base leading-[1.15] font-[450] tracking-[0.14px] text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-primary/80"
+    >
+      {isCreating ? "Creating…" : "Use Template"}
+    </Button>
+  );
+};
+
+const DashboardHeaderActions = () => {
+  const navigate = useNavigate();
+
+  const { data: activeOrg } = useQuery({
+    ...orgDataForLayoutQueryOptions(),
+    select: (d) => d.activeOrg,
+  });
+
+  const { data: liveWorkspaces } = useOrgWorkspaces(activeOrg?.id);
+
+  const orderedWorkspaces = useMemo(
+    () =>
+      sortByManualOrder(
+        liveWorkspaces ?? [],
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      ),
+    [liveWorkspaces],
+  );
+
+  const topWorkspace = orderedWorkspaces[0];
+  const hasMultipleWorkspaces = orderedWorkspaces.length > 1;
+  const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
+
+  const handleCreateForm = (workspaceId?: string) => {
+    const targetId = workspaceId ?? topWorkspace?.id;
+
+    if (!targetId) return;
+    const { form: newForm } = createFormLocal(targetId);
+    void navigate({
+      to: "/workspace/$workspaceId/form-builder/$formId/edit",
+      params: { workspaceId: targetId, formId: newForm.id },
+    });
+  };
+
+  // One button: multiple workspaces → ask which one first; otherwise create in the default workspace.
+  const handleNewForm = () => {
+    if (hasMultipleWorkspaces) {
+      setWorkspaceDialogOpen(true);
+
+      return;
+    }
+
+    handleCreateForm();
+  };
+
+  const handleSelectWorkspace = (workspaceId: string) => {
+    setWorkspaceDialogOpen(false);
+    handleCreateForm(workspaceId);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {/* New Form — Figma 26247:7573 (dark primary #141414, add-sm icon, 28px tall, 8px/10px padding,
+          8px radius). Search moved into the All Forms toolbar (dashboard route). */}
+      <Button
+        size="sm"
+        prefix={<FigAddSmIcon className="size-4" />}
+        className="rounded-[8px] ps-2! font-case text-base tracking-[0.14px]"
+        onClick={handleNewForm}
+      >
+        New Form
+      </Button>
+
+      <Dialog open={workspaceDialogOpen} onOpenChange={setWorkspaceDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New form</DialogTitle>
+            <DialogDescription>Choose a workspace for your new form.</DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex flex-col gap-1">
+            {orderedWorkspaces.map((ws) => (
+              <button
+                key={ws.id}
+                type="button"
+                onClick={() => handleSelectWorkspace(ws.id)}
+                className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate text-base font-[450] tracking-[0.14px] text-foreground">
+                  {ws.name}
+                </span>
+                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
 
 interface MenuItem {
   key: string;
@@ -697,41 +978,48 @@ interface FormBuilderHeaderActionsFlags {
 
 interface FormBuilderHeaderActionsProps {
   flags: FormBuilderHeaderActionsFlags;
-  activeSidebar: string | null;
   activeMenu: ActiveMenu;
   workspaceId: string | undefined;
   formId: string | undefined;
   savedDocs: ReturnType<typeof useFormMeta>["data"];
   menuItems: MenuItem[];
   onTogglePreview: () => void;
-  onToggleCustomizeSidebar: () => void;
+  onToggleShareSidebar: () => void;
   onPublish: () => Promise<void> | void;
   onSetActiveMenu: (menu: ActiveMenu) => void;
 }
 
 const FormBuilderHeaderActions = ({
   flags,
-  activeSidebar,
   activeMenu,
   workspaceId,
   formId,
   savedDocs,
   menuItems,
   onTogglePreview,
-  onToggleCustomizeSidebar,
+  onToggleShareSidebar,
   onPublish,
   onSetActiveMenu,
 }: FormBuilderHeaderActionsProps) => {
-  const { isEditRoute, hasUnpublishedChanges, isPublishing, previewMode, isLoadingSavedDocs } =
-    flags;
+  const {
+    isEditRoute,
+    hasUnpublishedChanges,
+    isPublishing,
+    previewMode,
+    canShare,
+    isShareSidebarOpen,
+    isLoadingSavedDocs,
+  } = flags;
+
   const showPublish = workspaceId && formId;
+
   const isUnpublished =
     !isLoadingSavedDocs && (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published");
 
-  // Figma logged-in header: ⋯ · palette · Preview · Publish. Share/Settings/Version history/
-  // Discard live in the ⋯ menu; Customize is the palette button.
+  // Figma logged-in header: ⋯ · ▷ (preview) · Share · Publish. Customize/Settings/
+  // Version history/Discard live in the ⋯ menu.
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <DropdownMenu
         open={activeMenu === "main"}
         onOpenChange={(open) => onSetActiveMenu(open ? "main" : null)}
@@ -739,14 +1027,14 @@ const FormBuilderHeaderActions = ({
         <DropdownMenuTrigger
           render={
             <Button
-              variant="ghost"
+              variant="ghost-flat"
               size="sm"
-              className="h-7 w-[30px] rounded-lg px-1.5 text-gray-700 hover:text-foreground aria-expanded:bg-secondary"
+              className={cn(HEADER_ICON_BUTTON_CLS, "aria-expanded:bg-secondary")}
               aria-label="More options"
             />
           }
         >
-          <MoreHorizontalIcon className="size-[18px] text-gray-700" strokeWidth={1.5} />
+          <MoreHorizontalIcon className="size-[18px]" strokeWidth={1.5} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48" sideOffset={4}>
           {menuItems.map((item) => (
@@ -758,120 +1046,96 @@ const FormBuilderHeaderActions = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {isEditRoute && (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-7 w-[30px] rounded-lg px-1.5 text-gray-700 hover:text-foreground",
-                  activeSidebar === "customize" && "bg-accent/50 text-foreground",
-                )}
-                onClick={onToggleCustomizeSidebar}
-                aria-label="Customize"
-              />
-            }
-          >
-            <PaletteIcon className="size-[18px] text-gray-700" />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="end">
-            <p>Customize</p>
-            <p className="text-xs text-muted-foreground">
-              {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      )}
+      {/* Preview (▷) — always shown (Figma 26835-9771). On /edit it toggles the inline preview;
+          elsewhere it enters preview and navigates into the editor (handled by onTogglePreview). */}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost-flat"
+              size="sm"
+              className={cn(
+                HEADER_ICON_BUTTON_CLS,
+                // Share opening enters preview for its inline pane — don't light up the play button for that.
+                previewMode && !isShareSidebarOpen && "bg-secondary text-foreground",
+              )}
+              onClick={onTogglePreview}
+              aria-label={previewMode && !isShareSidebarOpen ? "Back to Editor" : "Preview Form"}
+            />
+          }
+        >
+          <PlayIcon className="size-[18px]" />
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="end">
+          <p>{previewMode && !isShareSidebarOpen ? "Back to Editor" : "Preview Form"}</p>
+        </TooltipContent>
+      </Tooltip>
 
-      {isEditRoute ? (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "hidden rounded-lg pr-2 pl-2.5 text-[14px] font-medium text-gray-700 hover:text-foreground md:inline-flex",
-                  previewMode && "bg-accent/50 text-foreground",
-                )}
-                onClick={onTogglePreview}
-              />
-            }
-          >
-            {previewMode ? "Editor" : "Preview"}
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="end">
-            <p>{previewMode ? "Back to Editor" : "Preview Form"}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        workspaceId &&
-        formId && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Link
-                  to="/workspace/$workspaceId/form-builder/$formId/edit"
-                  params={{ workspaceId, formId }}
-                  search={(prev: Record<string, unknown>) => ({ ...prev, force: true })}
-                  preload="intent"
-                  aria-label="Edit form"
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-7 w-[30px] rounded-lg px-1.5 text-gray-700 hover:text-foreground",
-                  )}
-                />
-              }
-            >
-              <PencilIcon className="size-[18px] text-gray-700" />
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-              <p>Edit Form</p>
-              <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.EDIT_FORM)}</p>
-            </TooltipContent>
-          </Tooltip>
-        )
-      )}
+      {/* Always shown; disabled until published, and while the Share tab is open (it's a trigger only —
+          the tab's own ✕ closes it). */}
+      <Button
+        variant="ghost-flat"
+        size="sm"
+        className="hidden rounded-lg px-2 py-1.5 text-[14px] font-medium tracking-[0.14px] text-foreground hover:text-foreground md:inline-flex"
+        onClick={onToggleShareSidebar}
+        disabled={!canShare || isShareSidebarOpen}
+        title={canShare ? undefined : "Publish your form to share it"}
+      >
+        Share
+      </Button>
 
-      {showPublish && (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                size="sm"
-                className={cn(
-                  "rounded-[8px] border-none py-1.5 pr-2 pl-2.5 text-[14px] font-medium shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all",
-                  isUnpublished
-                    ? "bg-neutral-950 text-white hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80",
-                )}
-                onClick={onPublish}
-                disabled={
-                  isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
+      {/* Primary CTA: on /edit, Publish. Elsewhere (submissions), an "Edit form" button — you can
+          only publish from inside the editor (Figma 26835-9771). */}
+      {isEditRoute
+        ? showPublish && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="sm"
+                    className={cn(
+                      "rounded-[8px] border-none py-1.5 pr-2 pl-2.5 text-[14px] font-medium shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all",
+                      isUnpublished
+                        ? "bg-primary text-white hover:bg-primary/80 dark:bg-white dark:text-black dark:hover:bg-primary/80"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                    onClick={onPublish}
+                    disabled={
+                      isPublishing ||
+                      (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
+                    }
+                  />
                 }
-              />
-            }
-          >
-            {isPublishing ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : savedDocs?.[0]?.status === "published" && !hasUnpublishedChanges ? (
-              <TextSwap key="Published">Published</TextSwap>
-            ) : (
-              <TextSwap key="Publish">Publish</TextSwap>
-            )}
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="end">
-            <p className="text-xs text-muted-foreground">
-              {formatForDisplay(HOTKEYS.PUBLISH_FORM)}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      )}
+              >
+                {/* Always "Publish" — the disabled + muted state alone signals already-published. */}
+                {isPublishing ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <TextSwap key="Publish">Publish</TextSwap>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <p className="text-xs text-muted-foreground">
+                  {formatForDisplay(HOTKEYS.PUBLISH_FORM)}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )
+        : workspaceId &&
+          formId && (
+            <Link
+              to="/workspace/$workspaceId/form-builder/$formId/edit"
+              params={{ workspaceId, formId }}
+              search={(prev) => ({ ...prev, force: true })}
+              preload="intent"
+              aria-label="Edit form"
+              // Figma 26835:9809 — gray/950 #141414 pill, px-8/py-6, gap-6, 16px edit icon + 14px/450 white.
+              className="inline-flex items-center gap-1.5 rounded-[8px] bg-primary px-2 py-1.5 font-case text-[14px] font-[450] tracking-[0.14px] text-white transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-white dark:text-black dark:hover:bg-primary/80"
+            >
+              <EditLineSmIcon className="size-4" />
+              Edit form
+            </Link>
+          )}
     </div>
   );
 };

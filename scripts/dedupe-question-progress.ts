@@ -6,12 +6,14 @@ import postgres from "postgres";
 config({ path: [".env.local", ".env"] });
 
 const DATABASE_URL = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+
 if (!DATABASE_URL) {
   console.error("Neither DIRECT_URL nor DATABASE_URL is set");
   process.exit(1);
 }
 
 const client = postgres(DATABASE_URL, { max: 1 });
+
 const db = drizzle({ client });
 
 const [{ dupes }] = await db.execute<{ dupes: number }>(sql`
@@ -49,5 +51,7 @@ const result = await db.execute(sql`
 `);
 
 console.log(`Deleted ${result.count} duplicate row(s).`);
+
 await client.end();
+
 process.exit(0);

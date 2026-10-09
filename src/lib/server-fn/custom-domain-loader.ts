@@ -7,8 +7,11 @@ const APP_HOST_PATTERNS = [/\.vercel\.app$/];
 /** True when the Host belongs to the app itself (localhost, Vercel previews) — NOT a custom domain. */
 export const isAppHost = (host: string): boolean => {
   const hostname = host.split(":")[0]; // strip port
+
   if (APP_HOSTS.has(hostname)) return true;
+
   if (process.env.APP_DOMAIN && hostname === process.env.APP_DOMAIN) return true;
+
   return APP_HOST_PATTERNS.some((re) => re.test(hostname));
 };
 

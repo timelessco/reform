@@ -1,8 +1,9 @@
 import { createTransaction } from "@tanstack/react-db";
+import { log } from "evlog";
 import { logger } from "@/lib/utils";
 import { localFormCollection } from "@/collections/local/form";
-import { getFormListings, getWorkspaces, createWorkspaceLocal } from "@/collections";
-import type { FormListing } from "@/collections";
+import type { Form } from "@/collections/local/form";
+import { getFormListings, getWorkspaces, createWorkspaceLocal, formToListing } from "@/collections";
 import { createForm } from "@/lib/server-fn/forms";
 
 type SyncResult = {
@@ -20,7 +21,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     logger(`Organization ID: ${organizationId}`);
 
     if (!organizationId) {
-      console.error("syncLocalDataToCloud: organizationId is required");
+      log.error("syncLocalDataToCloud", "organizationId is required");
       throw new Error("Organization ID is required for sync");
     }
 
@@ -29,6 +30,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
     if (localForms.length === 0) {
       logger("No local data to sync");
+
       return null;
     }
 
@@ -36,14 +38,20 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
+
     if (orgWorkspaces.length === 0) {
       logger("No workspace found, creating via collection...");
+
       try {
         const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
         targetWorkspaceId = newWorkspace.id;
         logger(`Created workspace ${targetWorkspaceId} via collection`);
       } catch (wsError) {
-        console.error("Failed to create workspace:", wsError);
+        log.error({
+          tag: "syncLocalDataToCloud",
+          msg: "Failed to create workspace",
+          error: wsError,
+        });
         throw wsError;
       }
     } else {
@@ -52,15 +60,18 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     }
 
     const syncedForms: string[] = [];
+
     for (const localForm of localForms) {
       try {
         const newFormId = crypto.randomUUID();
         const now = new Date().toISOString();
 
-        const newFormData = {
+        const newFormData: Form = {
           id: newFormId,
           workspaceId: targetWorkspaceId,
-          createdByUserId: "", // Server will use context.session.user.id
+          // Placeholder — createForm ignores this and uses context.session.user.id; kept so
+          // formToListing maps a defined (non-null) createdByUserId on the optimistic row.
+          createdByUserId: "",
           title: localForm.title || "Untitled",
           formName: localForm.formName || "draft",
           schemaName: localForm.schemaName || "draftFormSchema",
@@ -70,6 +81,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
           status: localForm.status || "draft",
           // Promote local draft to cloud `draftSettings` — no live row yet; first Publish creates the formSettings row.
           draftSettings: localForm.draftSettings,
+          liveSettings: localForm.liveSettings ?? null,
           customization: localForm.customization,
           createdAt: now,
           updatedAt: now,
@@ -85,7 +97,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
         });
 
         tx.mutate(() => {
-          getFormListings().insert(newFormData as unknown as FormListing);
+          getFormListings().insert(formToListing(newFormData, { shortId: "", submissionCount: 0 }));
           localFormCollection.delete(localForm.id);
         });
 
@@ -94,7 +106,11 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
           `Synced form "${localForm.title || "Untitled"}" as ${newFormId} via createTransaction`,
         );
       } catch (error) {
-        console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
+        log.error({
+          tag: "syncLocalDataToCloud",
+          msg: `Failed to sync form "${localForm.title || "Untitled"}"`,
+          error,
+        });
       }
     }
 
@@ -110,7 +126,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
       syncedForms,
     };
   } catch (error) {
-    console.error("Failed to sync local data to cloud:", error);
+    log.error({ tag: "syncLocalDataToCloud", msg: "Failed to sync local data to cloud", error });
     throw error;
   }
 };
@@ -118,9 +134,11 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
     const forms = await localFormCollection.toArrayWhenReady();
+
     return forms.length > 0;
   } catch (error) {
-    console.error("Failed to check for local data:", error);
+    log.error({ tag: "hasLocalDataToSync", msg: "Failed to check for local data", error });
+
     return false;
   }
 };

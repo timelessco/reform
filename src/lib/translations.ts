@@ -2,6 +2,7 @@ type TranslationKey =
   // Buttons
   | "next"
   | "previous"
+  | "back"
   | "submit"
   | "submitting"
   // State pages
@@ -37,6 +38,7 @@ type Translations = Record<TranslationKey, string>;
 const en: Translations = {
   next: "Next",
   previous: "Previous",
+  back: "Back",
   submit: "Submit",
   submitting: "Submitting...",
   formNotFound: "Form not found",
@@ -67,6 +69,7 @@ const en: Translations = {
 const es: Translations = {
   next: "Siguiente",
   previous: "Anterior",
+  back: "Atrás",
   submit: "Enviar",
   submitting: "Enviando...",
   formNotFound: "Formulario no encontrado",
@@ -97,6 +100,7 @@ const es: Translations = {
 const fr: Translations = {
   next: "Suivant",
   previous: "Précédent",
+  back: "Retour",
   submit: "Soumettre",
   submitting: "Envoi en cours...",
   formNotFound: "Formulaire introuvable",
@@ -124,20 +128,31 @@ const fr: Translations = {
   submitFailed: "Échec de l'envoi du formulaire. Veuillez réessayer.",
 };
 
-const translations: Record<string, Translations> = { en, es, fr };
-
-const languageCodeMap: Record<string, string> = {
-  English: "en",
-  Spanish: "es",
-  French: "fr",
+// Accepts either the stored language name or its code; unknown input falls back to English.
+export const languageToCode = (language: string): string => {
+  switch (language) {
+    case "English":
+      return "en";
+    case "Spanish":
+      return "es";
+    case "French":
+      return "fr";
+    default:
+      return "en";
+  }
 };
 
-export const languageToCode = (language: string): string => languageCodeMap[language] ?? "en";
-
 export const getTranslations = (langOrCode: string): Translations => {
-  // Accept either language name or code
-  const code = languageCodeMap[langOrCode] ?? langOrCode;
-  return translations[code] ?? en;
+  switch (langOrCode) {
+    case "Spanish":
+    case "es":
+      return es;
+    case "French":
+    case "fr":
+      return fr;
+    default:
+      return en;
+  }
 };
 
 export type { TranslationKey, Translations };

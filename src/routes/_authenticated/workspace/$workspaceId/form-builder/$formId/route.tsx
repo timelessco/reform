@@ -1,34 +1,23 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getFormListings, isInitialized } from "@/collections";
+import { enrichFormDetail, getFormListings, isInitialized } from "@/collections";
+import { pushRecentForm } from "@/lib/recent-forms";
 import { getFormVersionsQueryOption } from "@/lib/server-fn/form-versions";
 import { getFormbyIdQueryOption, getFormStatus } from "@/lib/server-fn/forms-queries";
 import type { FormStatus } from "@/lib/server-fn/forms-queries";
-import {
-  importCustomizeSidebar,
-  importFormSettingsSidebar,
-  importShareSummarySidebar,
-} from "@/routes/_authenticated/-components/lazy-modules";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
 
 const FormLayout = () => {
   const pathname = useLocation({ select: (s) => s.pathname });
-  // Extract formId from pathname to ensure it's always current
+  // Read formId from pathname; route params can lag in-place form switches
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
   const formId = formIdFromPath || params.formId;
 
-  // Warm Settings/Share/Customize chunks so first open doesn't flash empty behind Suspense. Version History skipped — rare, lazy-on-click is fine.
-  useEffect(() => {
-    void importFormSettingsSidebar();
-    void importShareSummarySidebar();
-    void importCustomizeSidebar();
-  }, []);
-
   // Hide header on edit route (editor has its own full-screen layout)
   const isEditRoute = pathname.includes("/form-builder/") && pathname.includes("/edit");
+
   if (isEditRoute) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
@@ -51,6 +40,10 @@ const FormLayout = () => {
 export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/form-builder/$formId")(
   {
     ssr: false,
+    context: ({ params }) => ({
+      formQueryOptions: getFormbyIdQueryOption(params.formId),
+      formVersionsQueryOptions: getFormVersionsQueryOption(params.formId),
+    }),
     beforeLoad: async ({ context, params, location }) => {
       const isExactParentRoute =
         location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
@@ -58,6 +51,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
 
       if (isExactParentRoute) {
         let status: FormStatus | undefined;
+
         try {
           const cachedForm = getFormListings().get(params.formId);
           status = cachedForm?.status as FormStatus | undefined;
@@ -78,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
             params: { workspaceId: params.workspaceId, formId: params.formId },
           });
         }
+
         throw redirect({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
           params: { workspaceId: params.workspaceId, formId: params.formId },
@@ -85,16 +80,27 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
       }
     },
     loader: async ({ context, params }) => {
-      // Skip server fetch if collection has this form (e.g. optimistic create/duplicate) — component reads useLiveQuery. Guard: collections may not be init yet (SSR/first load before parent layout).
+      // Remember this form as recently-opened (localStorage; powers the command palette). Client-only
+      // route (ssr:false), so window is available; covers every open path (dashboard, sidebar, palette, URL).
+      pushRecentForm(params.formId);
+
+      // Skip server fetch if collection has this form (e.g. optimistic create/duplicate); component reads useLiveQuery. Guard: collections may not be init yet (SSR/first load before parent layout).
       if (isInitialized()) {
         const cachedForm = getFormListings().get(params.formId);
+
         if (cachedForm?.content) return;
       }
 
       await Promise.all([
-        context.queryClient.ensureQueryData(getFormbyIdQueryOption(params.formId)),
-        context.queryClient.ensureQueryData(getFormVersionsQueryOption(params.formId)),
+        context.queryClient.ensureQueryData(context.formQueryOptions),
+        context.queryClient.ensureQueryData(context.formVersionsQueryOptions),
       ]);
+
+      // Seed the collection with full content so the editor reads it on first render; avoids the
+      // post-mount enrichment hop that flashes "Loading editor…". Reuses the ensureQueryData cache above (no extra network). Guarded: collections may not be init yet on SSR/first load.
+      if (isInitialized()) {
+        await enrichFormDetail(params.formId);
+      }
     },
     staleTime: 30_000,
     gcTime: 5 * 60_000,

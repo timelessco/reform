@@ -28,27 +28,30 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { FeatureGate } from "@/components/ui/feature-gate";
-import {
-  ConfigCard,
-  ConfigRow,
-  selectTriggerCls,
-} from "@/components/form-builder/embed-config-panel";
+import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
 
 const settingsDefaults = defaultFormSettings;
 
 const selectRedirectOnCompletion = (state: { values: { redirectOnCompletion: unknown } }) =>
   state.values.redirectOnCompletion;
+
 const selectDataRetention = (state: { values: { dataRetention: unknown } }) =>
   state.values.dataRetention;
+
 const selectSelfEmailNotifications = (state: { values: { selfEmailNotifications: unknown } }) =>
   state.values.selfEmailNotifications;
+
 const selectRespondentEmailNotifications = (state: {
   values: { respondentEmailNotifications: unknown };
 }) => state.values.respondentEmailNotifications;
+
 const selectPasswordProtect = (state: { values: { passwordProtect: unknown } }) =>
   state.values.passwordProtect;
+
 const selectCloseForm = (state: { values: { closeForm: unknown } }) => state.values.closeForm;
+
 const selectCloseOnDate = (state: { values: { closeOnDate: unknown } }) => state.values.closeOnDate;
+
 const selectLimitSubmissions = (state: { values: { limitSubmissions: unknown } }) =>
   state.values.limitSubmissions;
 
@@ -80,6 +83,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
+
   // Gate so useAppForm below initializes from loaded draftSettings, not the
   // empty defaults it would capture before the collection is ready.
   if (formResult.data === undefined) {
@@ -89,6 +93,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
       </div>
     );
   }
+
   return <SettingsContentInner formId={formId} isLocal={isLocal} />;
 };
 
@@ -97,15 +102,21 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
+
   const hasEmailField = useMemo(() => {
     const content = formDoc?.content;
+
     if (!Array.isArray(content)) return false;
+
     return content.some((node) => (node as { type?: string }).type === "formEmail");
   }, [formDoc]);
+
   const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
+
   const queryClient = useQueryClient();
+
   const [browserPermission, setBrowserPermission] = useState<BrowserNotificationPermission>(
     getBrowserNotificationPermission,
   );
@@ -135,17 +146,20 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
 
     if (!checked) {
       setBrowserPermission(getBrowserNotificationPermission());
+
       return;
     }
 
     if (typeof window === "undefined" || !("Notification" in window)) {
       setBrowserPermission("unsupported");
+
       return;
     }
 
     if (Notification.permission === "default") {
       const permission = await Notification.requestPermission();
       setBrowserPermission(permission);
+
       return;
     }
 
@@ -170,16 +184,13 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
     },
   });
 
-  const CONFIG_INPUT_CLS = "rounded-lg !border-none";
-
   return (
     <div className="space-y-3 pb-8">
       <form.AppForm>
         <form.Form className="gap-3 p-0">
-          <GeneralSection form={form} CONFIG_INPUT_CLS={CONFIG_INPUT_CLS} />
+          <GeneralSection form={form} />
           <NotificationsSection
             form={form}
-            CONFIG_INPUT_CLS={CONFIG_INPUT_CLS}
             isLocal={isLocal}
             inAppNotificationPreference={inAppNotificationPreference.data}
             handleInAppNotificationsChange={handleInAppNotificationsChange}
@@ -187,7 +198,7 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
             browserPermission={browserPermission}
             hasEmailField={hasEmailField}
           />
-          <AccessSection form={form} CONFIG_INPUT_CLS={CONFIG_INPUT_CLS} />
+          <AccessSection form={form} />
           <BehaviorSection form={form} />
         </form.Form>
       </form.AppForm>
@@ -197,8 +208,8 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
 
 const GeneralSection = withForm({
   defaultValues: settingsDefaults,
-  props: { CONFIG_INPUT_CLS: "" },
-  render: function GeneralSectionRender({ form, CONFIG_INPUT_CLS }) {
+  props: {},
+  render: function GeneralSectionRender({ form }) {
     return (
       <SidebarSection label="General" className="pb-2.75" action={<></>}>
         <ConfigCard>
@@ -209,7 +220,7 @@ const GeneralSection = withForm({
                   value={field.state.value || "English"}
                   onValueChange={(value) => field.handleChange(value ?? "English")}
                 >
-                  <SelectTrigger className={selectTriggerCls}>
+                  <SelectTrigger className="w-auto shrink-0 gap-1 rounded-sm border-none bg-transparent px-2 py-0 text-sm font-medium whitespace-nowrap text-foreground shadow-none data-[size=default]:h-[24px]">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,7 +262,7 @@ const GeneralSection = withForm({
                           placeholder="https://example.com"
                           value={field.state.value ?? ""}
                           onChange={(e) => field.handleChange(e.target.value || null)}
-                          className={`w-40 text-sm ${CONFIG_INPUT_CLS}`}
+                          className="w-40 rounded-lg !border-none text-sm"
                           aria-label="Redirect URL"
                           variant="primary"
                         />
@@ -268,7 +279,7 @@ const GeneralSection = withForm({
                           placeholder="0"
                           value={field.state.value || 0}
                           onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
-                          className={`w-17.5 text-sm ${CONFIG_INPUT_CLS}`}
+                          className="w-17.5 rounded-lg !border-none text-sm"
                           aria-label="Redirect delay"
                           variant="primary"
                         />
@@ -288,7 +299,8 @@ const GeneralSection = withForm({
             <div className="flex items-center gap-1.5">
               <Badge
                 variant="secondary"
-                className="h-4 border-none bg-teal-100 px-1.5 text-[9px] text-teal-600"
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[9px] badge label has no value-identical step (nearest text-2xs is 11px); shrinking would shift visuals
+                className="h-4 border-none bg-(--color-success-soft) px-1.5 text-[9px] text-(--color-success-on-soft)"
               >
                 Pro
               </Badge>
@@ -315,7 +327,8 @@ const GeneralSection = withForm({
             <div className="flex items-center gap-1.5">
               <Badge
                 variant="secondary"
-                className="h-4 border-none bg-teal-100 px-1.5 text-[9px] text-teal-600"
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[9px] badge label has no value-identical step (nearest text-2xs is 11px); shrinking would shift visuals
+                className="h-4 border-none bg-(--color-success-soft) px-1.5 text-[9px] text-(--color-success-on-soft)"
               >
                 Pro
               </Badge>
@@ -348,7 +361,7 @@ const GeneralSection = withForm({
                         onChange={(e) =>
                           field.handleChange(e.target.value ? Number(e.target.value) : null)
                         }
-                        className={`w-17.5 text-sm ${CONFIG_INPUT_CLS}`}
+                        className="w-17.5 rounded-lg !border-none text-sm"
                         aria-label="Retention days"
                         variant="primary"
                       />
@@ -365,7 +378,6 @@ const GeneralSection = withForm({
 });
 
 interface NotificationsExtraProps {
-  CONFIG_INPUT_CLS: string;
   isLocal?: boolean;
   inAppNotificationPreference:
     | { canManageInAppNotifications?: boolean; inAppNotifications?: boolean }
@@ -379,7 +391,6 @@ interface NotificationsExtraProps {
 const NotificationsSection = withForm({
   defaultValues: settingsDefaults,
   props: {
-    CONFIG_INPUT_CLS: "",
     isLocal: false,
     inAppNotificationPreference: undefined,
     handleInAppNotificationsChange: async () => {},
@@ -389,7 +400,6 @@ const NotificationsSection = withForm({
   } as NotificationsExtraProps,
   render: function NotificationsSectionRender({
     form,
-    CONFIG_INPUT_CLS,
     isLocal,
     inAppNotificationPreference,
     handleInAppNotificationsChange,
@@ -428,7 +438,7 @@ const NotificationsSection = withForm({
                         placeholder="you@example.com"
                         value={field.state.value ?? ""}
                         onChange={(e) => field.handleChange(e.target.value || null)}
-                        className={`w-40 text-sm ${CONFIG_INPUT_CLS}`}
+                        className="w-40 rounded-lg !border-none text-sm"
                         aria-label="Notification email"
                         variant="primary"
                       />
@@ -480,7 +490,8 @@ const NotificationsSection = withForm({
             <div className="flex items-center gap-1.5">
               <Badge
                 variant="secondary"
-                className="h-4 border-none bg-teal-100 px-1.5 text-[9px] text-teal-600"
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[9px] badge label has no value-identical step (nearest text-2xs is 11px); shrinking would shift visuals
+                className="h-4 border-none bg-(--color-success-soft) px-1.5 text-[9px] text-(--color-success-on-soft)"
               >
                 Pro
               </Badge>
@@ -512,7 +523,7 @@ const NotificationsSection = withForm({
                           placeholder="Thank you for your submission"
                           value={field.state.value ?? ""}
                           onChange={(e) => field.handleChange(e.target.value || null)}
-                          className={`w-40 text-sm ${CONFIG_INPUT_CLS}`}
+                          className="w-40 rounded-lg !border-none text-sm"
                           aria-label="Email subject"
                           variant="primary"
                         />
@@ -545,8 +556,8 @@ const NotificationsSection = withForm({
 
 const AccessSection = withForm({
   defaultValues: settingsDefaults,
-  props: { CONFIG_INPUT_CLS: "" },
-  render: function AccessSectionRender({ form, CONFIG_INPUT_CLS }) {
+  props: {},
+  render: function AccessSectionRender({ form }) {
     return (
       <SidebarSection label="Access" className="pb-2.75" action={<></>}>
         <ConfigCard>
@@ -687,7 +698,7 @@ const AccessSection = withForm({
                         onChange={(e) =>
                           field.handleChange(e.target.value ? Number(e.target.value) : null)
                         }
-                        className={`w-17.5 text-sm ${CONFIG_INPUT_CLS}`}
+                        className="w-17.5 rounded-lg !border-none text-sm"
                         aria-label="Max submissions"
                         variant="primary"
                       />
@@ -750,6 +761,7 @@ const BehaviorSection = withForm({
 
 const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
   const [show, setShow] = useState(false);
+
   return (
     <div className="relative w-40">
       <Input

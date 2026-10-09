@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { log } from "evlog";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray } from "drizzle-orm";
@@ -11,10 +12,12 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { canonicalJSON, computeContentHash } from "@/lib/content-hash";
 import type { ErrorCode } from "@/lib/errors/codes";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
+import { stripProCustomization } from "@/lib/theme/pro-customization";
 import { defaultFormSettings } from "@/types/form-settings";
 import type { FormSettings } from "@/types/form-settings";
-import { getActiveOrgId } from "./auth-helpers";
-import { authForm } from "./auth-helpers.server";
+import { requireScopedForm } from "./auth-helpers.server";
+import { getOrgPlanWithPolarSync } from "./plan-helpers.server";
+import { queryKeys } from "@/lib/query-keys";
 
 // TODO: make plan-based
 const MAX_VERSIONS_PER_FORM = 20;
@@ -29,14 +32,13 @@ const serializeVersion = (version: FormVersionRow) => ({
 
 export const publishFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    const { orgId } = await requireScopedForm(context.session, data.formId);
 
     const result = await db.transaction(async (tx) => {
       const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
@@ -61,17 +63,34 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 
       const now = new Date();
 
+      // Free plans publish with Pro customization stripped (the draft keeps them; the customize
+      // sidebar lets free users experiment). Plan is resolved (DB read + possible Polar round-trip)
+      // only when the draft holds Pro keys, so clean-draft publishes skip it. Hash over the
+      // published snapshot so a later upgrade-to-pro republish reads dirty and re-snapshots full styles.
+      const draftCustomization = (form.customization ?? {}) as Record<string, string>;
+      const strippedCustomization = stripProCustomization(draftCustomization);
+
+      const hasProCustomization =
+        Object.keys(strippedCustomization).length !== Object.keys(draftCustomization).length;
+
+      const customizationSnapshot =
+        hasProCustomization &&
+        (await getOrgPlanWithPolarSync(orgId, context.session.user.email ?? null)) === "free"
+          ? strippedCustomization
+          : draftCustomization;
+
       const contentHash = computeContentHash({
         content: form.content,
-        customization: form.customization ?? {},
+        customization: customizationSnapshot,
         title: form.title,
         icon: form.icon,
         cover: form.cover,
       });
 
-      // DEBUG: log snapshot publish reads from DB to diagnose "changed it but published is
-      // stale" reports. Revert once verified.
-      console.log("[publish] read forms row", {
+      // DEBUG: log DB reads on publish to diagnose "changed it but published is stale" reports. Revert once verified.
+      log.info({
+        tag: "publish",
+        msg: "read forms row",
         formId: data.formId,
         title: form.title,
         contentLen: Array.isArray(form.content) ? form.content.length : null,
@@ -82,13 +101,15 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         updatedAt: form.updatedAt,
       });
 
-      // Per-domain conditional publish (see plan §2): versioned (editor + customization) inserts
-      // a new version row only if hash differs from publishedContentHash; settings upserts
-      // formSettings from draftSettings only if live differs from draft. First publish: both fire.
+      // Per-domain conditional publish (plan §2). Versioned (editor + customization) inserts a new
+      // version row only if hash differs from publishedContentHash; settings upserts formSettings
+      // from draftSettings only if live differs from draft. First publish fires both.
       const versionedDirty = form.publishedContentHash !== contentHash;
       const isFirstPublish = !form.lastPublishedVersionId;
 
-      console.log("[publish] decision", {
+      log.info({
+        tag: "publish",
+        msg: "decision",
         versionedDirty,
         isFirstPublish,
         willInsertVersion: versionedDirty || isFirstPublish,
@@ -108,9 +129,9 @@ export const publishFormVersion = createServerFn({ method: "POST" })
             formId: data.formId,
             version: nextVersionNumber,
             content: form.content,
-            // Settings excluded from versions: null on new rows; legacy rows keep pre-split snapshot.
+            // Settings excluded from versions. New rows write null; legacy rows keep the pre-split snapshot.
             settings: null,
-            customization: form.customization ?? {},
+            customization: customizationSnapshot,
             title: form.title,
             icon: form.icon,
             cover: form.cover,
@@ -121,9 +142,12 @@ export const publishFormVersion = createServerFn({ method: "POST" })
             createdAt: now,
           })
           .returning();
+
         newVersion = inserted;
 
-        console.log("[publish] inserted new version row", {
+        log.info({
+          tag: "publish",
+          msg: "inserted new version row",
           versionId,
           version: nextVersionNumber,
           contentLen: Array.isArray(inserted?.content)
@@ -154,14 +178,14 @@ export const publishFormVersion = createServerFn({ method: "POST" })
           await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
         }
       } else if (form.status !== "published") {
-        // No content change but archived/unpublished — flip back to published, no empty version.
+        // No content change but archived/unpublished. Flip back to published, no empty version.
         await tx
           .update(forms)
           .set({ status: "published", updatedAt: now })
           .where(eq(forms.id, data.formId));
       }
 
-      // Settings: copy draft → live when they differ (canonical compare) to avoid noop writes.
+      // Copy draft settings to live when they differ (canonical compare) to avoid noop writes.
       const [liveRow] = await tx
         .select({ settings: formSettings.settings })
         .from(formSettings)
@@ -196,11 +220,10 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 
 export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
     const [_, versions] = await Promise.all([
-      authForm(data.formId, context.session.user.id, orgId),
+      requireScopedForm(context.session, data.formId),
       db
         .select({
           id: formVersions.id,
@@ -235,13 +258,14 @@ export const getFormVersions = createServerFn({ method: "GET" })
     };
   });
 
-/** Version-list query options. Source of truth for the ["form-versions", formId] key + fetcher;
- * mirrors the version-list collection's injected queryFn (getVersionList in _authenticated.tsx). */
+/** Version-list query options. Pairs the shared key with the fetcher; mirrors the version-list
+ * collection's injected queryFn (getVersionList in _authenticated.tsx). */
 export const getFormVersionsQueryOption = (formId: string) =>
   queryOptions({
-    queryKey: ["form-versions", formId] as const,
+    queryKey: queryKeys.formVersions(formId),
     queryFn: async () => {
       const result = await getFormVersions({ data: { formId } });
+
       return result?.versions ?? [];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -249,7 +273,7 @@ export const getFormVersionsQueryOption = (formId: string) =>
 
 export const getFormVersionContent = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ versionId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ versionId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
     const [version] = await db
       .select()
@@ -267,8 +291,7 @@ export const getFormVersionContent = createServerFn({ method: "GET" })
       });
     }
 
-    const orgId = getActiveOrgId(context.session);
-    await authForm(version.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, version.formId);
 
     return { version: serializeVersion(version) };
   });
@@ -276,20 +299,20 @@ export const getFormVersionContent = createServerFn({ method: "GET" })
 /** Restore a version's content to the form draft. Leaves publishedContentHash so "has changes" stays. */
 export const restoreFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       versionId: v.pipe(v.string(), v.uuid()),
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    const authPromise = authForm(data.formId, context.session.user.id, orgId);
+    const authPromise = requireScopedForm(context.session, data.formId);
 
     const [version] = await db
       .select()
       .from(formVersions)
       .where(and(eq(formVersions.id, data.versionId), eq(formVersions.formId, data.formId)));
+
     await authPromise;
 
     if (!version) {
@@ -326,10 +349,9 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
 export const discardFormChanges = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.formId);
 
     const [result] = await db
       .select({
@@ -363,8 +385,9 @@ export const discardFormChanges = createServerFn({ method: "POST" })
       cover: version.cover,
     });
 
-    // Discard resets both domains: versioned (editor + customization + title/icon/cover) ← last
-    // version; settings (draftSettings) ← live formSettings.settings (defaultFormSettings if no live row).
+    // Discard resets both domains. Versioned fields (editor + customization + title/icon/cover)
+    // revert to the last version; settings (draftSettings) revert to live formSettings.settings
+    // (defaultFormSettings if no live row).
     const liveSettings = (result.liveSettings ?? defaultFormSettings) as FormSettings;
 
     const [updatedForm] = await db

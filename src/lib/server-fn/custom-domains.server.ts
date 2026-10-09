@@ -14,6 +14,7 @@ const serializeDomain = (domain: typeof customDomains.$inferSelect) => ({
 
 const loadDomain = async (domainId: string) => {
   const [domain] = await db.select().from(customDomains).where(eq(customDomains.id, domainId));
+
   if (!domain) {
     throw createError({
       code: "domains/not-found" satisfies ErrorCode,
@@ -24,11 +25,13 @@ const loadDomain = async (domainId: string) => {
       internal: { domainId },
     });
   }
+
   return domain;
 };
 
 const persistStatus = async (domainId: string, status: VercelDomainStatus | null) => {
   const newStatus = status?.verified ? "verified" : status === null ? "failed" : "pending";
+
   const [updated] = await db
     .update(customDomains)
     .set({ status: newStatus, updatedAt: new Date() })
@@ -58,6 +61,7 @@ export const refreshDomainStatusFromVercel = async (domainId: string) => {
   const domain = await loadDomain(domainId);
 
   let status: VercelDomainStatus;
+
   try {
     status = await vercelDomains.check(domain.domain);
   } catch {
@@ -73,6 +77,7 @@ export const triggerDomainVerification = async (domainId: string) => {
   const domain = await loadDomain(domainId);
 
   let status: VercelDomainStatus;
+
   try {
     status = await vercelDomains.verify(domain.domain);
   } catch {

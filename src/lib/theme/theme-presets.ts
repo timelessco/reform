@@ -15,7 +15,9 @@ export interface BaseColorTokens {
   input: string;
 }
 
-export type BaseColorMap = Record<string, BaseColorTokens>;
+export interface BaseColorMap {
+  [name: string]: BaseColorTokens;
+}
 
 export const BASE_COLORS: BaseColorMap = {
   neutral: {
@@ -170,7 +172,11 @@ export interface ThemeColorTokens {
   ring: string;
 }
 
-export const THEME_COLORS: Record<string, ThemeColorTokens> = {
+export interface ThemeColorMap {
+  [name: string]: ThemeColorTokens;
+}
+
+export const THEME_COLORS: ThemeColorMap = {
   neutral: {
     primary: "#212121",
     "primary-foreground": "#ffffff",
@@ -234,7 +240,11 @@ export const THEME_COLORS: Record<string, ThemeColorTokens> = {
   red: { primary: "#dc2626", "primary-foreground": "#fef2f2", ring: "#dc2626" },
 };
 
-export const RADIUS_MAP: Record<string, string> = {
+export interface RadiusMap {
+  [name: string]: string;
+}
+
+export const RADIUS_MAP: RadiusMap = {
   none: "0px",
   small: "0.375rem",
   medium: "0.625rem",
@@ -243,7 +253,11 @@ export const RADIUS_MAP: Record<string, string> = {
 
 export { FONT_MAP } from "./font-registry";
 
-export const SPACING_MAP: Record<string, string> = {
+export interface SpacingMap {
+  [name: string]: string;
+}
+
+export const SPACING_MAP: SpacingMap = {
   dense: "0.5rem",
   compact: "0.75rem",
   normal: "1rem",
@@ -258,7 +272,11 @@ export interface StyleConfig {
   font: string;
 }
 
-export const STYLES: Record<string, StyleConfig> = {
+export interface StyleConfigMap {
+  [name: string]: StyleConfig;
+}
+
+export const STYLES: StyleConfigMap = {
   vega: {
     radius: "medium",
     spacing: "normal",

@@ -10,16 +10,18 @@ import { db } from "@/db";
 import { authMiddleware, formProSettingsMiddleware } from "@/lib/auth/middleware";
 import type { ErrorCode } from "@/lib/errors/codes";
 import { purgeFormCache, purgeFormCacheBatch } from "@/lib/server-fn/cdn-cache";
-import { defaultFormSettings } from "@/types/form-settings";
+import { defaultFormSettings, sanitizeFormSettings } from "@/types/form-settings";
 import type { FormSettings } from "@/types/form-settings";
-import { getActiveOrgId } from "./auth-helpers";
-import { authForm, authFormsBulk } from "./auth-helpers.server";
+import { requireScopedForm, requireScopedFormsBulk } from "./auth-helpers.server";
 import { mergeFormSettings } from "./merge-form-settings.server";
+import { hashFormPassword, isHashedFormPassword } from "./password-hash.server";
 import { getOrgPlan, getOrgPlanWithPolarSync } from "./plan-helpers.server";
 import { generateShortId } from "@/lib/short-id";
 
 const MAX_SHORT_ID_ATTEMPTS = 5;
+
 const PG_UNIQUE_VIOLATION = "23505";
+
 const SHORT_ID_CONSTRAINT = "forms_shortId_key";
 
 // SQLSTATE 23505 (unique_violation): collision only on the shortId index; FK/PK/other propagate.
@@ -31,6 +33,20 @@ const isShortIdCollision = (err: unknown): boolean =>
   "constraint_name" in err &&
   (err as { constraint_name: unknown }).constraint_name === SHORT_ID_CONSTRAINT;
 
+// Shared field shapes for createForm/updateForm validators — the two differ only in a couple of
+// fields' optionality (workspaceId required on create; updatedAt/draftSettings type), spread below.
+const formMutationFields = {
+  title: v.optional(v.string()),
+  formName: v.optional(v.string()),
+  schemaName: v.optional(v.string()),
+  content: v.optional(v.array(v.any())),
+  icon: v.optional(v.nullable(v.string())),
+  cover: v.optional(v.nullable(v.string())),
+  status: v.optional(v.picklist(["draft", "published", "archived"])),
+  customization: v.optional(v.record(v.string(), v.any())),
+  sortIndex: v.optional(v.nullable(v.string())),
+} as const;
+
 const serializeForm = (form: FormRow) => ({
   ...form,
   createdAt: form.createdAt.toISOString(),
@@ -41,24 +57,17 @@ const serializeForm = (form: FormRow) => ({
 
 export const createForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware, formProSettingsMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       id: v.pipe(v.string(), v.uuid()),
       workspaceId: v.pipe(v.string(), v.uuid()),
-      title: v.optional(v.string()),
-      formName: v.optional(v.string()),
-      schemaName: v.optional(v.string()),
-      content: v.optional(v.array(v.any())),
-      icon: v.optional(v.nullable(v.string())),
-      cover: v.optional(v.nullable(v.string())),
-      status: v.optional(v.picklist(["draft", "published", "archived"])),
+      ...formMutationFields,
       draftSettings: v.optional(v.custom<FormSettings>(() => true)),
-      customization: v.optional(v.record(v.string(), v.any())),
-      sortIndex: v.optional(v.nullable(v.string())),
     }),
   )
   .handler(async ({ data, context }) => {
     const now = new Date();
+
     // Generate-then-INSERT, retry only on forms.shortId UNIQUE violation. 7-char base62
     // (3.5T namespace) → collisions vanishing, happy path is one roundtrip.
     for (let attempt = 0; attempt < MAX_SHORT_ID_ATTEMPTS; attempt++) {
@@ -84,12 +93,14 @@ export const createForm = createServerFn({ method: "POST" })
             updatedAt: now,
           })
           .returning();
+
         return { form: serializeForm(form) };
       } catch (err) {
         if (isShortIdCollision(err)) continue;
         throw err;
       }
     }
+
     throw createError({
       code: "forms/short-id-collision" satisfies ErrorCode,
       status: 500,
@@ -102,27 +113,25 @@ export const createForm = createServerFn({ method: "POST" })
 
 export const updateForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware, formProSettingsMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       id: v.pipe(v.string(), v.uuid()),
       workspaceId: v.optional(v.pipe(v.string(), v.uuid())),
-      title: v.optional(v.string()),
-      formName: v.optional(v.string()),
-      schemaName: v.optional(v.string()),
-      content: v.optional(v.array(v.any())),
-      icon: v.optional(v.nullable(v.string())),
-      cover: v.optional(v.nullable(v.string())),
-      status: v.optional(v.picklist(["draft", "published", "archived"])),
+      ...formMutationFields,
       updatedAt: v.optional(v.string()),
       draftSettings: v.optional(v.custom<Partial<FormSettings>>(() => true)),
-      customization: v.optional(v.record(v.string(), v.any())),
-      sortIndex: v.optional(v.nullable(v.string())),
     }),
   )
   .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, draftSettings: settingsPatch, ...updateData } = data;
-    const orgId = getActiveOrgId(context.session);
-    await authForm(id, context.session.user.id, orgId);
+    await requireScopedForm(context.session, id);
+
+    // This path also persists draftSettings (the settings UI flushes here via updateForm, not
+    // saveFormSettings). Hash a non-empty, not-already-hashed password so plaintext never lands at
+    // rest. Idempotent guard keeps re-saves from double-hashing.
+    if (settingsPatch?.password && !isHashedFormPassword(settingsPatch.password)) {
+      settingsPatch.password = hashFormPassword(settingsPatch.password);
+    }
 
     const [form] = await db
       .update(forms)
@@ -148,6 +157,7 @@ export const updateForm = createServerFn({ method: "POST" })
     // Only public-visible field this fn flips is status off "published" (updateForm touches
     // draftSettings only); live settings change via publishFormVersion.
     const statusChanged = updateData.status !== undefined;
+
     if (statusChanged && form.lastPublishedVersionId) {
       await purgeFormCache(id);
     }
@@ -160,16 +170,16 @@ export const updateForm = createServerFn({ method: "POST" })
  * updated too so share sidebar reflects it without a form-listings-sync roundtrip. */
 export const setFormAnalytics = createServerFn({ method: "POST" })
   .middleware([authMiddleware, formProSettingsMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()), enabled: v.boolean() }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()), enabled: v.boolean() }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
+    const { orgId } = await requireScopedForm(context.session, data.formId);
 
     // Re-check plan gate on enable: input is {enabled} not a gated field name, so
     // formProSettingsMiddleware (scans field names) waves it through. Polar-sync since
     // organization.plan drifts on missed webhook. OFF always allowed (downgrade path).
     if (data.enabled) {
       const plan = await getOrgPlanWithPolarSync(orgId, context.session.user.email ?? null);
+
       if (!planUnlocks(plan, "analytics")) {
         throw createError({
           code: "plan/pro-required" satisfies ErrorCode,
@@ -213,14 +223,54 @@ export const setFormAnalytics = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Settings-only publish: commit draftSettings straight to live `form_settings` WITHOUT
+ * snapshotting content into a version. This is what the Settings page "Save" button calls —
+ * it deliberately does NOT go through publishForm, so pending field/content edits stay in
+ * draft and never leak live. Writes draft + live in one tx so both clear the dirty flag. */
+export const saveFormSettings = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    v.object({
+      formId: v.pipe(v.string(), v.uuid()),
+      settings: v.record(v.string(), v.any()),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await requireScopedForm(context.session, data.formId);
+
+    const sanitized = sanitizeFormSettings(data.settings);
+
+    // Hash a non-empty, not-already-hashed password before persisting; never store plaintext.
+    if (sanitized.password && !isHashedFormPassword(sanitized.password)) {
+      sanitized.password = hashFormPassword(sanitized.password);
+    }
+
+    const now = new Date();
+    await db.transaction(async (tx) => {
+      await tx
+        .update(forms)
+        .set({ draftSettings: sanitized, updatedAt: now })
+        .where(eq(forms.id, data.formId));
+      await tx
+        .insert(formSettings)
+        .values({ formId: data.formId, settings: sanitized, updatedAt: now })
+        .onConflictDoUpdate({
+          target: formSettings.formId,
+          set: { settings: sanitized, updatedAt: now },
+        });
+    });
+
+    return { ok: true as const };
+  });
+
 export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ id: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ id: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.id, context.session.user.id, orgId);
+    await requireScopedForm(context.session, data.id);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+
     if (!form) {
       throw createError({
         code: "forms/not-found" satisfies ErrorCode,
@@ -239,20 +289,20 @@ export const deleteForm = createServerFn({ method: "POST" })
 // Bulk soft-delete (move to trash). Capped at 200 to keep statements bounded.
 export const bulkArchiveForms = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       ids: v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.minLength(1), v.maxLength(200)),
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authFormsBulk(data.ids, context.session.user.id, orgId);
+    await requireScopedFormsBulk(context.session, data.ids);
 
     const updated = await db
       .update(forms)
       .set({ status: "archived", updatedAt: new Date() })
       .where(inArray(forms.id, data.ids))
       .returning({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId });
+
     // Drafts that go straight to trash have no edge cache to invalidate.
     const everPublished = updated.filter((r) => r.lastPublishedVersionId).map((r) => r.id);
     await purgeFormCacheBatch(everPublished);
@@ -263,14 +313,13 @@ export const bulkArchiveForms = createServerFn({ method: "POST" })
 // Bulk hard-delete from trash.
 export const bulkDeleteForms = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       ids: v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.minLength(1), v.maxLength(200)),
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authFormsBulk(data.ids, context.session.user.id, orgId);
+    await requireScopedFormsBulk(context.session, data.ids);
 
     const deleted = await db
       .delete(forms)
@@ -295,6 +344,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
         icon: forms.icon,
         cover: forms.cover,
+        previewImageUrl: forms.previewImageUrl,
         customization: forms.customization,
         formName: forms.formName,
         sortIndex: forms.sortIndex,
@@ -357,12 +407,17 @@ export const getArchivedFormListings = createServerFn({ method: "GET" })
 
 export const _getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ id: v.pipe(v.string(), v.uuid()) }))
+  .validator(v.object({ id: v.pipe(v.string(), v.uuid()) }))
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    const [_, [form]] = await Promise.all([
-      authForm(data.id, context.session.user.id, orgId),
+    const [_, [form], [settingsRow]] = await Promise.all([
+      requireScopedForm(context.session, data.id),
       db.select().from(forms).where(eq(forms.id, data.id)),
+      // Carry live settings on the detail so the settings dirty-flag is correct regardless of
+      // whether the listing (which also joins form_settings) has loaded yet. Null until first save.
+      db
+        .select({ settings: formSettings.settings })
+        .from(formSettings)
+        .where(eq(formSettings.formId, data.id)),
     ]);
 
     if (!form) {
@@ -376,7 +431,7 @@ export const _getFormById = createServerFn({ method: "GET" })
       });
     }
 
-    return { form: serializeForm(form) };
+    return { form: { ...serializeForm(form), liveSettings: settingsRow?.settings ?? null } };
   });
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
@@ -393,11 +448,10 @@ const generateSlug = (title: string): string =>
 /** @public - consumed by upcoming domain settings UI */
 export const updateFormSlug = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ formId: v.pipe(v.string(), v.uuid()), slug: v.string() }))
+  .validator(v.object({ formId: v.pipe(v.string(), v.uuid()), slug: v.string() }))
   .handler(async ({ data, context }) => {
     const { formId, slug } = data;
-    const orgId = getActiveOrgId(context.session);
-    await authForm(formId, context.session.user.id, orgId);
+    await requireScopedForm(context.session, formId);
 
     if (!SLUG_PATTERN.test(slug)) {
       throw createError({
@@ -515,7 +569,7 @@ export const updateFormSlug = createServerFn({ method: "POST" })
 /** @public - consumed by upcoming domain settings UI */
 export const assignFormDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     v.object({
       formId: v.pipe(v.string(), v.uuid()),
       customDomainId: v.nullable(v.string()),
@@ -523,11 +577,11 @@ export const assignFormDomain = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { formId, customDomainId } = data;
-    const orgId = getActiveOrgId(context.session);
-    await authForm(formId, context.session.user.id, orgId);
+    const { orgId } = await requireScopedForm(context.session, formId);
 
     if (customDomainId !== null) {
       const plan = await getOrgPlan(orgId);
+
       if (!planUnlocks(plan, "customDomains")) {
         throw createError({
           code: "domains/pro-required" satisfies ErrorCode,

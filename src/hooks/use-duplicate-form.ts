@@ -14,6 +14,7 @@ export const useDuplicateForm = () => {
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: newForm.workspaceId, formId: newForm.id },
       });
+
       return newForm;
     },
     [navigate],

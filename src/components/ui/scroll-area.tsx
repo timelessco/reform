@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
 import { cn } from "@/lib/utils";
@@ -25,8 +27,14 @@ export const ScrollArea = ({
         scrollFade &&
           "mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] [--fade-size:2rem]",
         scrollbarGutter && "data-has-overflow-x:pb-2.5",
+        scrollHeight !== undefined && "max-h-(--scroll-area-max-height)",
       )}
-      style={{ maxHeight: scrollHeight }}
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+      style={
+        scrollHeight === undefined
+          ? undefined
+          : ({ "--scroll-area-max-height": `${scrollHeight}px` } as CSSProperties)
+      }
       data-slot="scroll-area-viewport"
     >
       {children}
@@ -56,7 +64,7 @@ export const ScrollBar = ({
     {...props}
   >
     <ScrollAreaPrimitive.Thumb
-      className="bg-gray-alpha-400 relative flex-1 rounded-full"
+      className="relative flex-1 rounded-full bg-(--color-gray-alpha-400)"
       data-slot="scroll-area-thumb"
     />
   </ScrollAreaPrimitive.Scrollbar>

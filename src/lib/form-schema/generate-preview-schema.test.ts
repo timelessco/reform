@@ -33,6 +33,7 @@ describe("generateZodSchemaFromFields - Date / Time required", () => {
     const fields: PlateFormField[] = [
       { id: "n", name: "n", fieldType: "Number", required: true, min: 3, max: 4 },
     ];
+
     const schema = generateZodSchemaFromFields(fields);
     expect(v.safeParse(schema, { n: 2 }).success).toBe(false);
     expect(v.safeParse(schema, { n: 3 }).success).toBe(true);
@@ -43,6 +44,7 @@ describe("generateZodSchemaFromFields - Date / Time required", () => {
     const fields: PlateFormField[] = [
       { id: "n", name: "n", fieldType: "Number", required: true, min: 3, max: 12 },
     ];
+
     const schema = generateZodSchemaFromFields(fields);
     expect(v.safeParse(schema, { n: "" }).success).toBe(false);
     expect(v.safeParse(schema, { n: "5" }).success).toBe(true);
@@ -93,6 +95,7 @@ describe("generateZodSchemaFromFields - repeatable", () => {
         isFieldArray: true,
       },
     ];
+
     const schema = generateZodSchemaFromFields(fields);
     expect(v.safeParse(schema, { n: ["5", "9"] }).success).toBe(true);
     expect(v.safeParse(schema, { n: ["5", "99"] }).success).toBe(false);
@@ -104,6 +107,7 @@ describe("generateDefaultValuesFromFields - repeatable", () => {
     const fields: PlateFormField[] = [
       { id: "e", name: "e", fieldType: "Email", required: true, isFieldArray: true },
     ];
+
     expect(generateDefaultValuesFromFields(fields)).toEqual({ e: [""] });
   });
 
@@ -111,6 +115,7 @@ describe("generateDefaultValuesFromFields - repeatable", () => {
     const fields: PlateFormField[] = [
       { id: "i", name: "i", fieldType: "Input", isFieldArray: true, defaultValue: "hello" },
     ];
+
     expect(generateDefaultValuesFromFields(fields)).toEqual({ i: ["hello"] });
   });
 

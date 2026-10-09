@@ -1,23 +1,35 @@
 import { animate, useMotionValue, useTransform } from "motion/react";
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 
 import { useControllableState } from "@/hooks/use-controllable-state/use-controllable-state";
+import { clamp } from "@/lib/utils";
 
-// Drag detection & rubber band
+// Drag detection & rubber band. DEAD_ZONE/MAX_CURSOR_RANGE are the *roomy-side* values; when the
+// slider edge sits near the viewport border (e.g. the right-pinned sidebar) they shrink to the
+// cursor travel that actually exists, so the rubber stays reachable on both ends (computeRubberStretch).
 const CLICK_THRESHOLD = 3;
+
 const DEAD_ZONE = 32;
+
 const MAX_CURSOR_RANGE = 200;
+
 const MAX_STRETCH = 8;
 
-// Layout offsets used by the "handle dodges label/value" calculation.
+// Layout offsets used by the "handle dodges value text" calculation.
 const HANDLE_BUFFER = 8;
-const LABEL_OFFSET = 12 + 4;
+
 const VALUE_OFFSET = 12 - 8;
 
 // Width of the hidden "auto" zone reserved at the left edge when allowAuto.
 const AUTO_SLOT_PERCENT = 8;
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 type InteractionState = {
   isInteracting: boolean;
@@ -70,11 +82,13 @@ const interactionReducer = (
 const decimalsForStep = (step: number): number => {
   const s = step.toString();
   const dot = s.indexOf(".");
+
   return dot === -1 ? 0 : s.length - dot - 1;
 };
 
 const roundValue = (val: number, step: number): number => {
   const raw = Math.round(val / step) * step;
+
   return Number.parseFloat(raw.toFixed(decimalsForStep(step)));
 };
 
@@ -82,9 +96,11 @@ const roundValue = (val: number, step: number): number => {
 const snapToDecile = (rawValue: number, min: number, max: number): number => {
   const normalized = (rawValue - min) / (max - min);
   const nearest = Math.round(normalized * 10) / 10;
+
   if (Math.abs(normalized - nearest) <= 0.03125) {
     return min + nearest * (max - min);
   }
+
   return rawValue;
 };
 
@@ -101,6 +117,8 @@ export interface UseElasticSliderOptions {
   isAuto: boolean;
   onAutoChange?: () => void;
   shouldReduceMotion: boolean | null;
+  /** "dot" turns the hash marks into discrete snap stops the handle locks onto. */
+  markStyle: "line" | "dot";
 }
 
 export const useElasticSlider = ({
@@ -116,10 +134,11 @@ export const useElasticSlider = ({
   isAuto,
   onAutoChange,
   shouldReduceMotion,
+  markStyle,
 }: UseElasticSliderOptions) => {
   const hasAutoSlot = allowAuto && typeof onAutoChange === "function";
   const slotOffset = hasAutoSlot ? AUTO_SLOT_PERCENT : 0;
-  const numericTrackPercent = 100 - slotOffset;
+
   const [value = min, setValue] = useControllableState({
     prop: valueProp,
     defaultProp: defaultValue ?? min,
@@ -135,6 +154,7 @@ export const useElasticSlider = ({
     interactionReducer,
     initialInteractionState,
   );
+
   const { isInteracting, isDragging, isHovered, keyboardFocusRing } = interaction;
 
   // Pointer session state — mutable, does not trigger re-renders.
@@ -145,14 +165,26 @@ export const useElasticSlider = ({
   const wrapperRectRef = useRef<DOMRect | null>(null);
   const scaleRef = useRef(1);
 
-  const percentage = isAuto ? 0 : slotOffset + ((value - min) / (max - min)) * numericTrackPercent;
   const isActive = isInteracting || isHovered;
   const displayValue = formatValue ? formatValue(value) : value.toFixed(decimalsForStep(step));
+
+  // Upstream mapping (ncdai/elastic-slider): fill width IS the value percent — no minimum-width
+  // clamp. The fill may collapse behind the label; the handle fades there (dodge below) instead.
+  // Keeping render position === value position is what makes grabbing the handle drag-accurate.
+  const numericTrackPercent = 100 - slotOffset;
+
+  const percentFromValue = useCallback(
+    (v: number) => slotOffset + ((v - min) / (max - min)) * numericTrackPercent,
+    [min, max, slotOffset, numericTrackPercent],
+  );
+
+  const percentage = isAuto ? 0 : percentFromValue(value);
 
   // Fill + handle driven by a single motion value for imperative updates.
   const fillPercent = useMotionValue(percentage);
   const fillWidth = useTransform(fillPercent, (pct) => `${pct}%`);
-  const handleLeft = useTransform(fillPercent, (pct) => `max(4px, calc(${pct}% - 8px))`);
+  // 2×12 bar rides the fill's right edge (8px inset); parks as a 2px sliver at the left edge.
+  const handleLeft = useTransform(fillPercent, (pct) => `max(2px, calc(${pct}% - 10px))`);
 
   // Rubber band: widens the track and pulls it left when dragged past bounds.
   const rubberStretch = useMotionValue(0);
@@ -169,6 +201,7 @@ export const useElasticSlider = ({
   const positionToState = useCallback(
     (clientX: number): { kind: "auto" } | { kind: "value"; value: number } => {
       const rect = wrapperRectRef.current;
+
       if (!rect) return { kind: "value", value: min };
 
       const sceneX = (clientX - rect.left) / scaleRef.current;
@@ -191,9 +224,32 @@ export const useElasticSlider = ({
     [min, max, hasAutoSlot],
   );
 
-  const percentFromValue = useCallback(
-    (v: number) => slotOffset + ((v - min) / (max - min)) * numericTrackPercent,
-    [min, max, slotOffset, numericTrackPercent],
+  // Dot variant: the marks ARE the snap stops. Place ~7 interior stops (Figma Radius) at a whole
+  // number of steps (clean increments) and snap the value to the nearest of {min, …stops, max}.
+  // Rendering reads the same list, so a dot always sits exactly where the handle can land.
+  const markStops = useMemo(() => {
+    if (markStyle !== "dot") return null;
+    const range = max - min;
+
+    if (range <= 0) return [];
+    const interval = Math.max(step, Math.round(range / 8 / step) * step);
+    const interior: number[] = [];
+
+    for (let v = min + interval; v < max - 1e-9; v += interval) {
+      interior.push(roundValue(v, step));
+    }
+
+    return interior;
+  }, [markStyle, min, max, step]);
+
+  const snapToMark = useCallback(
+    (v: number): number => {
+      if (!markStops) return v;
+      const stops = [min, ...markStops, max];
+
+      return stops.reduce((best, s) => (Math.abs(s - v) < Math.abs(best - v) ? s : best), stops[0]);
+    },
+    [markStops, min, max],
   );
 
   // Animate fill to target percent; jump instantly under reduced motion (position still updates, only spring skipped).
@@ -204,6 +260,7 @@ export const useElasticSlider = ({
       if (shouldReduceMotion) {
         fillPercent.jump(targetPercent);
         animRef.current = null;
+
         return;
       }
 
@@ -222,12 +279,20 @@ export const useElasticSlider = ({
 
   const computeRubberStretch = useCallback((clientX: number, sign: number) => {
     const rect = wrapperRectRef.current;
+
     if (!rect) return 0;
 
-    const distancePast = sign < 0 ? rect.left - clientX : clientX - rect.right;
-    const overflow = Math.max(0, distancePast - DEAD_ZONE);
+    // The cursor stops at the viewport edge, so a slider pinned near it has little room on that
+    // side. Shrink the dead-zone + ramp to the room that actually exists, keeping the full stretch
+    // reachable (roomy side is unchanged: room ≥ DEAD_ZONE+MAX_CURSOR_RANGE → original 32/200).
+    const room = sign < 0 ? rect.left : window.innerWidth - rect.right;
+    const deadZone = Math.min(DEAD_ZONE, room * 0.2);
+    const range = Math.max(1, Math.min(MAX_CURSOR_RANGE, room - deadZone));
 
-    return sign * MAX_STRETCH * Math.sqrt(Math.min(overflow / MAX_CURSOR_RANGE, 1));
+    const distancePast = sign < 0 ? rect.left - clientX : clientX - rect.right;
+    const overflow = Math.max(0, distancePast - deadZone);
+
+    return sign * MAX_STRETCH * Math.sqrt(Math.min(overflow / range, 1));
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -250,6 +315,7 @@ export const useElasticSlider = ({
 
     // Snapshot the wrapper rect so later math is immune to layout shifts.
     const wrapper = wrapperRef.current;
+
     if (wrapper) {
       const rect = wrapper.getBoundingClientRect();
       wrapperRectRef.current = rect;
@@ -272,6 +338,7 @@ export const useElasticSlider = ({
       if (isClickRef.current) return;
 
       const rect = wrapperRectRef.current;
+
       if (rect && !shouldReduceMotion) {
         if (e.clientX < rect.left) {
           rubberStretch.jump(computeRubberStretch(e.clientX, -1));
@@ -312,28 +379,35 @@ export const useElasticSlider = ({
     (e: React.PointerEvent) => {
       if (!isInteracting) return;
 
-      if (isClickRef.current) {
-        const next = positionToState(e.clientX);
-        if (next.kind === "auto") {
+      const next = positionToState(e.clientX);
+
+      if (next.kind === "auto") {
+        if (isClickRef.current) {
           animateFillTo(0);
           onAutoChange?.();
-        } else {
-          // Coarse sliders (≤10 positions) snap to nearest step; continuous ones keep decile-magnetic.
-          const discreteSteps = (max - min) / step;
-          const snapped =
-            discreteSteps <= 10
-              ? clamp(min + Math.round((next.value - min) / step) * step, min, max)
-              : snapToDecile(next.value, min, max);
-
-          animateFillTo(percentFromValue(snapped));
-          setValue(roundValue(snapped, step));
         }
+      } else if (markStops) {
+        // Dot variant: land on the nearest snap stop whether the gesture was a click or a drag.
+        const snapped = snapToMark(next.value);
+        animateFillTo(percentFromValue(snapped));
+        setValue(roundValue(snapped, step));
+      } else if (isClickRef.current) {
+        // Coarse sliders (≤10 positions) snap to nearest step; continuous ones keep decile-magnetic.
+        const discreteSteps = (max - min) / step;
+
+        const snapped =
+          discreteSteps <= 10
+            ? clamp(min + Math.round((next.value - min) / step) * step, min, max)
+            : snapToDecile(next.value, min, max);
+
+        animateFillTo(percentFromValue(snapped));
+        setValue(roundValue(snapped, step));
       }
 
       if (!shouldReduceMotion && rubberStretch.get() !== 0) {
         animate(rubberStretch, 0, {
           type: "spring",
-          visualDuration: 0.35,
+          visualDuration: 0.25,
           bounce: 0.15,
         });
       }
@@ -353,6 +427,8 @@ export const useElasticSlider = ({
       rubberStretch,
       shouldReduceMotion,
       onAutoChange,
+      markStops,
+      snapToMark,
     ],
   );
 
@@ -418,22 +494,25 @@ export const useElasticSlider = ({
     dispatchInteraction({ type: "hover-leave" });
   }, []);
 
-  // Measure label + value to derive "dodge" thresholds so handle fades when it would overlap either text.
+  // Measure label + value to derive "dodge" thresholds (upstream): the handle fades when it
+  // would overlap either text, since the fill can collapse behind the label.
   const [dodge, setDodge] = useState({ left: 38, right: 72 });
 
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
+
     if (!wrapper) return;
 
     const measure = () => {
       const trackWidth = wrapper.offsetWidth;
+
       if (trackWidth <= 0) return;
 
       const labelEl = labelRef.current;
       const valueEl = valueRef.current;
 
       const left = labelEl
-        ? ((LABEL_OFFSET + labelEl.offsetWidth + HANDLE_BUFFER) / trackWidth) * 100
+        ? ((labelEl.offsetLeft + labelEl.offsetWidth + HANDLE_BUFFER) / trackWidth) * 100
         : 38;
 
       const right = valueEl
@@ -449,13 +528,17 @@ export const useElasticSlider = ({
     observer.observe(wrapper);
 
     if (labelRef.current) observer.observe(labelRef.current);
+
     if (valueRef.current) observer.observe(valueRef.current);
 
     return () => observer.disconnect();
   }, [label, displayValue]);
 
   const valueDodge = percentage < dodge.left || percentage > dodge.right;
-  const handleOpacity = isAuto || !isActive ? 0 : valueDodge ? 0.1 : isDragging ? 0.8 : 0.5;
+  // Figma: in Auto the handle is a solid gray/300 sliver at the left edge (light color carries the
+  // "faint" look, not opacity); once a value is set it's gray/500 and fades only when it would
+  // collide with the label/value text (see `dimmed` in SliderHandle for the color switch).
+  const handleOpacity = isAuto ? 1 : valueDodge ? 0.15 : 1;
 
   const discreteSteps = (max - min) / step;
   const hashMarkCount = discreteSteps <= 10 ? discreteSteps - 1 : 9;
@@ -463,10 +546,39 @@ export const useElasticSlider = ({
   const hashMarkPct = useCallback(
     (i: number) => {
       const rawPct = discreteSteps <= 10 ? (((i + 1) * step) / (max - min)) * 100 : (i + 1) * 10;
+
       return slotOffset + (rawPct * numericTrackPercent) / 100;
     },
     [discreteSteps, max, min, step, slotOffset, numericTrackPercent],
   );
+
+  // Line variant: marks across the track, hiding any that fall under the label text (Figma: marks
+  // never sit behind the label) — same rule as the dot variant.
+  const hashMarks = useMemo(
+    () =>
+      Array.from({ length: hashMarkCount }, (_, i) => {
+        const pct = hashMarkPct(i);
+
+        return { pct, hidden: pct < dodge.left };
+      }),
+    [hashMarkCount, hashMarkPct, dodge.left],
+  );
+
+  // Dot variant: render a dot per snap stop, hiding the one the handle is currently on/nearest so the
+  // handle never collides with a dot (matches the Figma filled states).
+  const dotMarks = useMemo(() => {
+    if (!markStops) return null;
+    const hideWithin = markStops.length > 0 ? 100 / (markStops.length + 1) / 2 : 5;
+
+    return markStops.map((v) => {
+      const pct = percentFromValue(v);
+      const nearHandle = Math.abs(pct - percentage) < hideWithin;
+      // Hide dots that fall under the label text (Figma: marks never sit behind the label).
+      const underLabel = pct < dodge.left;
+
+      return { pct, hidden: nearHandle || underLabel };
+    });
+  }, [markStops, percentFromValue, percentage, dodge.left]);
 
   return {
     wrapperRef,
@@ -480,8 +592,8 @@ export const useElasticSlider = ({
     keyboardFocusRing,
     valueDodge,
     handleOpacity,
-    hashMarkCount,
-    hashMarkPct,
+    hashMarks,
+    dotMarks,
     fillWidth,
     handleLeft,
     rubberWidth,

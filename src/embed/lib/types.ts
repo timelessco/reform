@@ -1,5 +1,10 @@
 export type PopupPosition = "bottom-right" | "bottom-left" | "center";
+
 export type PopupLayout = "default" | "modal";
+
+/** How the auto-bubble opens the popup. "button" = click the bubble; others auto-open once. */
+export type PopupTrigger = "button" | "auto" | "scroll" | "delay" | "exit-intent";
+
 export type EmojiAnimation = "wave" | "bounce" | "pulse" | "none";
 
 export interface EmojiOptions {
@@ -59,7 +64,8 @@ export interface PopupInstance {
 
 /** Events sent from iframe to parent */
 export type IframeEvent =
-  | { event: "Reform.FormLoaded"; formId: string }
+  // frameRadius: the form's popup cover radius (--bf-cover-radius) so the host-page frame matches it.
+  | { event: "Reform.FormLoaded"; formId: string; frameRadius?: string }
   | { event: "Reform.Resize"; height: number }
   | {
       event: "Reform.FormSubmitted";

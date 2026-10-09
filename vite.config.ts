@@ -9,7 +9,6 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
-import viteTsConfigPaths from "vite-tsconfig-paths";
 
 // Custom Cache-Control headers for the public embed script so updates
 // propagate quickly to embedders without requiring a versioned URL.
@@ -21,6 +20,7 @@ const setEmbedHeader = (
   if (req.url?.startsWith("/embed/popup.js") || req.url?.startsWith("/widgets/embed.js")) {
     res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
   }
+
   next();
 };
 
@@ -49,6 +49,7 @@ const stripImageSentinelForApiIcons = (
   if (req.url?.startsWith("/api/icons/")) {
     delete req.headers["sec-fetch-dest"];
   }
+
   next();
 };
 
@@ -126,6 +127,31 @@ const config = defineConfig({
             { path: "/api/cron/aggregate-analytics", schedule: "15 0 * * *" },
             { path: "/api/cron/purge-archived-forms", schedule: "30 0 * * *" },
           ],
+          // Provision Vercel's image optimizer (/_vercel/image) for Vercel-Blob covers/previews/
+          // avatars. Unlike Next.js, Nitro/TanStack Start doesn't enable it automatically, so the
+          // Build Output config must declare it — without this the endpoint 404s in prod.
+          // `sizes` MUST list every `w` <Image> requests (w= must match exactly, else 400); keep it
+          // in sync with the widths passed in src/components/ui/image.tsx + lib/vercel-image.ts.
+          images: {
+            sizes: [
+              16, 24, 32, 48, 64, 72, 80, 120, 144, 160, 240, 400, 640, 800, 960, 1200, 1280, 1600,
+              1920, 2048,
+            ],
+            domains: [],
+            // Pinned to OUR blob store (not `*.public.blob.vercel-storage.com`) so the optimizer
+            // can't be used as an open proxy for any Vercel-Blob tenant's images. Host is the
+            // lowercased store id from BLOB_READ_WRITE_TOKEN; the URL parser lowercases hostnames
+            // before matching, so casing of stored URLs is irrelevant.
+            remotePatterns: [
+              {
+                protocol: "https",
+                hostname: "gwsqlmqg0axhgzzt.public.blob.vercel-storage.com",
+                pathname: "/**",
+              },
+            ],
+            formats: ["image/avif", "image/webp"],
+            minimumCacheTTL: 86400,
+          },
         },
       },
       routeRules: {
@@ -143,10 +169,7 @@ const config = defineConfig({
         },
       },
     }),
-    // this is the plugin that enables path aliases
-    viteTsConfigPaths({
-      projects: ["./tsconfig.json"],
-    }),
+
     tailwindcss(),
     tanstackStart({
       router: {},
@@ -183,11 +206,24 @@ const config = defineConfig({
       : null,
   ],
   resolve: {
+    tsconfigPaths: true,
     // `jotai` added: @platejs/core pins ~2.8.4 while another tree pulls 2.20.0,
     // so node_modules has two copies. The Vite RSC plugin's client-references
     // grouping collides when both reach the bundler ("Identifier 'import_*'
     // has already been declared"). Deduping picks one for the bundle.
     dedupe: ["@platejs/core", "jotai"],
+    // @vercel/oidc is pulled in transitively by `ai` → `@ai-sdk/gateway` but is
+    // never used at runtime (this project doesn't use AI Gateway auth). The real
+    // package is CJS-only: bundling it crashes Vite 7's dev module runner, and
+    // leaving it external (`ssr.external`) breaks the nitro production build
+    // (Rollup can't resolve the bare import from `node_modules/.nitro/`). Alias
+    // it to a no-op stub so both dev and prod resolve it deterministically.
+    alias: [
+      // The Node import wrapper reads a CJS default that Rolldown drops in SSR.
+      // Use the native ESM helpers in every build environment instead.
+      { find: /^tslib$/, replacement: "tslib/tslib.es6.mjs" },
+      { find: "@vercel/oidc", replacement: `${import.meta.dirname}/src/lib/vercel-oidc-stub.ts` },
+    ],
   },
   server: {
     sourcemapIgnoreList: (sourcePath) => sourcePath.includes("node_modules"),
@@ -196,53 +232,51 @@ const config = defineConfig({
     // Emit .vite/manifest.json so the server can resolve lazy field chunks
     // and emit <link rel="modulepreload"> for the fields used on step 1.
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          // Pin Vite's dynamic-import preload helper (`__vitePreload`) to its
-          // own tiny chunk. Otherwise Rollup places it in `editor` (largest
-          // shared chunk via platejs), which forces every module that uses
-          // dynamic `import()` — fields, form-preview, public-form-page — to
-          // pull `editor-*.js` (362 kB) and its KaTeX `editor-*.css` (7 kB)
-          // just to call the helper.
-          if (id.includes("vite/preload-helper")) return "vite-runtime";
-          // Pin small shared runtime utilities to their own chunk so Rollup
-          // can't absorb them into `editor`. Without this, `use-sync-external-store`
-          // and `scheduler` end up owned by the editor chunk (because platejs
-          // also uses them), which forces every Base UI primitive that needs
-          // those utilities (e.g. `getDisabledMountTransitionStyles`, `useForm`,
-          // `useDebouncedCallback`) to pull the full editor chunk + KaTeX CSS
-          // on the public form's happy path. Also covers tiny class-name utilities
-          // (`clsx`, `tailwind-merge`, `class-variance-authority`) that every `cn()`
-          // caller would otherwise drag into whatever chunk Rollup picks first.
-          if (id.includes("node_modules/use-sync-external-store")) return "shared-runtime";
-          if (id.includes("node_modules/scheduler")) return "shared-runtime";
-          if (
-            id.includes("node_modules/clsx") ||
-            id.includes("node_modules/tailwind-merge") ||
-            id.includes("node_modules/class-variance-authority")
-          )
-            return "shared-runtime";
-          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
-          if (id.includes("@radix-ui/")) return "ui";
-          // Pin Base UI primitives to their own chunk. Without this, modules
-          // like `getDisabledMountTransitionStyles` / `useOpenInteractionType`
-          // end up grouped with `editor` by Rollup's auto-chunker, which
-          // forces every field chunk (InputField, TextareaField, …) that
-          // uses a Base UI primitive to pull the full 361 kB platejs chunk
-          // + KaTeX CSS.
-          //
-          // A per-primitive split (`ui-base-<primitive>` from a regex) was
-          // tried in PR #86 and rolled back — it caused
-          // `Cannot access 'React$1' before initialization` (TDZ violation)
-          // in the SSR bundle on Vercel, crashing every request with 500.
-          // Rollup splits @base-ui's internal cross-primitive deps in a way
-          // that breaks ESM init order in the Nitro server bundle. Single-
-          // bucket "ui" keeps all base-ui modules together, sidestepping
-          // the cycle. Reintroducing per-primitive needs an actual Nitro
-          // SSR smoke test (vite preview alone doesn't catch it).
-          if (id.includes("@base-ui/")) return "ui";
-          if (id.includes("@sentry/")) return "sentry";
+        codeSplitting: {
+          groups: [
+            // Pin Vite's dynamic-import preload helper (`__vitePreload`) to its
+            // own tiny chunk. Otherwise the bundler places it in `editor` (largest
+            // shared chunk via platejs), which forces every module that uses
+            // dynamic `import()` — fields, form-preview, public-form-page — to
+            // pull `editor-*.js` (362 kB) and its KaTeX `editor-*.css` (7 kB)
+            // just to call the helper.
+            { name: "vite-runtime", test: /vite[\\/]preload-helper/ },
+            // Pin small shared runtime utilities to their own chunk so the
+            // bundler can't absorb them into `editor`. Without this,
+            // `use-sync-external-store` and `scheduler` end up owned by the
+            // editor chunk (because platejs also uses them), which forces every
+            // Base UI primitive that needs those utilities to pull the full
+            // editor chunk + KaTeX CSS on the public form's happy path. Also
+            // covers tiny class-name utilities (`cnfast`,
+            // `class-variance-authority`) that every `cn()` caller would
+            // otherwise drag into whatever chunk gets picked first.
+            {
+              name: "shared-runtime",
+              test: /node_modules[\\/](use-sync-external-store|scheduler|cnfast|class-variance-authority)/,
+            },
+            { name: "editor", test: /node_modules[\\/](@platejs|platejs)/ },
+            { name: "ui", test: /node_modules[\\/](@radix-ui|@base-ui)/ },
+            // Pin Base UI primitives to their own chunk. Without this, modules
+            // like `getDisabledMountTransitionStyles` / `useOpenInteractionType`
+            // end up grouped with `editor`, which forces every field chunk
+            // (InputField, TextareaField, …) that uses a Base UI primitive to
+            // pull the full 361 kB platejs chunk + KaTeX CSS.
+            //
+            // A per-primitive split (`ui-base-<primitive>` from a regex) was
+            // tried in PR #86 and rolled back — it caused
+            // `Cannot access 'React$1' before initialization` (TDZ violation)
+            // in the SSR bundle on Vercel, crashing every request with 500.
+            // The bundler splits @base-ui's internal cross-primitive deps in a
+            // way that breaks ESM init order in the Nitro server bundle. Single-
+            // bucket "ui" keeps all base-ui modules together, sidestepping the
+            // cycle. Reintroducing per-primitive needs an actual Nitro SSR
+            // smoke test (vite preview alone doesn't catch it).
+            //
+            // (ui group above covers both @radix-ui and @base-ui)
+            { name: "sentry", test: /node_modules[\\/]@sentry/ },
+          ],
         },
       },
     },
@@ -262,13 +296,6 @@ const config = defineConfig({
       // the Vercel function. Inlining it into the SSR bundle drops the .ttf
       // and crashes with ENOENT on first import in /var/task/_ssr/.
       "@vercel/og",
-      // @vercel/oidc (pulled in transitively by `ai@6` → `@ai-sdk/gateway`
-      // → here for AI Gateway auth) ships CJS-only modules that crash Vite
-      // 7's module runner with `Cannot read properties of undefined
-      // (reading '__cjs_module_runner_transform')`. Hand it to Node's
-      // native CJS loader at runtime. `@ai-sdk/gateway` itself is ESM and
-      // must stay bundled so Rollup can resolve it.
-      "@vercel/oidc",
     ],
   },
   environments: {
@@ -302,10 +329,10 @@ const config = defineConfig({
     // If a server fn module is ever scanned for client (during route-tree
     // analysis), these node-only packages would otherwise be eagerly bundled
     // and crash on Buffer/process references at module load.
-    // `@base-ui/react` is excluded per the RSC plugin's inconsistent-
-    // optimization warning (client components consumed across SSR + RSC
-    // envs).
-    exclude: ["postgres", "drizzle-orm/postgres-js", "@base-ui/react"],
+    // `@base-ui/react` + `@tanstack/react-form` are excluded per the RSC
+    // plugin's inconsistent-optimization warning (client components consumed
+    // across SSR + RSC envs).
+    exclude: ["postgres", "drizzle-orm/postgres-js", "@base-ui/react", "@tanstack/react-form"],
     // Force-include CJS-only `use-sync-external-store` so Vite extracts its
     // named exports correctly. The shim uses a `module.exports = require(...)`
     // indirection that Vite's auto-scan misses.

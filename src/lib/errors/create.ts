@@ -47,9 +47,13 @@ export class StructuredError extends Error {
     this.name = "EvlogError";
     this.code = opts.code;
     this.status = opts.status ?? 500;
+
     if (opts.why) this.why = opts.why;
+
     if (opts.fix) this.fix = opts.fix;
+
     if (opts.link) this.link = opts.link;
+
     if (opts.internal) {
       Object.defineProperty(this, INTERNAL_SYMBOL, {
         value: opts.internal,

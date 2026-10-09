@@ -16,12 +16,13 @@ it("keeps only allowlisted presentational keys", () => {
     progressBar: true,
     presentationMode: "field-by-field" as const,
   };
+
   const picked = pickTemplateSettings(dirty);
   expect(Object.keys(picked).sort()).toEqual([...TEMPLATE_SETTINGS_ALLOWLIST].sort());
   expect(picked.progressBar).toBe(true);
   expect(picked.presentationMode).toBe("field-by-field");
-  expect((picked as Record<string, unknown>).notificationEmail).toBeUndefined();
-  expect((picked as Record<string, unknown>).password).toBeUndefined();
+  expect(Object.hasOwn(picked, "notificationEmail")).toBe(false);
+  expect(Object.hasOwn(picked, "password")).toBe(false);
 });
 
 it("merges allowlisted settings onto defaults, leaving sensitive keys at default", () => {
@@ -32,6 +33,7 @@ it("merges allowlisted settings onto defaults, leaving sensitive keys at default
     saveAnswersForLater: false,
     preventDuplicateSubmissions: true,
   });
+
   expect(merged.progressBar).toBe(true);
   expect(merged.notificationEmail).toBe(defaultFormSettings.notificationEmail); // null
   expect(merged.passwordProtect).toBe(false);

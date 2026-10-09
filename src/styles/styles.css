@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Vendored from vaul-base/style.css — its exports map doesn't expose the css, so a package import breaks Vite resolution. */
+@import "./vaul-base.css";
 @import "./inter-v.css";
 @import "./transitions.css";
 
@@ -31,6 +33,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    scrollbar-gutter: stable; /* reserve scrollbar space so content doesn't reflow */
+    overscroll-behavior: contain; /* prevent page bounce/scroll propagation */
   }
 
   /* When the form-builder editor is themed, propagate its background to html/body
@@ -157,6 +161,19 @@
     U+1EA0-1EF9, U+20AB;
 }
 
+/* IBM Plex Mono — latin only, Regular. Used by the Custom CSS editor box (chrome, not a form font). */
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+  src: url("/fonts/ibm-plex-mono/fonts/ibm-plex-mono-latin-400.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
 /* `dark:` applies under a `.dark` ancestor, EXCEPT inside a `.bf-light` subtree. The form
    preview adds `.bf-light` to a light form so the app's global `<html.dark>` can't leak its
    `dark:` styles (checkbox borders, button hovers, chips, etc.) into a light-themed form. */
@@ -184,7 +201,19 @@
 	--color-gray-800: #303030;
 	--color-gray-900: #212121;
 	--color-gray-950: #141414;
-	--color-gray-1000: #000;
+  --color-gray-1000: #000;
+
+  /* App-wide success (Figma published-state green #1e8d02). The .bf-themed scope overrides this
+     per-form via --bf-success; defined here so non-themed surfaces (e.g. dashboard) get the token. */
+  --color-success: #1e8d02;
+  --color-success-foreground: #ffffff;
+  /* Soft "published" pill pair (Figma list row 26216:13362). */
+  --color-success-soft: #e4faeb;
+  --color-success-on-soft: #137949;
+  /* Partial pill pair (Figma 27015:17195). */
+  --color-partial-soft: #fff7d3;
+  --color-partial-on-soft: #b35309;
+
 
 	/* Light Gray Alpha Shades */
 	--color-gray-alpha-50: rgb(0 0 0 / 3%); /* 3% Black */
@@ -253,6 +282,9 @@
   --destructive: #cd2b31;
   --destructive-foreground: #e03636;
   --border: var(--color-gray-200);
+  /* espresso-base-ui tabs tokens (surface = active-tab pill, border-soft = tab-list rule) */
+  --surface: oklch(100% 0 0);
+  --border-soft: var(--color-gray-200);
   --input: var(--color-gray-300);
   --ring: var(--color-gray-600);
   --chart-1: var(--color-blue-400);
@@ -324,6 +356,16 @@
 	--color-gray-950: #f8f8f8;
 	--color-gray-1000: #fff;
 
+	/* Figma dark-mode success green (27015:17122). */
+	--color-success: #1e8d02;
+	--color-success-foreground: #ffffff;
+	/* Figma 27015:17122 — Completed pill dark: bg #0b2e1c / text #58c08e. */
+	--color-success-soft: #0b2e1c;
+	--color-success-on-soft: #58c08e;
+	/* Figma 27015:17195 — Partial pill dark: bg #371e06 / text #e56300. */
+	--color-partial-soft: #371e06;
+	--color-partial-on-soft: #e56300;
+
 	/* Dark Gray Alpha Shades */
 	--color-gray-alpha-50: rgb(255 255 255 / 5%); /* 5% White */
 	--color-gray-alpha-100: rgb(255 255 255 / 8%); /* 8% White */
@@ -390,6 +432,10 @@
   --destructive: #cd2b31;
   --destructive-foreground: #e03636;
   --border: var(--color-gray-400);
+  /* espresso-base-ui tabs tokens (dark) */
+  /* Active tab pill = Figma alpha/50 (#ffffff14, white @ 8%) over the gray-100 track — not a solid gray. */
+  --surface: oklch(100% 0 0 / 8%);
+  --border-soft: var(--color-gray-800);
   --input: var(--color-gray-300);
   --ring: var(--color-gray-600);
   --chart-1: var(--color-blue-900);
@@ -446,7 +492,8 @@
   --font-sans: inter-v, inter-v-fallback;
 
   /* Variations Fonts */
-  --font-sans--font-variation-settings: "opsz" 20, "wght" var(--tw-font-weight, 450);
+  /* opsz 14 = Inter's default optical size (Figma renders "Inter Variable" at axis-default 14, not 20). */
+  --font-sans--font-variation-settings: "opsz" 14, "wght" var(--tw-font-weight, 450);
 
   /* Font Weight */
   --font-sans-weight: var(--tw-font-weight, 420);
@@ -468,6 +515,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-border-soft: var(--border-soft);
+  --shadow-6xs: 0 0 1.5px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.14);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -513,6 +563,9 @@
   --font-weight-black: 900;
   /* Font Variation Settings */
   --font-variation-420: "wght" 420;
+  /* Figma "text/base/regular" weight role — opsz pinned to Inter's 14 default. Shared by every
+     placeholder/upload/matrix/block-menu rule so the regular weight lives in one place. */
+  --font-variation-regular: "opsz" 14, "wght" 420;
 
 
   /* Font Size (line-height overrides Tailwind's defaults to match Figma's 115%) */
@@ -640,6 +693,42 @@
     0 24px 30px -8px rgba(0, 0, 0, 0.1);
 }
 
+/* Figma `elevation/light/xl` for dashboard form cards — same 3 layers as elevation-xl plus the
+   inset top highlight. Kept separate so shared elevation-xl (popovers) is unaffected. Mode-independent. */
+@utility elevation-card {
+  box-shadow:
+    inset 0 0.25px 2px 0 rgba(255, 255, 255, 0.15),
+    0 0 1px 0 rgba(0, 0, 0, 0.2),
+    0 0 10px 2px rgba(0, 0, 0, 0.04),
+    0 24px 30px -8px rgba(0, 0, 0, 0.1);
+}
+
+/* Figma `elevation/light/base` — the lightest tier, for tooltips and inline
+   popups. Includes the inset top highlight that reads on the dark surface. */
+@utility elevation-base {
+  box-shadow:
+    0 2px 5px 0 rgba(0, 0, 0, 0.14),
+    0 0 1.5px 0 rgba(0, 0, 0, 0.16),
+    inset 0 0.25px 1.5px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Figma `elevation/light/pop` — the "floating chip" affordance on popover
+   save/action buttons (settings screens). Bare shadow, mode-independent. */
+@utility elevation-pop {
+  box-shadow:
+    0 1px 1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0.5px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Figma `elevation/light/md` — mid tier for the floating publish toast pill. */
+@utility elevation-md {
+  box-shadow:
+    0 6px 12px -2px rgba(0, 0, 0, 0.122),
+    0 0 6px 2px rgba(0, 0, 0, 0.031),
+    0 0 1.5px 0 rgba(0, 0, 0, 0.149),
+    inset 0 0.25px 1.5px 0 rgba(255, 255, 255, 0.078);
+}
+
 @keyframes drop-line-pulse {
   0%,
   100% {
@@ -666,6 +755,16 @@
   font-feature-settings: "case";
 }
 
+/* opsz 16 = Figma value-cell optical size (labels stay at axis-default 14). Re-binds wght so font-[450] still drives weight. */
+@utility font-opsz-16 {
+  font-variation-settings: "opsz" 16, "wght" var(--tw-font-weight, 450);
+}
+
+/* opsz 24 = Figma settings-page date/tz/time + URL cell optical size. Re-binds wght so font-[420] still drives weight. */
+@utility font-opsz-24 {
+  font-variation-settings: "opsz" 24, "wght" var(--tw-font-weight, 450);
+}
+
 /* Canonical text-input box used by Input/Email/Number/Link/Textarea/Time/
    Phone/FileUpload field widgets. Matches the editor's form-field-node
    spec from Figma (gray/50 fill, 8px radius, hairline drop shadow) in both
@@ -677,7 +776,10 @@
    binds it to --bf-input so the customize-sidebar Input token actually
    reaches every input widget. */
 @utility form-input {
-  @apply w-full text-foreground placeholder:text-muted-foreground/50;
+  @apply w-full placeholder:text-muted-foreground/50;
+  /* Typed text auto-contrasts with the Input bg (--bf-input-foreground), not blind body text —
+     so a dark Input + dark body text stays readable. Falls back to foreground when uncustomized. */
+  color: var(--bf-input-foreground, var(--color-foreground));
   background-color: var(--form-input-bg, var(--color-gray-50)) !important;
   border-radius: 8px !important;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.54), 0 1px 1px rgba(0, 0, 0, 0.06) !important;
@@ -685,7 +787,12 @@
 }
 
 @utility form-input-error {
-  @apply ring-1 ring-destructive;
+  /* form-input's border box-shadow is !important, so the invalid ring must also be an !important
+     box-shadow (a red 1px ring + the input's subtle drop shadow) to actually show — a plain
+     `ring-1` loses to it and the box never turns red. Uses the Error color (--destructive). */
+  box-shadow:
+    0 0 0 1px var(--destructive),
+    0 1px 1px rgba(0, 0, 0, 0.06) !important;
 }
 
 @layer utilities {
@@ -785,24 +892,61 @@
   padding-right: var(--editor-px);
 }
 
+/* Cover full-bleed measures the PANE, not the viewport: editor/preview panes are narrower
+   than the window (app sidebars, drawer inset), where 100vw misaligns (zoom/scrollbars/pane
+   offsets skew it). cqw resolves against the nearest container — these panes — and falls back
+   to the small viewport width where no container exists (public form = full window). */
+[data-bf-cover-pane] {
+  container-type: inline-size;
+  overflow-x: clip; /* contain full-bleed cover breakout — prevents horizontal scroll */
+}
+
 .bf-themed [data-bf-cover] {
   height: var(--bf-cover-height);
-  /* unset = current square cover; overflow clips img once a radius is set */
-  border-radius: var(--bf-cover-radius, 0);
-  overflow: hidden;
-  /* Full-bleed by default (var fallbacks reproduce the w-screen breakout). Cover width "fit"
+  /* unset = current square cover; overflow clips img once a radius is set. Bottom corners default
+     to the cover radius, but the popup zeroes them (--bf-cover-radius-b: 0) so the popup cover's
+     bottom stays flush over the fields while its top still follows the cover radius. */
+  border-radius: var(--bf-cover-radius, 0) var(--bf-cover-radius, 0)
+    var(--bf-cover-radius-b, var(--bf-cover-radius, 0)) var(--bf-cover-radius-b, var(--bf-cover-radius, 0));
+  /* Fill clips to the rounded box (hidden); Fit goes visible so the ambient glow can bleed past. */
+  overflow: var(--bf-cover-overflow, hidden);
+  isolation: isolate; /* own stacking context so glow (z0) sits under the image (z1) */
+  /* Full-bleed by default (var fallbacks reproduce the 100cqw breakout). Cover width "fit"
      makes generate-theme-css emit these vars to bleed the cover 28px past the form width on
      each side (into the editor gutter), so a radius rounds corners that are on-screen. */
-  width: var(--bf-cover-w, 100vw);
-  margin-left: var(--bf-cover-mx, -50vw);
-  margin-right: var(--bf-cover-mx, -50vw);
+  width: var(--bf-cover-w, 100cqw);
+  margin-left: var(--bf-cover-mx, -50cqw);
+  margin-right: var(--bf-cover-mx, -50cqw);
+  /* Fit floats the cover as a card with a 32px top gap (Figma); Fill stays flush (0). */
+  margin-top: var(--bf-cover-mt, 0);
   left: var(--bf-cover-x, 50%);
   right: var(--bf-cover-x, 50%);
 }
 
-/* Cover image fit (Fit=contain / Fill=cover); unset = current cover */
-.bf-themed [data-bf-cover] img {
+/* Cover image fit (Fit=contain / Fill=cover); unset = current cover. Sits above the glow and
+   self-clips to the radius (needed once overflow goes visible in Fit). */
+.bf-themed [data-bf-cover] img:not([data-bf-cover-glow]) {
   object-fit: var(--bf-cover-fit, cover);
+  position: relative;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* Ambient glow (Figma 25690:11807): a blurred, 35%-opacity copy of the cover image so the cover's
+   shadow takes on the photo's colours. Fit only (var-gated). Anchored to the lower half (top 45%)
+   so the blur(37px) bleeds DOWN/sideways only — never above the cover top (that upward bleed read
+   as a halo/"chip" clipping the header). */
+.bf-themed [data-bf-cover] [data-bf-cover-glow] {
+  display: var(--bf-cover-glow, none);
+  position: absolute;
+  inset: 45% 20px auto 20px;
+  height: 75%;
+  z-index: 0;
+  border-radius: inherit;
+  object-fit: var(--bf-cover-fit, cover);
+  filter: blur(37px);
+  opacity: 0.35;
+  pointer-events: none;
 }
 
 /* Cover fade (Figma node 25293:1954) — the cover dissolves into the page background at its
@@ -815,10 +959,21 @@
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  height: 66%;
+  /* % of height → same dissolve at any --bf-cover-height. MUST equal ::before height so paint +
+     blur are coterminous (else a blurred-but-colorful band reads as two stacked layers). */
+  height: 75%;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0%, var(--background) 92%);
+  /* Fade to --background at 0 alpha (not `transparent`=transparent-black → gray banding). Whitening
+     ramps from the same top point as the blur and grows with it = Figma's seamless single fade. */
+  background: linear-gradient(
+    to bottom,
+    rgb(from var(--background) r g b / 0) 0%,
+    rgb(from var(--background) r g b / 0.08) 30%,
+    rgb(from var(--background) r g b / 0.4) 64%,
+    rgb(from var(--background) r g b / 0.85) 88%,
+    var(--background) 100%
+  );
 }
 [data-bf-cover]::before {
   content: "";
@@ -826,11 +981,13 @@
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  height: 34%;
+  /* Figma 25293-1954: backdrop blur(21px). Same height as ::after; linear mask (0→opaque, no
+     plateau) eases the blur in from the same top point so it never "suddenly appears". */
+  height: 75%;
   z-index: 2;
   pointer-events: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(21px);
+  -webkit-backdrop-filter: blur(21px);
   mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
 }
@@ -911,11 +1068,11 @@
 }
 
 /* Input fill metrics: unset fallbacks match the current literal classes
-   (h-7 = 1.75rem, rounded-[8px], pr-[8px] pl-[10px]) so unset = identical. */
+   (h-[30px], rounded-[8px], px-[10px]) so unset = identical. */
 .bf-themed [data-bf-input-fill] {
-  height: var(--bf-input-height, 1.75rem);
+  height: var(--bf-input-height, 30px);
   border-radius: var(--bf-input-radius, 8px);
-  padding: var(--bf-input-padding, 0 8px 0 10px);
+  padding: var(--bf-input-padding, 0 10px);
 }
 
 /* Submit button metrics: unset fallbacks match current submit button
@@ -924,14 +1081,18 @@
   width: var(--bf-button-width, auto);
   height: var(--bf-button-height, 32px);
   border-radius: var(--bf-button-radius, 8px);
+  /* Label auto-contrasts with the Buttons color (--bf-button-foreground = pickInk(--bf-primary)), so
+     it stays visible on any button color; falls back to primary-foreground when uncustomized.
+     Cascades to the label + icons via currentColor. */
+  color: var(--bf-button-foreground, var(--color-primary-foreground));
 }
 
-/* Popup surfaces inside themed forms — date-picker calendar, multi-select
-   dropdown, etc. — bypass `--bf-popover` (which derives from the base
-   preset, typically white) and route through `--bf-input` so popups feel
-   like an extension of the input/trigger they expand from. The
-   `--color-popover` override is needed for Tailwind v4's bg-popover utility,
-   which resolves through the @theme color scale rather than the raw token. */
+/* Popup surfaces (date/calendar, multi-select, phone country list, block/context menus) route
+   through --bf-input so the popover matches the input family (white for a light input, dark for a
+   dark one) — the app-default look, NOT a tinted grey. --popover-foreground stays the preset
+   (readable on either), and the reanchor hook remaps --foreground/--muted-foreground to it so
+   items that hardcode text-foreground contrast. --color-popover mirror is needed for Tailwind v4's
+   bg-popover utility, which resolves through the @theme color scale. */
 .bf-themed {
   --popover: var(--bf-input);
   --color-popover: var(--bf-input);
@@ -939,16 +1100,119 @@
 
 /* Typography bridge */
 .bf-themed {
-  font-size: var(--bf-font-size);
+  /* Default body size 14px (Figma system-flat); --bf-font-size overrides when customized */
+  font-size: var(--bf-font-size, 0.875rem);
   /* unset = current defaults (normal line-height, left-aligned body) */
   line-height: var(--bf-line-height, normal);
   text-align: var(--bf-text-align, left);
+  /* Figma system-flat uses case-sensitive forms across all form text */
+  font-feature-settings: "case";
 }
 
 /* Override global * { letter-spacing: 0.01em } inside themed forms */
 .bf-themed,
 .bf-themed * {
   letter-spacing: var(--bf-letter-spacing);
+}
+
+/* All form placeholders — Figma "text/base/regular" @ 50% opacity (node 25434:2713):
+   gray-600 (theme-adaptive: #7c7c7c light / #949494 dark), 14px, wght 420, 0.28px.
+   Real placeholders (preview, live, editor inline inputs) + slate placeholders carry the full
+   spec incl. color+opacity; lh stays inherited so the textarea's 22px isn't clobbered. */
+.bf-themed input::placeholder,
+.bf-themed textarea::placeholder,
+.bf-themed [data-slate-placeholder] {
+  /* Auto-contrast ink for the Input bg @ 50% = a muted-but-legible placeholder derived from the
+     theme; falls back to gray-600 when uncustomized (unchanged default). */
+  color: var(--bf-input-foreground, var(--color-gray-600));
+  opacity: 0.5;
+  font-size: 14px;
+  font-variation-settings: var(--font-variation-regular);
+  letter-spacing: 0.28px;
+}
+
+/* Title textarea placeholder must match the TITLE (48px/thin/-1.44px), not the 14px field default
+   the rule above pins. Scoped to the editor header title textarea; more specific, so it wins. */
+.bf-themed [data-bf-header] textarea::placeholder {
+  font-size: inherit;
+  font-variation-settings: normal;
+  letter-spacing: inherit;
+}
+
+/* UNIFORM field-value color: every native input/textarea value (and the value-bearing icons next
+   to it) auto-contrasts with the Input bg via --bf-input-foreground — so text/email/number/phone/
+   date/textarea all match, instead of some inheriting Body text (black) and some the form-input
+   ink. Scoped to the preview/live field list; placeholders keep their own 50% rule above. */
+.bf-themed [data-bf-field-list] input,
+.bf-themed [data-bf-field-list] textarea,
+.bf-themed [data-bf-field-list] [data-bf-input-fill] {
+  color: var(--bf-input-foreground, var(--color-foreground));
+}
+/* Trailing field icons (chevrons, @, phone, #) sit on the Input bg too — same ink, slightly muted. */
+.bf-themed [data-bf-field-list] [data-bf-input-fill] svg {
+  color: color-mix(in srgb, var(--bf-input-foreground, var(--color-muted-foreground)) 70%, transparent);
+}
+
+/* Invalid field → its label turns red (the Error color), uniformly across input & option fields:
+   any control with aria-invalid inside the field wrapper reddens that field's label. Pairs with the
+   control's red ring + the error message; answer/option text stays neutral (shadcn/TanStack pattern). */
+.bf-themed [data-bf-input]:has([aria-invalid="true"]) [data-bf-field-label] {
+  color: var(--destructive);
+}
+/* Editor field placeholders are author-editable spans (they carry a caret) — match weight/size/
+   tracking only; the span keeps its own muted-foreground/50 color (no element opacity → caret stays crisp). */
+.bf-themed [data-bf-placeholder] {
+  font-size: 14px;
+  font-variation-settings: var(--font-variation-regular);
+  letter-spacing: 0.28px;
+}
+/* Field-INPUT placeholders auto-contrast with the Input bg (--bf-input-foreground), matching the
+   real ::placeholder; scoped to the input wrapper so page-bg placeholders (labels/options) keep
+   muted-foreground. color-mix gives the 50% mute without element opacity so the caret stays crisp. */
+.bf-themed [data-bf-input-fill] [data-bf-placeholder] {
+  color: color-mix(
+    in srgb,
+    var(--bf-input-foreground, var(--color-muted-foreground)) 50%,
+    transparent
+  );
+}
+
+/* Upload field text (editor node + preview/live) — Figma node 25687:11155, both Regular (wght 420,
+   0.02em → 0.28px@14 / 0.26px@13). Primary "Click to choose…" 14px/gray-600; secondary "Max file…"
+   13px/gray-500. !important overrides the field-list font-size rule + global * letter-spacing. */
+.bf-themed [data-bf-upload-primary],
+.bf-themed [data-bf-upload-secondary] {
+  font-variation-settings: var(--font-variation-regular);
+  letter-spacing: 0.02em !important;
+}
+.bf-themed [data-bf-upload-primary] {
+  font-size: 14px !important;
+}
+.bf-themed [data-bf-upload-secondary] {
+  font-size: 13px !important;
+}
+
+/* Matrix headers (editor node + preview/live) — Figma node 25644:10558, both Regular (wght 420,
+   0.02em → 0.26px@13 / 0.28px@14). Column headers 13px/gray-600 (text-muted-foreground); row labels
+   14px/gray-800. !important on the column size beats the field-list font-size rule (preview); the
+   row follows --bf-font-size (14px default). */
+.bf-themed [data-bf-matrix-col],
+.bf-themed [data-bf-matrix-row] {
+  font-variation-settings: var(--font-variation-regular);
+  letter-spacing: 0.02em !important;
+}
+.bf-themed [data-bf-matrix-col] {
+  font-size: 13px !important;
+}
+
+/* Form branding badge "Made with Reform" (Figma 26031:13933) — Regular 420 / 0.28px / gray-500.
+   Overrides the .bf-themed variation(450) + global * letter-spacing(0.14px); size 14px is inline. */
+.bf-themed [data-bf-branding] {
+  font-variation-settings: var(--font-variation-regular);
+  letter-spacing: 0.02em !important;
+  /* Button alignment (Buttons → Alignment) reorders the badge within its flex row: right-aligned
+     buttons push the badge to the left (order -1); left/center keep it after the button. */
+  order: var(--bf-branding-order, 0);
 }
 
 /* Header is excluded from body typography — revert to base layer defaults */
@@ -965,8 +1229,8 @@
   font-size: var(--bf-title-font-size);
   letter-spacing: var(--bf-title-letter-spacing);
   font-style: var(--bf-title-font-style, normal);
-  /* unset title color falls back to body foreground = current look */
-  color: var(--bf-title-color, var(--bf-foreground));
+  /* unset title color → Figma system-flat gray-800 (#303030); --bf-title-color overrides */
+  color: var(--bf-title-color, var(--color-gray-800));
 }
 
 /* Title line-height; alignment follows the global --bf-text-align (whole-form alignment). */
@@ -980,9 +1244,27 @@
   display: none !important;
 }
 
+/* Block-menu rows — Figma system-flat item typography (node 25644:10041): 14px / wght 420 /
+   0.28px / gray-800 (lh 1.15 + case inherited from the popover). Row height (h-[26px]) and
+   padding are untouched, so list measurements stay matching Figma. */
+.bf-block-menu [data-slot="dropdown-menu-item"] {
+  font-size: 14px;
+  font-variation-settings: var(--font-variation-regular);
+  color: var(--color-gray-800);
+}
+.bf-block-menu [data-slot="dropdown-menu-item"] > span {
+  /* label spans pin their own text-foreground/80 — override so the text reads gray-800 */
+  color: var(--color-gray-800);
+}
+/* Override global * { letter-spacing: 0.01em } for the rows + their text */
+.bf-block-menu [data-slot="dropdown-menu-item"],
+.bf-block-menu [data-slot="dropdown-menu-item"] * {
+  letter-spacing: 0.28px;
+}
+
 /* Font-size: editor blocks (inputs, labels, buttons, textareas, paragraphs — NOT headings/header) */
 .bf-themed [data-slate-editor] {
-  font-size: var(--bf-font-size);
+  font-size: var(--bf-font-size, 0.875rem);
 }
 
 .bf-themed [data-slate-editor] [data-slate-node="element"]:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]),
@@ -1004,6 +1286,15 @@
   font-size: inherit;
 }
 
+/* Line height: form body content (NOT headings/title). The Line-height control sets --bf-line-height,
+   but the text-* utilities pin every text element's line-height to 1.15, overriding the inherited
+   value on .bf-themed — so force the var on the leaf body text (editor + preview + public). Title +
+   header subtree keep their own (--bf-title-line-height). Unset = 1.15 (current default, no change). */
+.bf-themed [data-bf-field-list] *:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]):not([data-bf-header] *),
+.bf-themed [data-bf-form-container] *:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]):not([data-bf-header] *) {
+  line-height: var(--bf-line-height, 1.15);
+}
+
 /* Spacing tokens — adjust these to experiment with the form layout:
    - --bf-block-margin: visible gap between any two block selections
    - --bf-field-gap:    margin around labels (= gap between fields)
@@ -1021,6 +1312,13 @@
 [data-bf-field-list] > [data-slate-node="element"]:not([data-bf-chrome]),
 [data-bf-field-list] > [data-bf-input] {
   margin-bottom: var(--bf-block-margin) !important;
+}
+
+/* One-at-a-time footer form is flex `gap-7`; flex items don't margin-collapse, so the block
+   margin above would ADD to the gap (field→footer = 56px). Zero it — the flex gap owns spacing. */
+[data-bf-field-list][data-bf-fbf-footer] > [data-bf-input],
+[data-bf-field-list][data-bf-fbf-footer] > [data-slate-node="element"]:not([data-bf-chrome]) {
+  margin-bottom: 0 !important;
 }
 
 /* Public-form label spacing mirrors the editor's label block exactly.
@@ -1089,6 +1387,15 @@
   margin-bottom: var(--bf-field-gap) !important;
 }
 
+/* A block immediately preceding a logic block must contribute the full block-margin (28px) so the
+   logic block's -16px tuck (mt-[calc(12px - block-margin)]) nets the intended 12px gap. Paragraphs
+   and labels otherwise contribute only --bf-field-gap (10px), letting the tuck overlap the block
+   above. Specificity (0,6,0) > the paragraph/label rules above so it wins for those predecessors. */
+:not([data-bf-chrome]):not([data-bf-input]):has(> .slate-blockWrapper):has(+ * .slate-logicBlock)
+  > .slate-blockWrapper.flow-root {
+  margin-bottom: var(--bf-block-margin) !important;
+}
+
 /* Headings: block-margin above (section break) + tight below
    (binds to what they introduce). Notion-style asymmetry.
    Preview-side uses DESCENDANT not direct-child: in the editor-internal
@@ -1123,6 +1430,25 @@
   animation-timing-function: ease-out;
 }
 
+/* View Transition: version-history enter/switch/exit. Cross-fades the editor surface so the
+   content + spacing swap eases in instead of jumping (see edit.tsx committed snapshot). */
+::view-transition-old(editor-content),
+::view-transition-new(editor-content) {
+  animation-duration: 220ms;
+  animation-timing-function: ease-out;
+}
+
+/* Isolate a localized cross-fade to its named groups only. startScopedViewTransition() (see
+   lib/view-transition.ts) marks :root with .vt-isolate-root for the duration of the transition;
+   this cancels the global root transition (below) so the app sidebar, header and side panels stay
+   static while only the explicitly-named groups (e.g. "editor-content", "preview-content") animate.
+   The theme toggle intentionally skips this class so it still gets the full-page root cross-fade. */
+:root.vt-isolate-root::view-transition-group(root),
+:root.vt-isolate-root::view-transition-old(root),
+:root.vt-isolate-root::view-transition-new(root) {
+  animation: none !important;
+}
+
 /* View Transition: public-form theme toggle. Smooths the light↔dark
    flip — dozens of CSS variables swap at once, so the default instant
    apply is visually harsh. The crossfade animates the snapshot of the
@@ -1149,3 +1475,60 @@
     0 4.5px 18px 0 rgba(0, 0, 0, 0.02),
     0 2px 9.5px 0 rgba(0, 0, 0, 0.01);
 }
+/* Submissions single-view: slide the record on prev/next (View Transitions API).
+   Scoped to [data-bf-subnav] so other view transitions keep their default cross-fade. */
+@keyframes bf-subnav-in-from-right {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+}
+@keyframes bf-subnav-out-to-left {
+  to {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+}
+@keyframes bf-subnav-in-from-left {
+  from {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+}
+@keyframes bf-subnav-out-to-right {
+  to {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+}
+
+/* The record slides; the rest of the page (toolbar count/pager) snaps — no root cross-fade. */
+html[data-bf-subnav]::view-transition-old(root),
+html[data-bf-subnav]::view-transition-new(root) {
+  animation: none;
+}
+html[data-bf-subnav]::view-transition-old(bf-submission-record),
+html[data-bf-subnav]::view-transition-new(bf-submission-record) {
+  animation-duration: 0.26s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-bf-subnav="next"]::view-transition-old(bf-submission-record) {
+  animation-name: bf-subnav-out-to-left;
+}
+html[data-bf-subnav="next"]::view-transition-new(bf-submission-record) {
+  animation-name: bf-subnav-in-from-right;
+}
+html[data-bf-subnav="prev"]::view-transition-old(bf-submission-record) {
+  animation-name: bf-subnav-out-to-right;
+}
+html[data-bf-subnav="prev"]::view-transition-new(bf-submission-record) {
+  animation-name: bf-subnav-in-from-left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-bf-subnav]::view-transition-old(bf-submission-record),
+  html[data-bf-subnav]::view-transition-new(bf-submission-record) {
+    animation: none;
+  }
+}
+

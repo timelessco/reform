@@ -14,6 +14,7 @@ import { applyOp, canLiveUpdate, liveUpdateOp } from "@/lib/editor/apply-op";
 import type { AppliedOp, ApplyContext } from "@/lib/editor/apply-op";
 import { mergeThemeIntoCustomization } from "@/lib/editor/merge-theme";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
+import { parseAiQuotaCode, showAiQuotaToast } from "@/components/editor/hooks/ai-quota-toast";
 import { FREE_CUSTOMIZATION_KEYS } from "@/lib/server-fn/plan-helpers";
 import { AI_DAILY_LIMIT_ERROR } from "@/lib/server-fn/ai-quota-constants";
 import { parseError } from "@/lib/errors/parse";
@@ -42,7 +43,9 @@ const REPLACE_OVERRIDE_PATTERN =
 // Append (preserve selected) vs replace (delete + substitute). Replace verbs override additive ones.
 const detectIntent = (prompt: string): "append" | "replace" => {
   if (REPLACE_OVERRIDE_PATTERN.test(prompt)) return "replace";
+
   if (ADDITIVE_INTENT_PATTERN.test(prompt)) return "append";
+
   return "replace";
 };
 
@@ -72,6 +75,7 @@ const FORM_BUILDING_PATTERN =
 
 const buildUserMessage = (prompt: string, images?: ImagePart[]): UIMessage => {
   const parts: UIMessagePart[] = [{ type: "text", text: prompt }];
+
   for (const image of images ?? []) {
     const mediaType = image.url.split(";")[0]?.split(":")[1] ?? "image/png";
     parts.push({
@@ -81,6 +85,7 @@ const buildUserMessage = (prompt: string, images?: ImagePart[]): UIMessage => {
       filename: image.name,
     });
   }
+
   return {
     id: crypto.randomUUID(),
     role: "user",
@@ -148,75 +153,71 @@ export const useFormGenStream = ({
           match: (n) => Boolean((n as Record<string, unknown>)[AI_DIFF_KEY]),
         }),
       ) as Array<[Record<string, unknown>, number[]]>;
+
       for (const [node, path] of entries) visit(node, path);
     },
     [editor],
   );
 
+  // Accept and discard are mirror images: same node walk, insert/remove roles swapped.
+  // discard = remove `insert` blocks, strip `remove` marks; accept = remove `remove` blocks, strip `insert` marks.
+  const settleDiff = useCallback(
+    (mode: "accept" | "discard") => {
+      if (settledRef.current) return;
+      const removeMark = mode === "discard" ? "insert" : "remove";
+      const stripMark = mode === "discard" ? "remove" : "insert";
+      const removePaths: number[][] = [];
+      const stripPaths: number[][] = [];
+      forEachDiffNode((node, path) => {
+        const mark = (node as { aiDiff?: "insert" | "remove" }).aiDiff;
+
+        if (mark === removeMark) removePaths.push(path);
+        else if (mark === stripMark) stripPaths.push(path);
+      });
+
+      const strip = () => {
+        for (const p of stripPaths) {
+          try {
+            editor.tf.unsetNodes(AI_DIFF_KEY, { at: p });
+          } catch {
+            // node moved; skip
+          }
+        }
+      };
+
+      // Remove descending so earlier paths stay valid.
+      const remove = () => {
+        for (const p of removePaths.toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0))) {
+          try {
+            editor.tf.removeNodes({ at: p });
+          } catch {
+            // path stale; skip
+          }
+        }
+      };
+
+      editor.tf.withoutNormalizing(() => {
+        // Discard strips marks FIRST (paths valid pre-remove); accept removes first (preserved order).
+        if (mode === "discard") {
+          strip();
+          remove();
+        } else {
+          remove();
+          strip();
+        }
+      });
+
+      settledRef.current = true;
+      resetStreamState();
+    },
+    [editor, forEachDiffNode, resetStreamState],
+  );
+
   /** Discard: remove every block marked `insert`; strip the `remove` mark. */
-  const rollback = useCallback(() => {
-    if (settledRef.current) return;
-    const removePaths: number[][] = [];
-    const stripPaths: number[][] = [];
-    forEachDiffNode((node, path) => {
-      const mark = (node as { aiDiff?: "insert" | "remove" }).aiDiff;
-      if (mark === "insert") removePaths.push(path);
-      else if (mark === "remove") stripPaths.push(path);
-    });
-
-    editor.tf.withoutNormalizing(() => {
-      // Strip marks FIRST (paths valid pre-remove), then remove descending so earlier paths stay valid.
-      for (const p of stripPaths) {
-        try {
-          editor.tf.unsetNodes(AI_DIFF_KEY, { at: p });
-        } catch {
-          // node moved; skip
-        }
-      }
-      for (const p of removePaths.toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0))) {
-        try {
-          editor.tf.removeNodes({ at: p });
-        } catch {
-          // path stale; skip
-        }
-      }
-    });
-
-    settledRef.current = true;
-    resetStreamState();
-  }, [editor, forEachDiffNode, resetStreamState]);
+  const rollback = useCallback(() => settleDiff("discard"), [settleDiff]);
 
   /** Accept: remove every block marked `remove`; strip the `insert` mark. */
-  const accept = useCallback(() => {
-    if (settledRef.current) return;
-    const removePaths: number[][] = [];
-    const stripPaths: number[][] = [];
-    forEachDiffNode((node, path) => {
-      const mark = (node as { aiDiff?: "insert" | "remove" }).aiDiff;
-      if (mark === "remove") removePaths.push(path);
-      else if (mark === "insert") stripPaths.push(path);
-    });
-
-    editor.tf.withoutNormalizing(() => {
-      for (const p of removePaths.toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0))) {
-        try {
-          editor.tf.removeNodes({ at: p });
-        } catch {
-          // path stale; skip
-        }
-      }
-      for (const p of stripPaths) {
-        try {
-          editor.tf.unsetNodes(AI_DIFF_KEY, { at: p });
-        } catch {
-          // node moved; skip
-        }
-      }
-    });
-
-    settledRef.current = true;
-    resetStreamState();
-  }, [editor, forEachDiffNode, resetStreamState]);
+  const accept = useCallback(() => settleDiff("accept"), [settleDiff]);
 
   const lastPromptRef = useRef<string>("");
 
@@ -227,32 +228,42 @@ export const useFormGenStream = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
+
       if (!res.ok) {
-        // 429 = daily AI quota exhausted; structured body. Show rate-limit toast + Upgrade CTA.
+        // 429 = AI limit. Two kinds: short-window burst ("quota/ai-rate-limited" → slow down) and
+        // daily quota ("quota/ai-daily-limit" → Upgrade CTA). Branch on the structured body code.
         if (res.status === 429) {
           const body = (await res.json().catch(() => null)) as {
+            code?: string;
             message?: string;
             limit?: number;
           } | null;
-          toast.error(body?.message || "Daily AI limit reached. Upgrade to Pro for unlimited.", {
-            action: {
-              label: "Upgrade to Pro",
-              onClick: () => settingsDialogStore.open("billing"),
-            },
-          });
+
+          if (parseAiQuotaCode(body?.code) === "rate-limited") {
+            showAiQuotaToast("rate-limited", body?.message);
+            throw new Error(body?.message || "AI rate limited");
+          }
+
+          showAiQuotaToast("daily-limit", body?.message);
           throw new Error(body?.message || AI_DAILY_LIMIT_ERROR);
         }
+
         throw new Error(`theme request failed: ${res.status}`);
       }
+
       const data = (await res.json()) as { theme?: ThemePayload };
+
       if (!data.theme) throw new Error("no theme in response");
+
       return data.theme;
     },
     onSuccess: async (theme) => {
       if (!formId) {
         onFinish?.();
+
         return;
       }
+
       // Merge plan-aware customization dict onto existing, preset="custom" so picker reflects change.
       const collectionsModule = await import("@/collections");
       const localModule = await import("@/collections/local/form");
@@ -264,6 +275,7 @@ export const useFormGenStream = ({
       };
 
       const cloud = collectionsModule.getFormListings();
+
       if (cloud.get(formId)) {
         cloud.update(formId, updateDraft as never);
       } else if (localModule.localFormCollection.get(formId)) {
@@ -272,6 +284,7 @@ export const useFormGenStream = ({
 
       // All-free-key response → free tier; prompt upgrade. Pro (light:*/dark:* tokens) skips toast.
       const isFreeTierResponse = Object.keys(theme).every((k) => FREE_CUSTOMIZATION_KEYS.has(k));
+
       if (isFreeTierResponse) {
         toast("Theme applied. For full per-mode color customization, upgrade to Pro.", {
           action: {
@@ -292,15 +305,19 @@ export const useFormGenStream = ({
   const applyFinalThemeOps = useCallback(
     (finalObject: { ops?: PartialOp[] } | undefined) => {
       const ops = finalObject?.ops;
+
       if (!ops || ops.length === 0) return;
 
       // Last set-theme op wins (AI may emit multiple).
       let themeOp: SetThemeOp | null = null;
+
       for (const partial of ops) {
         if (partial?.type !== "set-theme") continue;
+
         if (!isOpReady(partial)) continue;
         themeOp = partial;
       }
+
       if (!themeOp) return;
 
       const ctx: ApplyContext = {
@@ -315,6 +332,7 @@ export const useFormGenStream = ({
         thankYouEmittedRef,
         firstContentSeenRef,
       };
+
       applyOp(themeOp, ctx);
     },
     [editor, formId],
@@ -322,14 +340,19 @@ export const useFormGenStream = ({
 
   const finalizeStream = useCallback(() => {
     if (!createModeRef.current) return;
+
     try {
       editor.tf.withoutNormalizing(() => {
         // 1. Default formHeader icon/cover if AI omitted them
         const header = editor.children[0] as Record<string, unknown> | undefined;
+
         if (header?.type === "formHeader") {
           const updates: Record<string, unknown> = {};
+
           if (!header.icon) updates.icon = "Document";
+
           if (!header.cover) updates.cover = "#1e293b";
+
           if (Object.keys(updates).length > 0) {
             editor.tf.setNodes(updates, { at: [0] });
           }
@@ -346,13 +369,16 @@ export const useFormGenStream = ({
 
         if (wantsThankYouMessage) {
           const children = editor.children as Array<Record<string, unknown>>;
+
           const tyIdx = children.findIndex(
             (n) => n?.type === "pageBreak" && n.isThankYouPage === true,
           );
+
           if (tyIdx !== -1) {
             // Content already after thank-you page-break?
             const next = children[tyIdx + 1];
             const hasContent = next && /^h[1-3]$/.test(next.type as string);
+
             if (!hasContent) {
               const insertAt = [tyIdx + 1];
               editor.tf.insertNodes(
@@ -398,25 +424,30 @@ export const useFormGenStream = ({
       const parsed = parseError(err);
       const msg = parsed.message ?? "";
       let bodyCode: string | undefined;
+
       try {
         const body = JSON.parse(msg) as { code?: unknown };
+
         if (typeof body?.code === "string") bodyCode = body.code;
       } catch {
         // err.message wasn't a JSON body (network error, abort, etc.)
       }
+
+      const isRateLimited =
+        bodyCode === "quota/ai-rate-limited" || parsed.code === "quota/ai-rate-limited";
+
       const isDailyLimit =
         bodyCode === "quota/ai-daily-limit" ||
         parsed.code === "quota/ai-daily-limit" ||
         msg.includes(AI_DAILY_LIMIT_ERROR) ||
         msg.includes("Daily AI limit");
-      if (isDailyLimit) {
-        toast.error("Daily AI limit reached. Upgrade to Pro for unlimited generations.", {
-          action: {
-            label: "Upgrade to Pro",
-            onClick: () => settingsDialogStore.open("billing"),
-          },
-        });
+
+      if (isRateLimited) {
+        showAiQuotaToast("rate-limited");
+      } else if (isDailyLimit) {
+        showAiQuotaToast("daily-limit");
       }
+
       onError?.(msg || "Generation failed. Changes have been rolled back.");
     },
   }) as unknown as UseObjectReturn;
@@ -427,6 +458,7 @@ export const useFormGenStream = ({
   useEffect(() => {
     if (!object?.ops) return;
     const ops = object.ops as PartialOp[];
+
     const ctx: ApplyContext = {
       editor,
       initialPathRef,
@@ -444,23 +476,30 @@ export const useFormGenStream = ({
     editor.tf.withoutNormalizing(() => {
       // Below high-water mark = frozen. Only tail op (currently streaming) can live-update.
       const start = frozenBelowRef.current;
+
       for (let i = start; i < ops.length; i++) {
         const partial = ops[i];
+
         if (!isOpReady(partial)) continue;
+
         // set-theme is applied atomically in onFinish, not during streaming.
         if (partial?.type === "set-theme") continue;
         const op = partial as Op;
         const prev = appliedRef.current.get(i);
+
         if (!prev) {
           const applied = applyOp(op, ctx);
+
           if (applied) {
             appliedRef.current.set(i, applied);
             didInsert = true;
+
             if ("path" in applied && applied.path?.length) {
               lastInsertedPathRef.current = applied.path;
               // Mark inserted block(s) so AIDiff wrapper tints green. nodeCount = contiguous top-level blocks from path.
               const count = "nodeCount" in applied ? applied.nodeCount : 1;
               const startIdx = applied.path[0];
+
               if (typeof startIdx === "number") {
                 for (let j = 0; j < count; j++) {
                   try {
@@ -477,6 +516,7 @@ export const useFormGenStream = ({
           appliedRef.current.set(i, updated);
         }
       }
+
       // Freeze everything except the tail op — it may still grow.
       frozenBelowRef.current = Math.max(0, ops.length - 1);
     });
@@ -487,10 +527,13 @@ export const useFormGenStream = ({
       requestAnimationFrame(() => {
         try {
           const entry = editor.api.node(path);
+
           if (!entry) return;
+
           const domNode = (
             editor.api as unknown as { toDOMNode?: (node: unknown) => HTMLElement | undefined }
           ).toDOMNode?.(entry[0]);
+
           domNode?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         } catch {
           // best-effort; ignore
@@ -501,8 +544,10 @@ export const useFormGenStream = ({
 
   // Rollback on error (additional safety beyond onError; adjust-during-render).
   const [lastError, setLastError] = useState(error);
+
   if (lastError !== error) {
     setLastError(error);
+
     if (error) rollback();
   }
 
@@ -527,9 +572,11 @@ export const useFormGenStream = ({
       if (editMode) {
         // REPLACE: originals stay marked aiDiff='remove' (red), new blocks after last selected (green). Accept prunes originals; discard prunes new.
         const sortedAsc = [...selectedPaths].toSorted((a, b) => (a[0] ?? 0) - (b[0] ?? 0));
+
         const lastPath = sortedAsc[sortedAsc.length - 1] ?? [
           Math.max(0, editor.children.length - 1),
         ];
+
         const insertAt = PathApi.next(lastPath);
         initialPathRef.current = [...insertAt];
         nextInsertPathRef.current = [...insertAt];
@@ -554,9 +601,11 @@ export const useFormGenStream = ({
 
       // Fresh form = only chrome (formHeader/formButton/pageBreak), zero content blocks. MarkdownPlugin serializes header title even when empty, so editorContent alone is unreliable.
       const CHROME_TYPES = new Set(["formHeader", "formButton", "pageBreak"]);
+
       const contentBlockCount = (editor.children as Array<Record<string, unknown>>).filter(
         (n) => !CHROME_TYPES.has(n?.type as string),
       ).length;
+
       const formIsEmpty = contentBlockCount === 0;
 
       // Theme mode = image + theme intent + no form-building verbs. Form+theme → fall back to create/append; AI can still emit set-theme as an op.
@@ -567,6 +616,7 @@ export const useFormGenStream = ({
         !editMode;
 
       let mode: "create" | "append" | "replace" | "theme";
+
       if (isThemeIntent) mode = "theme";
       else if (editMode) mode = "replace";
       else if (formIsEmpty && selectedPaths.length === 0) mode = "create";
@@ -584,6 +634,7 @@ export const useFormGenStream = ({
       // Theme mode bypasses useObject — server returns one-shot tool-call JSON, not a stream.
       if (mode === "theme") {
         themeMutate(requestBody);
+
         return;
       }
 

@@ -18,6 +18,7 @@ export const TextSwap = ({ children, className }: TextSwapProps) => {
 
   useMountEffect(() => {
     const el = ref.current;
+
     if (!el) return;
     // Jump to "below + blurred" start, force reflow, release so it transitions up to rest.
     el.classList.add("is-enter-start");

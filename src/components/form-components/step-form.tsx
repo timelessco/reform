@@ -1,18 +1,22 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { TextSwap } from "@/components/transitions/text-swap";
 import { use, useMemo, useRef, useState } from "react";
 import { useFocusFirstField } from "@/hooks/use-focus-first-field";
-import { useMountEffect } from "@/hooks/use-mount-effect";
-import { Button } from "@/components/ui/button";
-import { useStepForm } from "@/contexts/step-form-context";
+import { FormPreviewReadOnlyContext, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import { enqueueQuestionProgress } from "@/lib/analytics/track-client";
 import { getFieldsFromSegments } from "@/lib/editor/transform-plate-for-preview";
 import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import type { QuestionRef } from "@/lib/forms/extract-questions";
+import { cn } from "@/lib/utils";
 import { StaticContentBlock } from "./static-content-block";
 import { PreviewRendererContext, RenderStepPreviewInput } from "./render-step-preview-input";
+import {
+  AutoActionFooter,
+  brandingRowClass,
+  FormBrandingBadge,
+  StepNavButton,
+  useFieldByFieldKeyboard,
+  useQuestionViewTracking,
+} from "./step-runner";
 
 interface StepFormProps {
   stepIndex: number;
@@ -21,6 +25,11 @@ interface StepFormProps {
   questions?: QuestionRef[];
   isLastStep: boolean;
   autoActionButton?: boolean;
+  /** Show the "Made with Reform." footer badge beside the final Submit (settings.branding). */
+  branding?: boolean;
+  /** Auto-action nav style: "hint" = keyboard-hint row (popup/embed); "footer" = full-page
+   *  Back / Next → button row (Figma 27112:21064). */
+  navVariant?: "hint" | "footer";
 }
 
 // One step's form instance. Nav + data accumulation via StepFormContext.
@@ -30,67 +39,49 @@ export const StepForm = ({
   questions,
   isLastStep,
   autoActionButton = false,
+  branding = false,
+  navVariant = "hint",
 }: StepFormProps) => {
   const { totalSteps, goToPrevStep, canGoBack, isSubmitting, tracking } = useStepForm();
-  const { t } = useTranslation();
+  // Read-only submission view: suppress every nav/action affordance (button groups,
+  // authored Buttons, auto Next/Submit) so stacked steps read as a flat record.
+  const readOnly = use(FormPreviewReadOnlyContext);
   const Renderer = use(PreviewRendererContext) ?? RenderStepPreviewInput;
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const stepQuestions = useMemo<QuestionRef[]>(() => questions ?? [], [questions]);
+
   const hasAuthoredButton = useMemo(
     () => segments.some((seg) => seg.type === "field" && seg.field.fieldType === "Button"),
     [segments],
   );
+
   const showAutoActionButton = autoActionButton && !hasAuthoredButton;
 
-  const { form, formName, handleFieldFocus, visibleFieldNames, lockedFieldNames, hideSubmit } =
-    useStepPreviewForm({
-      fields,
-      questions: stepQuestions,
-      stepIndex,
-      isLastStep,
-      formName: `stepForm-${stepIndex}`,
-    });
+  const {
+    form,
+    formName,
+    handleFieldFocus,
+    visibleFieldNames,
+    lockedFieldNames,
+    requiredFieldNames,
+    hideSubmit,
+  } = useStepPreviewForm({
+    fields,
+    questions: stepQuestions,
+    stepIndex,
+    isLastStep,
+    formName: `stepForm-${stepIndex}`,
+  });
 
   const groupedItems = useMemo(() => groupSegmentsForRendering(segments), [segments]);
+  // Branding rides EVERY step's action row (Next and Submit), not just the final Submit — so
+  // multi-step card forms show "Made with Reform." throughout, matching one-at-a-time (Figma 27112-20324).
+  const showBranding = branding;
 
   const formRef = useRef<HTMLFormElement>(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
-  // Field-by-field shortcuts, CAPTURE phase (intercept Enter before child handlers e.g. Base UI Checkbox).
-  // Enter → advance/submit; textareas keep newline unless Cmd/Ctrl; nav buttons (outside [data-bf-input]) keep native; in-question widgets advance (Space to interact).
-  // Esc → back one step. Open popover: focus is portaled (outside form), handler doesn't fire, popover closes first.
-  const handleFieldByFieldKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
-    // React events bubble the React tree, so portaled UI (combobox, popovers) still reaches this handler. Bail if target isn't a DOM descendant of form, so popups handle own Enter/Esc (e.g. phone-input country combobox).
-    const target = event.target as HTMLElement | null;
-    if (target && formRef.current && !formRef.current.contains(target)) return;
-
-    if (event.key === "Escape") {
-      if (!canGoBack) return;
-      // Defensive: bail if an in-form popover trigger is open — Esc shouldn't navigate away if focus stayed on trigger.
-      if (formRef.current?.querySelector('[aria-expanded="true"]')) return;
-      event.preventDefault();
-      event.stopPropagation();
-      goToPrevStep();
-      return;
-    }
-
-    if (event.key !== "Enter") return;
-    if (!target) return;
-    const isInQuestion = target.closest("[data-bf-input]") !== null;
-    const isNavButton =
-      (target.tagName === "BUTTON" || target.getAttribute("role") === "button") && !isInQuestion;
-    if (isNavButton) return;
-
-    const isTextarea = target.tagName === "TEXTAREA";
-    const isMetaEnter = event.metaKey || event.ctrlKey;
-
-    if (isTextarea && !isMetaEnter) return;
-
-    // stopPropagation stops widget keydown handlers (PopoverTrigger, Checkbox) reacting to Enter, else popover flashes open for a frame before next step.
-    event.preventDefault();
-    event.stopPropagation();
-    formRef.current?.requestSubmit();
-  };
+  const handleFieldByFieldKeyDown = useFieldByFieldKeyboard(formRef, { canGoBack, goToPrevStep });
 
   const handleTextareaFocusChange =
     (focused: boolean) => (event: React.FocusEvent<HTMLFormElement>) => {
@@ -107,27 +98,7 @@ export const StepForm = ({
 
   useFocusFirstField(formRef);
 
-  // Fire one `view` per Question on mount. No-op if tracking null (builder preview) or visitId null (pre-recordFormVisit). Last Question of final Step flags `wasLastQuestion` for funnel terminal detection.
-  useMountEffect(() => {
-    if (!(tracking?.visitId && tracking.mode)) return;
-    const visitId = tracking.visitId;
-    const lastIndex = stepQuestions.length - 1;
-    for (let i = 0; i < stepQuestions.length; i++) {
-      const q = stepQuestions[i];
-      enqueueQuestionProgress({
-        visitId,
-        formId: tracking.formId,
-        visitorHash: tracking.visitorHash,
-        questionId: q.questionId,
-        questionType: q.questionType,
-        questionIndex: q.questionIndex,
-        stepId: q.stepId,
-        stepIndex: q.stepIndex,
-        event: "view",
-        wasLastQuestion: isLastStep && i === lastIndex,
-      });
-    }
-  });
+  useQuestionViewTracking(stepQuestions, { tracking, isLastStep });
 
   return (
     <form.AppForm>
@@ -136,14 +107,25 @@ export const StepForm = ({
         ref={formRef}
         noValidate
         data-bf-field-list
+        // Footer variant is flex `gap-7`; mark it so CSS can zero the field's block margin (flex
+        // items don't margin-collapse, else field→footer doubles to 56px). See styles.css.
+        data-bf-fbf-footer={navVariant === "footer" ? "" : undefined}
         onKeyDownCapture={autoActionButton ? handleFieldByFieldKeyDown : undefined}
         onFocus={handleFormFocus}
         onBlur={autoActionButton ? handleTextareaFocusChange(false) : undefined}
-        className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        // footer variant: flex-col gap-7 (28px) so field→footer matches the Figma card. Otherwise
+        // pb-7 gives 28px breathing room so the submit/branding row doesn't sit flush at the bottom.
+        className={
+          navVariant === "footer"
+            ? "flex flex-col gap-7 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            : "pb-7 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        }
       >
         {groupedItems.map((item) => {
           if (item.type === "buttonGroup") {
+            if (readOnly) return null;
             const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
+
             const actionButton = item.buttons.find(
               (b) => b.buttonRole === "next" || b.buttonRole === "submit",
             );
@@ -151,30 +133,31 @@ export const StepForm = ({
             const groupKey = `button-group-${item.buttons.map((b) => b.id).join("-")}`;
 
             return (
+              // Prev + Next/Submit grouped left (8px gap), branding pushed right (Figma 27112-20305).
               <div
                 key={groupKey}
-                className="flex w-full flex-row-reverse items-center justify-between"
-                style={{ maxWidth: "var(--bf-input-width)" }}
+                className="flex w-full max-w-(--bf-input-width) items-center justify-between gap-3"
               >
-                {actionButton && (
-                  <RenderStepButton
-                    field={actionButton}
-                    isSubmitting={isSubmitting}
-                    onPrevious={canGoBack ? goToPrevStep : undefined}
-                    hideSubmit={hideSubmit}
-                    grouped
-                  />
-                )}
-                {prevButton ? (
-                  <RenderStepButton
-                    field={prevButton}
-                    isSubmitting={isSubmitting}
-                    onPrevious={canGoBack ? goToPrevStep : undefined}
-                    grouped
-                  />
-                ) : (
-                  <div /> // Spacer for justify-between
-                )}
+                <div className="flex items-center gap-2">
+                  {prevButton && (
+                    <RenderStepButton
+                      field={prevButton}
+                      isSubmitting={isSubmitting}
+                      onPrevious={canGoBack ? goToPrevStep : undefined}
+                      grouped
+                    />
+                  )}
+                  {actionButton && (
+                    <RenderStepButton
+                      field={actionButton}
+                      isSubmitting={isSubmitting}
+                      onPrevious={canGoBack ? goToPrevStep : undefined}
+                      hideSubmit={hideSubmit}
+                      grouped
+                    />
+                  )}
+                </div>
+                {showBranding && <FormBrandingBadge />}
               </div>
             );
           }
@@ -201,6 +184,8 @@ export const StepForm = ({
             }
 
             if (field.fieldType === "Button") {
+              if (readOnly) return null;
+
               return (
                 <RenderStepButton
                   key={field.id}
@@ -209,23 +194,29 @@ export const StepForm = ({
                   onPrevious={canGoBack ? goToPrevStep : undefined}
                   hideSubmit={hideSubmit}
                   totalSteps={totalSteps}
+                  showBranding={showBranding}
                 />
               );
             }
 
-            // Fields auto-filled by a "Set value" action are locked (non-interactive)
-            // while the controlling logic is active; the value still submits.
-            const locked = lockedFieldNames.has(field.name);
+            // Fields auto-filled by a "Set value" action stay editable so a mistaken auto-fill
+            // can be corrected; they're only dimmed to hint that logic set the value.
+            const autoFilled = lockedFieldNames.has(field.name);
+
+            // Reflect logic-driven requiredness on the label (a passing "Require field" action),
+            // not just the authored flag.
+            const rendered = requiredFieldNames
+              ? { ...field, required: requiredFieldNames.has(field.name) }
+              : field;
+
             return (
               <div
                 key={field.id}
-                className={`w-full${locked ? " opacity-75" : ""}`}
+                className={`w-full${autoFilled ? " opacity-75" : ""}`}
                 data-bf-input
                 data-bf-question-id={field.id}
-                inert={locked || undefined}
-                aria-disabled={locked || undefined}
               >
-                <Renderer element={field} form={form} />
+                <Renderer element={rendered} form={form} />
               </div>
             );
           }
@@ -233,46 +224,14 @@ export const StepForm = ({
           return null;
         })}
 
-        {showAutoActionButton && !(hideSubmit && isLastStep) && (
-          <div
-            className="flex w-full items-center gap-3 pt-2"
-            style={{ maxWidth: "var(--bf-input-width)" }}
-          >
-            <Button
-              type="submit"
-              style={{ fontSize: "13px" }}
-              className="h-9 gap-1.5 rounded-lg px-4"
-              disabled={isSubmitting}
-            >
-              {(() => {
-                const label = isSubmitting ? t("submitting") : isLastStep ? t("submit") : t("next");
-                return <TextSwap key={label}>{label}</TextSwap>;
-              })()}
-            </Button>
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              press{" "}
-              {isTextareaFocused && (
-                <>
-                  <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-medium text-foreground">
-                    ⌘
-                  </kbd>
-                  +
-                </>
-              )}
-              <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-medium text-foreground">
-                Enter
-              </kbd>
-              <span aria-hidden="true">↵</span>
-            </span>
-            {canGoBack && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-medium text-foreground">
-                  Esc
-                </kbd>
-                to go back
-              </span>
-            )}
-          </div>
+        {!readOnly && showAutoActionButton && !(hideSubmit && isLastStep) && (
+          <AutoActionFooter
+            navVariant={navVariant}
+            branding={showBranding}
+            isLastStep={isLastStep}
+            hideSubmit={hideSubmit}
+            isTextareaFocused={isTextareaFocused}
+          />
         )}
       </form.Form>
     </form.AppForm>
@@ -319,6 +278,7 @@ const RenderStepButton = ({
   grouped = false,
   totalSteps = 1,
   hideSubmit = false,
+  showBranding = false,
 }: {
   field: ButtonField;
   isSubmitting: boolean;
@@ -326,84 +286,85 @@ const RenderStepButton = ({
   grouped?: boolean;
   totalSteps?: number;
   hideSubmit?: boolean;
+  showBranding?: boolean;
 }) => {
   const { t } = useTranslation();
   const buttonRole = field.buttonRole || "submit";
 
   // Conditional "hide submit button" action suppresses the completion control.
   if (hideSubmit && buttonRole === "submit") return null;
+
   const defaultText =
     buttonRole === "next" ? t("next") : buttonRole === "previous" ? t("previous") : t("submit");
-  const buttonText = field.buttonText || defaultText;
 
-  // Matches editor button: h-8, 13px font, px-2.5
-  const buttonStyle = { fontSize: "13px" } as const;
+  const buttonText = field.buttonText || defaultText;
 
   if (buttonRole === "previous") {
     const button = (
-      <Button
-        type="button"
-        onClick={onPrevious}
-        style={buttonStyle}
-        className="h-8 gap-1.5 rounded-lg px-2.5"
-        prefix={<ChevronLeftIcon className="size-4" />}
-      >
-        {buttonText}
-      </Button>
+      // Always "Back" (like the one-at-a-time footer) — ignore any authored/legacy "Previous" text.
+      <StepNavButton role="previous" onPrevious={onPrevious}>
+        {t("back")}
+      </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
-      <div className="flex justify-start" style={{ maxWidth: "var(--bf-input-width)" }}>
-        {button}
-      </div>
+      <div className="flex max-w-(--bf-input-width) justify-start">{button}</div>
     );
   }
 
   if (buttonRole === "next") {
     const button = (
-      <Button
-        type="submit"
-        style={buttonStyle}
-        className="h-8 gap-1.5 rounded-lg px-2.5"
-        suffix={<ChevronRightIcon className="size-4" />}
-        disabled={isSubmitting}
-      >
+      <StepNavButton role="next" isSubmitting={isSubmitting}>
         {buttonText}
-      </Button>
+      </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
-      <div className="mb-4 flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
+      // Branding rides the Next row opposite the button per Buttons → Alignment; without branding
+      // the button honors --bf-button-justify (fallback right).
+      <div
+        className={cn(
+          "mb-4 flex max-w-(--bf-input-width) items-center gap-3",
+          showBranding ? brandingRowClass : "[justify-content:var(--bf-button-justify,flex-end)]",
+        )}
+      >
         {button}
+        {showBranding && <FormBrandingBadge />}
       </div>
     );
   }
 
   const isMultiStep = totalSteps > 1;
+
   const submitButton = (
-    <Button
-      type="submit"
-      data-bf-button
-      style={buttonStyle}
-      className="h-8 gap-1.5 rounded-lg px-2.5"
-      disabled={isSubmitting}
-    >
-      {(() => {
-        const label = isSubmitting ? t("submitting") : buttonText;
-        return <TextSwap key={label}>{label}</TextSwap>;
-      })()}
-    </Button>
+    // Render text directly (not TextSwap) — the inline-block+blur span clipped the last glyph
+    // ("Submit" → "Submi"); the Next button and live renderer render text directly too.
+    <StepNavButton role="submit" isSubmitting={isSubmitting}>
+      {isSubmitting ? t("submitting") : buttonText}
+    </StepNavButton>
   );
+
   return grouped ? (
     submitButton
   ) : (
+    // Branding rides the submit row opposite the button per Buttons → Alignment. Without branding
+    // the button honors --bf-button-justify (fallback: multi-step right, single-step left).
     <div
-      className={`flex ${isMultiStep ? "justify-end" : "justify-start"}`}
-      style={{ maxWidth: "var(--bf-input-width)" }}
+      className={cn(
+        "flex max-w-(--bf-input-width) items-center gap-3",
+        showBranding
+          ? brandingRowClass
+          : isMultiStep
+            ? "[justify-content:var(--bf-button-justify,flex-end)]"
+            : "[justify-content:var(--bf-button-justify,flex-start)]",
+      )}
     >
       {submitButton}
+      {showBranding && <FormBrandingBadge />}
     </div>
   );
 };

@@ -37,9 +37,11 @@ const FIELD_RENDERERS: Record<
   FileUpload: lazy(() => import("./fields/FileUploadField")),
   Checkbox: lazy(() => import("./fields/CheckboxField")),
   MultiChoice: lazy(() => import("./fields/MultiChoiceField")),
-  MultiSelect: lazy(() => import("./fields/MultiSelectField")),
   Ranking: lazy(() => import("./fields/RankingField")),
-  Dropdown: lazy(() => import("./fields/DropdownField")),
+  LinearScale: lazy(() => import("./fields/LinearScaleField")),
+  Rating: lazy(() => import("./fields/RatingField")),
+  Matrix: lazy(() => import("./fields/MatrixField")),
+  Signature: lazy(() => import("./fields/SignatureField")),
 } as const;
 
 interface RenderStepPreviewInputProps {
@@ -50,19 +52,25 @@ interface RenderStepPreviewInputProps {
 export const PreviewInputShell = ({
   element,
   children,
+  form,
 }: {
   element: PlateFormField;
   children: React.ReactNode;
+  /** Passed through to the label so `@`-mention tokens resolve to live answers. */
+  form?: AppForm;
 }) => {
-  const { label, required, labelType } = getFieldLabelProps(element);
+  const { label, required, labelType, labelNodes } = getFieldLabelProps(element);
+
   // Group fields (Checkbox/MultiChoice/Ranking) render N controls, no single labelable input — wrap in role=group + aria-labelledby. Others: <label htmlFor>/heading wiring (field reads via element.name). Repeatable scalars also group-label.
   const isGroup =
     ("fieldType" in element && GROUP_FIELD_TYPES.has(element.fieldType)) ||
     isFieldArrayElement(element);
+
   const groupAriaProps =
     isGroup && label
       ? { role: "group" as const, "aria-labelledby": fieldLabelId(element.name) }
       : {};
+
   return (
     <div data-bf-input="true" data-bf-standalone={label ? undefined : "true"} {...groupAriaProps}>
       <FieldLabelText
@@ -71,6 +79,8 @@ export const PreviewInputShell = ({
         htmlFor={element.name}
         required={required}
         asGroupLabel={isGroup}
+        labelNodes={labelNodes}
+        form={form}
       />
       {children}
     </div>
@@ -81,10 +91,13 @@ export const PreviewInputShell = ({
 export const RenderFieldComponent = ({ element, form }: RenderStepPreviewInputProps) => {
   if (element.fieldType === "Button") return null;
   const Component = FIELD_RENDERERS[element.fieldType as FieldType];
+
   if (!Component) return null;
+
   if (isFieldArrayElement(element)) {
     return <RepeatableField element={element} form={form} ItemComponent={Component as never} />;
   }
+
   return (
     <Suspense fallback={<FieldSkeleton fieldType={element.fieldType as FieldType} />}>
       <Component element={element as never} form={form} />
@@ -95,10 +108,12 @@ export const RenderFieldComponent = ({ element, form }: RenderStepPreviewInputPr
 export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInputProps) => {
   if (element.fieldType === "Button") return null;
   const Component = FIELD_RENDERERS[element.fieldType as FieldType];
+
   if (!Component) return null;
   const isFieldArray = isFieldArrayElement(element);
+
   return (
-    <PreviewInputShell element={element}>
+    <PreviewInputShell element={element} form={form}>
       {isFieldArray ? (
         <RepeatableField element={element} form={form} ItemComponent={Component as never} />
       ) : (

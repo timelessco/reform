@@ -1,6 +1,7 @@
 import { createCollection } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { queryKeys } from "@/lib/query-keys";
 
 export type VersionListItem = {
   id: string;
@@ -21,7 +22,7 @@ export type VersionContent = {
   formId: string;
   version: number;
   content: object[];
-  /** Legacy: pre-split versions snapshot 23 settings keys here; new versions write null. Kept so old rows parse — not for current state. */
+  /** Pre-split versions snapshot settings here; new versions write null. Kept so old rows parse, not for current state. */
   settings: VersionedSettingsSnapshot | null;
   customization: Record<string, string>;
   title: string | null;
@@ -42,11 +43,11 @@ export const createVersionListCollection = (config: VersionListCollectionConfig)
 
   return createCollection(
     queryCollectionOptions<VersionListItem, unknown, string[]>({
-      queryKey: ["form-versions", formId],
+      queryKey: queryKeys.formVersions(formId),
       queryFn: async () => queryFn(),
       queryClient,
       getKey: (item): string | number => item.id,
-      staleTime: 1000 * 60 * 5, // 5 minutes — matches the route loader's prefetch
+      staleTime: 1000 * 60 * 5, // 5 minutes, matches the route loader's prefetch
     }),
   );
 };
@@ -65,11 +66,12 @@ export const createVersionContentCollection = (config: VersionContentCollectionC
       queryKey: ["form-version-content", versionId],
       queryFn: async () => {
         const result = await queryFn();
+
         return result ? [result] : [];
       },
       queryClient,
       getKey: (item): string | number => item.id,
-      staleTime: 1000 * 60 * 30, // 30 minutes — version content is immutable
+      staleTime: 1000 * 60 * 30, // 30 minutes, version content is immutable
     }),
   );
 };

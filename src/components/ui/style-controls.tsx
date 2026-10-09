@@ -2,6 +2,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
 import { useLazyRef } from "@/hooks/use-lazy-ref";
+import { cssColorToHex } from "@/lib/color";
 import { cn } from "@/lib/utils";
 import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
 import { AnimatePresence, domAnimation, LazyMotion, m } from "motion/react";
@@ -20,6 +21,8 @@ interface StyleNumberInputProps {
   unit?: string;
   /** User-facing unit label (e.g. "%" when the internal unit is "vw"). If omitted, no unit is shown. */
   displayUnit?: string;
+  /** Multiply the DISPLAYED value by this; the stored/applied value stays raw (e.g. 100 shows a 1.15 ratio as "115%"). */
+  displayScale?: number;
   className?: string;
   valueWidth?: string;
   /** Show the scrubber track, knob, hash marks, and spring/rubber-band effects. Default true. */
@@ -32,6 +35,10 @@ interface StyleNumberInputProps {
   isAuto?: boolean;
   /** Called when the far-left auto state is selected. */
   onAutoChange?: () => void;
+  /** Hash-mark style — "dot" for the Figma radius variant. Default "line". */
+  markStyle?: "line" | "dot";
+  /** Replaces the right-side value text with an icon (Figma radius variant). */
+  endIcon?: React.ReactNode;
 }
 
 export const StyleNumberInput = ({
@@ -43,20 +50,24 @@ export const StyleNumberInput = ({
   step = 1,
   unit: forcedUnit,
   displayUnit,
+  displayScale = 1,
   className,
   allowAuto = false,
   isAuto = false,
   onAutoChange,
   bare = false,
+  markStyle,
+  endIcon,
 }: StyleNumberInputProps) => {
   const match = value?.toString().match(VALUE_PARSE_RE);
   const numValue = match ? parseFloat(match[1]) : min;
   const unit = forcedUnit ?? (match ? match[2] : "");
   const shownUnit = displayUnit ?? unit;
 
+  // Round after scaling so 1.15 × 100 reads "115%", not "114.99999%".
   const formatValue = React.useCallback(
-    (n: number) => (isAuto ? "Auto" : `${n}${shownUnit}`),
-    [isAuto, shownUnit],
+    (n: number) => (isAuto ? "Auto" : `${Math.round(n * displayScale * 100) / 100}${shownUnit}`),
+    [isAuto, shownUnit, displayScale],
   );
 
   const handleValueChange = React.useCallback(
@@ -76,37 +87,33 @@ export const StyleNumberInput = ({
       allowAuto={allowAuto}
       isAuto={isAuto}
       onAutoChange={onAutoChange}
-      aria-label={isAuto ? `${label}: Auto` : `${label}: ${numValue}${shownUnit}`}
+      markStyle={markStyle}
+      endIcon={endIcon}
+      // bare = flush Figma customize rows: flat at rest, gray track revealed on hover/focus.
+      revealOnHover={bare}
+      aria-label={
+        isAuto
+          ? `${label}: Auto`
+          : `${label}: ${Math.round(numValue * displayScale * 100) / 100}${shownUnit}`
+      }
       className={cn(
         bare ? "h-7 [--elastic-slider-height:1.75rem]" : "h-[34px] [--elastic-slider-height:34px]",
-        "[--elastic-slider-bg:var(--background)]",
+        // Revealed track = Figma gray/100 (solid --muted) for bare rows; white for bordered scrubber.
+        bare ? "[--elastic-slider-bg:var(--muted)]" : "[--elastic-slider-bg:var(--background)]",
+        // 6px inner padding (Figma): pairs with the -mx-1.5 bleed on sidebar rows so the label
+        // column stays flush-aligned with non-slider rows while the track extends past it.
+        // leading-[1.15]: ElasticSlider's base label/value are `text-sm/none` (line-height:1); Figma rows are 14px/115% (16.1px).
         bare
-          ? "[--elastic-slider-fill-active:transparent] [--elastic-slider-fill:transparent]"
-          : "[--elastic-slider-fill-active:var(--secondary)] [--elastic-slider-fill:var(--secondary)]",
-        bare
-          ? "[&_[data-slot=elastic-slider-label]]:inset-s-0 [&_[data-slot=elastic-slider-label]]:text-[14px] [&_[data-slot=elastic-slider-label]]:font-normal [&_[data-slot=elastic-slider-label]]:text-muted-foreground"
+          ? "[&_[data-slot=elastic-slider-label]]:inset-s-1.5 [&_[data-slot=elastic-slider-label]]:text-[14px] [&_[data-slot=elastic-slider-label]]:leading-[1.15] [&_[data-slot=elastic-slider-label]]:font-[400] [&_[data-slot=elastic-slider-label]]:text-muted-foreground"
           : "[&_[data-slot=elastic-slider-label]]:inset-s-2 [&_[data-slot=elastic-slider-label]]:text-base [&_[data-slot=elastic-slider-label]]:font-normal",
         bare
-          ? "[&_[data-slot=elastic-slider-value]]:inset-e-0 [&_[data-slot=elastic-slider-value]]:text-[14px] [&_[data-slot=elastic-slider-value]]:font-medium [&_[data-slot=elastic-slider-value]]:text-foreground [&_[data-slot=elastic-slider-value]]:tabular-nums"
-          : "[&_[data-slot=elastic-slider-value]]:inset-e-[11px] [&_[data-slot=elastic-slider-value]]:text-[13px] [&_[data-slot=elastic-slider-value]]:tabular-nums",
+          ? "[&_[data-slot=elastic-slider-value]]:inset-e-1.5 [&_[data-slot=elastic-slider-value]]:font-case [&_[data-slot=elastic-slider-value]]:text-[14px] [&_[data-slot=elastic-slider-value]]:leading-[1.15] [&_[data-slot=elastic-slider-value]]:font-[450] [&_[data-slot=elastic-slider-value]]:text-sidebar-foreground [&_[data-slot=elastic-slider-value]]:font-opsz-16"
+          : "[&_[data-slot=elastic-slider-value]]:inset-e-[11px] [&_[data-slot=elastic-slider-value]]:text-[13px]",
         className,
       )}
       trackClassName={cn(!bare && "border border-border/60", className)}
     />
   );
-};
-
-/** Convert any CSS color (hex, oklch, rgb, etc.) to #rrggbb for <input type="color"> */
-const cssColorToHex = (color: string): string => {
-  if (color?.startsWith("#")) return color.slice(0, 7);
-  try {
-    const ctx = document.createElement("canvas").getContext("2d");
-    if (!ctx) return "#000000";
-    ctx.fillStyle = color;
-    return ctx.fillStyle;
-  } catch {
-    return "#000000";
-  }
 };
 
 export const StyleColorPicker = ({
@@ -148,16 +155,20 @@ export const StyleColorPicker = ({
           aria-label={`${label} hex value`}
           onChange={(e) => {
             const val = e.target.value.trim();
+
             if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
               onChange(val);
             }
           }}
-          className="w-[60px] bg-transparent text-right font-mono text-[11px] text-muted-foreground uppercase tabular-nums outline-none"
+          className="w-[60px] bg-transparent text-right font-mono text-[11px] text-muted-foreground uppercase outline-none"
           maxLength={7}
         />
         <div
-          className="relative size-[18px] shrink-0 cursor-pointer overflow-hidden rounded-[4px] border border-border/60"
-          style={{ backgroundColor: hexColor }}
+          className="relative size-[18px] shrink-0 cursor-pointer overflow-hidden rounded-[4px] border border-border/60 bg-(--style-swatch-color)"
+          style={
+            // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+            { "--style-swatch-color": hexColor } as React.CSSProperties
+          }
         >
           <input
             type="color"
@@ -193,21 +204,25 @@ export const StyleSelect = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+
   const [portalTarget] = React.useState<HTMLElement | null>(() =>
     typeof document !== "undefined" ? document.body : null,
   );
+
   const [pos, setPos] = React.useState<{
     top: number;
     left: number;
     width: number;
     above: boolean;
   } | null>(null);
+
   const selectedOption = options.find((o) => o.value === value);
   const hasDescriptions = options.some((o) => o.description);
   const itemHeight = hasDescriptions ? 60 : 36;
 
   const updatePos = React.useCallback(() => {
     const el = triggerRef.current;
+
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const dropdownHeight = 8 + options.length * itemHeight;
@@ -233,6 +248,7 @@ export const StyleSelect = ({
       passive: true,
     });
     window.addEventListener("resize", handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll, { capture: true });
       window.removeEventListener("resize", handleScroll);
@@ -243,9 +259,11 @@ export const StyleSelect = ({
     if (!isOpen) return;
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
+      const target = e.target instanceof Node ? e.target : null;
+
       if (
         triggerRef.current &&
+        target &&
         !triggerRef.current.contains(target) &&
         dropdownRef.current &&
         !dropdownRef.current.contains(target)
@@ -255,6 +273,7 @@ export const StyleSelect = ({
     };
 
     document.addEventListener("mousedown", handleClick);
+
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
@@ -274,8 +293,11 @@ export const StyleSelect = ({
           <div className="ml-auto flex items-center gap-2">
             {selectedOption?.swatchColor && (
               <div
-                className="size-3.5 shrink-0 rounded-full border border-border/60"
-                style={{ backgroundColor: selectedOption.swatchColor }}
+                className="size-3.5 shrink-0 rounded-full border border-border/60 bg-(--style-swatch-color)"
+                style={
+                  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                  { "--style-swatch-color": selectedOption.swatchColor } as React.CSSProperties
+                }
               />
             )}
             <span className="text-foreground">{selectedOption?.label ?? value}</span>
@@ -302,27 +324,28 @@ export const StyleSelect = ({
               {isOpen && pos && (
                 <m.div
                   ref={dropdownRef}
-                  className="z-9999 overflow-hidden rounded-lg bg-background/95 elevation-lg backdrop-blur-md"
+                  className="fixed top-(--style-select-top) bottom-(--style-select-bottom) left-(--style-select-left) z-9999 max-h-80 w-(--style-select-width) [transform-origin:var(--style-select-origin)] overflow-hidden rounded-lg bg-background/95 elevation-lg backdrop-blur-md"
                   initial={{ opacity: 0, y: pos.above ? 8 : -8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: pos.above ? 8 : -8, scale: 0.95 }}
                   transition={{ type: "spring", visualDuration: 0.15, bounce: 0 }}
-                  style={{
-                    position: "fixed",
-                    left: pos.left,
-                    width: pos.width,
-                    maxHeight: 320,
-                    ...(pos.above
-                      ? {
-                          bottom: window.innerHeight - pos.top,
-                          transformOrigin: "bottom",
-                        }
-                      : { top: pos.top, transformOrigin: "top" }),
-                  }}
+                  style={
+                    // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                    {
+                      "--style-select-left": `${pos.left}px`,
+                      "--style-select-top": pos.above ? undefined : `${pos.top}px`,
+                      "--style-select-bottom": pos.above
+                        ? `${window.innerHeight - pos.top}px`
+                        : undefined,
+                      "--style-select-width": `${pos.width}px`,
+                      "--style-select-origin": pos.above ? "bottom" : "top",
+                    } as React.CSSProperties
+                  }
                 >
-                  <div className="custom-scrollbar flex max-h-[312px] flex-col overflow-y-auto p-1">
+                  <div className="flex max-h-[312px] flex-col overflow-y-auto p-1">
                     {options.map((option) => {
                       const isSelected = option.value === value;
+
                       return (
                         <button
                           key={option.value}
@@ -342,8 +365,13 @@ export const StyleSelect = ({
                           <div className="flex min-w-0 items-center gap-2.5">
                             {option.swatchColor && (
                               <div
-                                className="size-5 shrink-0 rounded-full border border-border/60"
-                                style={{ backgroundColor: option.swatchColor }}
+                                className="size-5 shrink-0 rounded-full border border-border/60 bg-(--style-swatch-color)"
+                                style={
+                                  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                                  {
+                                    "--style-swatch-color": option.swatchColor,
+                                  } as React.CSSProperties
+                                }
                               />
                             )}
                             <div className="min-w-0">
@@ -396,15 +424,18 @@ export const StyleToggle = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = useLazyRef(() => new Map<boolean, HTMLButtonElement>());
+
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
+
   const hasAnimated = React.useRef(false);
 
   useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
+
     if (button && container) {
       const containerRect = container.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
@@ -430,8 +461,14 @@ export const StyleToggle = ({
         >
           {pillStyle && (
             <m.div
-              className="absolute top-0.5 bottom-0.5 z-0 rounded bg-white/10"
-              style={{ left: pillStyle.left, width: pillStyle.width }}
+              className="absolute top-0.5 bottom-0.5 left-(--toggle-pill-left) z-0 w-(--toggle-pill-width) rounded bg-white/10"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                {
+                  "--toggle-pill-left": `${pillStyle.left}px`,
+                  "--toggle-pill-width": `${pillStyle.width}px`,
+                } as React.CSSProperties
+              }
               animate={{ left: pillStyle.left, width: pillStyle.width }}
               transition={
                 hasAnimated.current
@@ -488,15 +525,18 @@ export const StyleAlignToggle = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = useLazyRef(() => new Map<string, HTMLButtonElement>());
+
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
+
   const hasAnimated = React.useRef(false);
 
   useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
+
     if (button && container) {
       const containerRect = container.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
@@ -524,8 +564,14 @@ export const StyleAlignToggle = ({
         >
           {pillStyle && (
             <m.div
-              className="absolute top-1.5 bottom-1.5 z-0 rounded border border-border/40 bg-background"
-              style={{ left: pillStyle.left, width: pillStyle.width }}
+              className="absolute top-1.5 bottom-1.5 left-(--align-pill-left) z-0 w-(--align-pill-width) rounded border border-border/40 bg-background"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                {
+                  "--align-pill-left": `${pillStyle.left}px`,
+                  "--align-pill-width": `${pillStyle.width}px`,
+                } as React.CSSProperties
+              }
               animate={{ left: pillStyle.left, width: pillStyle.width }}
               transition={
                 hasAnimated.current

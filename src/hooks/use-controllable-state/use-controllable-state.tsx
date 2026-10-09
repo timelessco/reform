@@ -1,3 +1,4 @@
+import { log } from "evlog";
 import * as React from "react";
 
 // use-layout-effect.tsx
@@ -16,10 +17,12 @@ const useLayoutEffect = globalThis?.document ? React.useLayoutEffect : () => {};
 // https://github.com/radix-ui/primitives/blob/main/packages/react/use-controllable-state/src/use-controllable-state.tsx
 
 // Prevent bundlers from trying to optimize the import
+// SAFETY: the computed key always resolves to useInsertionEffect, which React ships
 const useInsertionEffect: typeof useLayoutEffect =
   (React as never)[" useInsertionEffect ".trim().toString()] || useLayoutEffect;
 
 type ChangeHandler<T> = (state: T) => void;
+
 type SetStateFn<T> = React.Dispatch<React.SetStateAction<T>>;
 
 interface UseControllableStateParams<T> {
@@ -39,6 +42,7 @@ export const useControllableState = <T,>({
     defaultProp,
     onChange,
   });
+
   const isControlled = prop !== undefined;
   const value = isControlled ? prop : uncontrolledProp;
 
@@ -50,13 +54,16 @@ export const useControllableState = <T,>({
     const isControlledRef = React.useRef(prop !== undefined);
     React.useEffect(() => {
       const wasControlled = isControlledRef.current;
+
       if (wasControlled !== isControlled) {
         const from = wasControlled ? "controlled" : "uncontrolled";
         const to = isControlled ? "controlled" : "uncontrolled";
-        console.warn(
+        log.warn(
+          "use-controllable-state",
           `${caller} is changing from ${from} to ${to}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`,
         );
       }
+
       isControlledRef.current = isControlled;
     }, [isControlled, caller]);
   }
@@ -66,6 +73,7 @@ export const useControllableState = <T,>({
     (nextValue) => {
       if (isControlled) {
         const next = isFunction(nextValue) ? nextValue(prop) : nextValue;
+
         if (next !== prop) {
           onChangeRef.current?.(next);
         }
@@ -105,5 +113,5 @@ const useUncontrolledState = <T,>({
   return [value, setValue, onChangeRef];
 };
 
-const isFunction = (value: unknown): value is (...args: never[]) => unknown =>
-  typeof value === "function";
+const isFunction = <T,>(value: React.SetStateAction<T>): value is (prevState: T) => T =>
+  value instanceof Function;

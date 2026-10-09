@@ -1,21 +1,8 @@
 import { useMemo } from "react";
 import type { CSSProperties } from "react";
-import { useResolvedTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import type { EditorThemeValue } from "@/contexts/editor-theme-context";
-
-/**
- * True when the FORM's resolved mode is dark (`customization.mode`), falling back to the app
- * theme only when the form has no customization. Use on form-preview surfaces that must follow
- * the form theme rather than the app's global `.dark` (e.g. chips/badges that would otherwise
- * pick up `dark:` variants from the app's <html.dark>).
- */
-export const useFormIsDark = (): boolean => {
-  const appTheme = useResolvedTheme();
-  const formMode = useEditorTheme().customization?.mode;
-  return (formMode ?? appTheme) === "dark";
-};
 
 type UseFormThemeContextValueArgs = {
   themeVars: CSSProperties;
@@ -54,8 +41,26 @@ export const useReanchorThemeProps = (
   baseClassName?: string,
 ): { className: string | undefined; style: CSSProperties | undefined } => {
   const { themeVars, hasCustomization } = useEditorTheme();
+
   return {
     className: cn(baseClassName, hasCustomization && "bf-themed") || undefined,
-    style: hasCustomization ? themeVars : undefined,
+    // Inside the popup, text contrasts with the popover SURFACE, not the body bg: remap
+    // --foreground/--muted-foreground to the popover ink so items that hardcode text-foreground /
+    // text-muted-foreground (country list, dropdown options) stay readable. Inline so it beats the
+    // body --foreground that themeVars also carries. --popover-foreground is derived in the theme
+    // engine (color-contrast) and rides along in themeVars.
+    style: hasCustomization
+      ? ({
+          ...themeVars,
+          // Base text color: set inline so it beats the `.bf-themed { color: var(--bf-foreground) }`
+          // root rule (which would otherwise paint popup text with the body color).
+          color: "var(--popover-foreground)",
+          "--foreground": "var(--popover-foreground)",
+          "--color-foreground": "var(--popover-foreground)",
+          "--muted-foreground": "color-mix(in srgb, var(--popover-foreground) 62%, var(--popover))",
+          "--color-muted-foreground":
+            "color-mix(in srgb, var(--popover-foreground) 62%, var(--popover))",
+        } as CSSProperties)
+      : undefined,
   };
 };

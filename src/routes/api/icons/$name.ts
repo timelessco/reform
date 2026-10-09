@@ -26,15 +26,19 @@ const sanitizeSvgFragment = (fragment: string): string =>
 
 const extractSymbol = (sprite: string, name: string): string | null => {
   const cached = symbolCache.get(name);
+
   if (cached) return cached;
   const re = new RegExp(`<symbol[^>]*\\bid="${name}"[^>]*>([\\s\\S]*?)</symbol>`, "i");
   const match = sprite.match(re);
+
   if (!match) return null;
   const inner = sanitizeSvgFragment(match[1]);
   // Dual-purpose: outer <svg> renders via <img>; inner <symbol> addressable via #name for cross-doc <use>. fill="currentColor" must be on the <symbol> — <svg> attrs don't cascade across cross-doc <use>, else blank.
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><symbol id="${name}" viewBox="0 0 24 24" fill="currentColor">${inner}</symbol><use href="#${name}" fill="currentColor"/></svg>`;
+
   if (symbolCache.size >= MAX_CACHE_SIZE) symbolCache.clear();
   symbolCache.set(name, svg);
+
   return svg;
 };
 
@@ -44,14 +48,18 @@ export const Route = createFileRoute("/api/icons/$name")({
       OPTIONS: () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       GET: async ({ params }: { params: { name: string } }) => {
         const name = params.name.replace(/\.svg$/i, "");
+
         if (!NAME_RE.test(name)) {
           return new Response("invalid name", { status: 400, headers: CORS_HEADERS });
         }
+
         try {
           const svg = extractSymbol(spriteSvg, name);
+
           if (!svg) {
             return new Response("not found", { status: 404, headers: CORS_HEADERS });
           }
+
           return new Response(svg, { status: 200, headers: CORS_HEADERS });
         } catch {
           return new Response("error", { status: 500, headers: CORS_HEADERS });

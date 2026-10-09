@@ -13,7 +13,7 @@ import type { ErrorCode } from "@/lib/errors/codes";
  * keyed by org. Bypass the adapter and create a customer session via the SDK directly. */
 export const openOrgBillingPortal = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(v.object({ orgId: v.string() }))
+  .validator(v.object({ orgId: v.string() }))
   .handler(async ({ data, context }) => {
     const [membership] = await db
       .select()
@@ -39,6 +39,7 @@ export const openOrgBillingPortal = createServerFn({ method: "POST" })
     // subscription's metadata, not the customer). Look up by email, then mint a session by customerId.
     const list = await polarClient.customers.list({ email, limit: 1 });
     const customer = list.result.items[0];
+
     if (!customer) {
       throw createError({
         code: "billing/no-customer" satisfies ErrorCode,

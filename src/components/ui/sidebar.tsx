@@ -3,6 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
+import * as v from "valibot";
 import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 
@@ -19,12 +20,17 @@ import { useHotkey } from "@tanstack/react-hotkeys";
 import { PanelLeftIcon } from "@/components/ui/icons";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
+
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+
 const SIDEBAR_WIDTH_ICON = "3rem";
 
 const SIDEBAR_WIDTH_MIN = 220;
+
 const SIDEBAR_WIDTH_DEFAULT = 248;
+
 const SIDEBAR_WIDTH_MAX = 320;
+
 const SIDEBAR_WIDTH_STORAGE_KEY = "sidebar_width";
 
 type SidebarContextProps = {
@@ -45,6 +51,7 @@ const SidebarContext = createContext<SidebarContextProps | null>(null);
 
 export const useSidebar = () => {
   const context = use(SidebarContext);
+
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.");
   }
@@ -74,20 +81,25 @@ export const SidebarProvider = ({
   // Auto-close mobile drawer on navigation so it doesn't overlay the destination route.
   const pathname = useLocation({ select: (s) => s.pathname });
   const [lastPathname, setLastPathname] = useState(pathname);
+
   if (lastPathname !== pathname) {
     setLastPathname(pathname);
+
     if (isMobile) setOpenMobile(false);
   }
 
   const [sidebarWidth, _setSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
+
     if (stored) {
       const parsed = Number(stored);
+
       if (!Number.isNaN(parsed) && parsed >= SIDEBAR_WIDTH_MIN && parsed <= SIDEBAR_WIDTH_MAX) {
         return parsed;
       }
     }
+
     return SIDEBAR_WIDTH_DEFAULT;
   });
 
@@ -100,9 +112,11 @@ export const SidebarProvider = ({
   // eslint-disable-next-line react-doctor/no-derived-useState -- standard controlled/uncontrolled pattern; defaultOpen is the initial value, openProp takes over when provided
   const [_open, _setOpen] = useState(defaultOpen);
   const open = openProp ?? _open;
+
   const setOpen = useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
-      const openState = typeof value === "function" ? value(open) : value;
+      const openState = value instanceof Function ? value(open) : value;
+
       if (setOpenProp) {
         setOpenProp(openState);
       } else {
@@ -163,6 +177,7 @@ export const SidebarProvider = ({
         <div
           data-slot="sidebar-wrapper"
           data-resizing={isResizing ? "" : undefined}
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
           style={
             {
               "--sidebar-width": `${sidebarWidth}px`,
@@ -567,6 +582,7 @@ export const SidebarMenuButton = ({
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>) => {
   const { isMobile, state } = useSidebar();
+
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
@@ -588,7 +604,7 @@ export const SidebarMenuButton = ({
     return comp;
   }
 
-  if (typeof tooltip === "string") {
+  if (v.is(v.string(), tooltip)) {
     tooltip = {
       children: tooltip,
     };
@@ -596,7 +612,7 @@ export const SidebarMenuButton = ({
 
   return (
     <Tooltip>
-      <TooltipTrigger render={comp as React.ReactElement} />
+      <TooltipTrigger render={comp} />
       <TooltipContent
         side="right"
         align="center"
@@ -641,7 +657,7 @@ export const SidebarMenuBadge = ({ className, ...props }: React.ComponentProps<"
     data-slot="sidebar-menu-badge"
     data-sidebar="menu-badge"
     className={cn(
-      "pointer-events-none absolute inset-e-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 peer-data-active/menu-button:text-sidebar-accent-foreground",
+      "pointer-events-none absolute inset-e-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs text-sidebar-foreground select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 peer-data-active/menu-button:text-sidebar-accent-foreground",
       className,
     )}
     {...props}
@@ -670,6 +686,7 @@ export const SidebarMenuSkeleton = ({
         className="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
         style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
           {
             "--skeleton-width": width,
           } as React.CSSProperties

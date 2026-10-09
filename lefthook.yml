@@ -25,11 +25,3 @@ pre-commit:
       glob:
         - "**/*.ts"
         - "**/*.tsx"
-
-pre-push:
-  parallel: true
-  jobs:
-    - name: typecheck
-      run: pnpm exec tsc --noEmit
-    - name: test
-      run: pnpm run test

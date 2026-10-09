@@ -5,7 +5,6 @@ import {
   IconConditionalLogic,
   IconDate,
   IconDivider,
-  IconDropdown,
   IconEmail,
   IconEmbedAnything,
   IconFileUpload,
@@ -21,7 +20,6 @@ import {
   IconLongAnswer,
   IconMatrix,
   IconMultipleChoice,
-  IconMultiSelect,
   IconNewPage,
   IconNumber,
   IconPayment,
@@ -36,6 +34,7 @@ import {
   IconTime,
   IconVideo,
   IconWallet,
+  SmileIcon,
 } from "@/components/ui/icons";
 import type { TComboboxInputElement } from "platejs";
 import { KEYS } from "platejs";
@@ -48,14 +47,16 @@ import { insertBlock } from "@/components/editor/transforms";
 import {
   FormCheckboxPreview,
   FormDatePreview,
-  FormDropdownPreview,
   FormEmailPreview,
   FormFileUploadPreview,
   FormLinkPreview,
+  FormMatrixPreview,
   FormMultiChoicePreview,
-  FormMultiSelectPreview,
+  FormLinearScalePreview,
   FormNumberPreview,
   FormPhonePreview,
+  FormRatingPreview,
+  FormSignaturePreview,
   FormTextAreaPreview,
   FormTextInputPreview,
   FormTimePreview,
@@ -64,6 +65,7 @@ import {
   Heading3Preview,
   NewPagePreview,
   TextPreview,
+  ThankYouPagePreview,
 } from "./slash-preview-mockups";
 
 import {
@@ -133,20 +135,6 @@ const groups: Group[] = [
         value: "formCheckbox",
       },
       {
-        description: "Single selection dropdown",
-        icon: <IconDropdown />,
-        keywords: ["form", "dropdown", "select", "option", "single"],
-        label: "Dropdown",
-        value: "formDropdown",
-      },
-      {
-        description: "Multiple selection dropdown",
-        icon: <IconMultiSelect />,
-        keywords: ["form", "multi", "select", "dropdown", "tag", "option"],
-        label: "Multi-select",
-        value: "formMultiSelect",
-      },
-      {
         description: "Numeric input field",
         icon: <IconNumber />,
         keywords: ["form", "number", "numeric", "integer", "amount"],
@@ -197,27 +185,24 @@ const groups: Group[] = [
       },
       {
         description: "Rate on a linear scale",
-        disabled: true,
         icon: <IconLinearScale />,
         keywords: ["form", "linear", "scale", "slider", "range"],
         label: "Linear scale",
-        value: "linearScale",
+        value: "formLinearScale",
       },
       {
         description: "Grid of rows and columns",
-        disabled: true,
         icon: <IconMatrix />,
         keywords: ["form", "matrix", "grid", "table", "rows", "columns"],
         label: "Matrix",
-        value: "matrix",
+        value: "formMatrix",
       },
       {
         description: "Star rating field",
-        disabled: true,
         icon: <IconRating />,
         keywords: ["form", "rating", "star", "score", "review"],
         label: "Rating",
-        value: "rating",
+        value: "formRating",
       },
       {
         description: "Collect a payment",
@@ -229,11 +214,10 @@ const groups: Group[] = [
       },
       {
         description: "Capture a signature",
-        disabled: true,
         icon: <IconSignature />,
         keywords: ["form", "signature", "sign", "draw"],
         label: "Signature",
-        value: "signature",
+        value: "formSignature",
       },
       {
         description: "Drag to rank options in order",
@@ -261,6 +245,13 @@ const groups: Group[] = [
         keywords: ["page", "break"],
         label: "New page",
         value: "pageBreak",
+      },
+      {
+        description: "Add a thank you confirmation",
+        icon: <SmileIcon className="size-4" />,
+        keywords: ["thankyou", "thank", "confirmation", "completion", "success"],
+        label: "'Thank you' page",
+        value: "pageBreakThankYou",
       },
       {
         description: "Start writing with plain text",
@@ -411,12 +402,13 @@ const groups: Group[] = [
   })),
 }));
 
-const previewMap: Record<string, () => ReactNode> = {
+const previewMap = {
   [KEYS.p]: TextPreview,
   [KEYS.h1]: Heading1Preview,
   [KEYS.h2]: Heading2Preview,
   [KEYS.h3]: Heading3Preview,
   pageBreak: NewPagePreview,
+  pageBreakThankYou: ThankYouPagePreview,
   formInput: FormTextInputPreview,
   formTextarea: FormTextAreaPreview,
   formEmail: FormEmailPreview,
@@ -428,9 +420,15 @@ const previewMap: Record<string, () => ReactNode> = {
   formFileUpload: FormFileUploadPreview,
   formCheckbox: FormCheckboxPreview,
   formMultiChoice: FormMultiChoicePreview,
-  formMultiSelect: FormMultiSelectPreview,
-  formDropdown: FormDropdownPreview,
-};
+  formLinearScale: FormLinearScalePreview,
+  formRating: FormRatingPreview,
+  formMatrix: FormMatrixPreview,
+  formSignature: FormSignaturePreview,
+} satisfies Record<string, () => ReactNode>;
+
+type PreviewKey = keyof typeof previewMap;
+
+const isPreviewKey = (value: string): value is PreviewKey => value in previewMap;
 
 const findItemByValue = (activeValue: string | null) => {
   if (!activeValue) return null;
@@ -454,7 +452,8 @@ export const SlashInputElement = (props: PlateElementProps<TComboboxInputElement
 
     if (!item) return null;
 
-    const PreviewComponent = activeValue ? previewMap[activeValue] : null;
+    const PreviewComponent =
+      activeValue && isPreviewKey(activeValue) ? previewMap[activeValue] : null;
 
     return (
       <div className="p-3">

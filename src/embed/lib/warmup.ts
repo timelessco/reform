@@ -7,14 +7,17 @@ const ensureLinkTag = (rel: string, href: string, crossOrigin?: string): void =>
   const existing = document.head.querySelector(
     `link[rel="${rel}"][href="${href}"]`,
   ) as HTMLLinkElement | null;
+
   if (existing) return;
 
   const link = document.createElement("link");
   link.rel = rel;
   link.href = href;
+
   if (crossOrigin !== undefined) {
     link.crossOrigin = crossOrigin;
   }
+
   document.head.appendChild(link);
 };
 
@@ -29,6 +32,7 @@ export const preconnectOrigin = (origin: string): void => {
 /** One-shot intent listeners — first hover/focus/touch runs `warmup` (usually builds the popup hidden so click reveals). */
 export const warmupFormOnIntent = (trigger: HTMLElement, warmup: () => void): void => {
   let fired = false;
+
   const fire = () => {
     if (fired) return;
     fired = true;

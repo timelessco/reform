@@ -23,14 +23,11 @@ interface Args {
   enabled?: boolean; // default true; allows preview mode to disable tracking
 }
 
-const MAX_DURATION_MS = 86_400_000; // 24h
-
 export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicFormTracking => {
   const [visitId, setVisitId] = useState<string | null>(null);
   const [visitorHash, setVisitorHash] = useState<string>("");
 
   const visitIdRef = useRef<string | null>(null);
-  const startedAtRef = useRef<number>(0);
   const vitalsRef = useRef<SessionVitals>({});
 
   // NOTE: dev StrictMode fires twice → two visit rows. Non-issue in prod
@@ -39,6 +36,7 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
     if (!enabled) {
       return;
     }
+
     if (typeof window === "undefined") {
       return;
     }
@@ -46,7 +44,6 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
     const hash = getOrCreateVisitorHash();
     const session = getOrCreateSessionId();
     setVisitorHash(hash);
-    startedAtRef.current = Date.now();
 
     // CWV (RUM): web-vitals reports each metric once finalized (LCP on first
     // interaction/hide; INP/CLS on visibilitychange→hidden, before the pagehide
@@ -77,6 +74,7 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
       if (cancelled) {
         return;
       }
+
       visitIdRef.current = id;
       setVisitId(id);
     });
@@ -86,18 +84,22 @@ export const usePublicFormTracking = ({ formId, enabled = true }: Args): PublicF
       // doesn't race ahead of (and cancel) their delivery.
       flushQuestionProgressBuffer();
       const id = visitIdRef.current;
+
       if (!id) {
         return;
       }
+
+      // visitEndedAt still feeds the dropoff terminal-question logic; duration is now derived
+      // server-side (submission.createdAt − visitStartedAt), so no client timing is sent.
       fireUpdateVisitBeacon({
         visitId: id,
         visitEndedAt: new Date().toISOString(),
-        durationMs: Math.min(Date.now() - startedAtRef.current, MAX_DURATION_MS),
         lcpMs: vitalsRef.current.lcpMs,
         inpMs: vitalsRef.current.inpMs,
         cls: vitalsRef.current.cls,
       });
     };
+
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
 

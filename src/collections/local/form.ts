@@ -8,6 +8,7 @@ import type { FormSettings } from "@/types/form-settings";
 /** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. */
 const parseAsUTC = (val: string): string => {
   if (val.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(val)) return new Date(val).toISOString();
+
   return new Date(val.replace(" ", "T") + "Z").toISOString();
 };
 
@@ -26,6 +27,8 @@ export const FormSchema = v.object({
   content: v.optional(v.array(v.any()), []),
   icon: v.nullish(v.string()),
   cover: v.nullish(v.string()),
+  // Generated content thumbnail (Plate render → Blob); card preview + OG image. Set on publish.
+  previewImageUrl: v.nullish(v.string()),
   status: v.optional(v.picklist(["draft", "published", "archived"]), "draft"),
   lastPublishedVersionId: v.nullish(v.string()),
   publishedContentHash: v.nullish(v.string()),

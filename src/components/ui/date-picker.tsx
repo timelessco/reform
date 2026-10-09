@@ -32,20 +32,25 @@ export const DatePicker = ({
   const [date, setDate] = React.useState<Date | undefined>(() => {
     if (value) {
       const parsed = new Date(value);
+
       return isNaN(parsed.getTime()) ? undefined : parsed;
     }
+
     return undefined;
   });
+
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
+
     if (selectedDate && onChange) {
       const formatted = format(selectedDate, "yyyy-MM-dd");
       onChange(formatted);
     } else if (onChange) {
       onChange(null);
     }
+
     setIsOpen(false);
   };
 
@@ -65,11 +70,12 @@ export const DatePicker = ({
             aria-labelledby={ariaLabelledBy}
             aria-invalid={ariaInvalid}
             data-empty={!date}
+            data-bf-input-fill
             className={cn(
               "inline-flex h-[30px] w-full items-center justify-start rounded-[8px] border-0 bg-[var(--form-input-bg,var(--color-gray-50))] pr-1.5 pl-2.5 text-left text-sm font-normal elevation-sm",
-              // Foreground (not muted token) so custom themes can't drop placeholder below WCAG AA;
-              // 70% of gray-950 ≈ gray-700, ~7:1 on gray-50.
-              !date && "text-foreground/70",
+              // Value text/icon color comes from the data-bf-input-fill rule (auto-contrast with the
+              // Input bg). Empty = dim it to a placeholder tone via opacity (keeps the contrast ink).
+              !date && "opacity-70",
               className,
             )}
           >
@@ -78,6 +84,7 @@ export const DatePicker = ({
           </button>
         }
       />
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color */}
       <PopoverContent className={themeReanchor.className} style={themeReanchor.style} align="start">
         <Calendar mode="single" selected={date} onSelect={handleDateSelect} />
       </PopoverContent>

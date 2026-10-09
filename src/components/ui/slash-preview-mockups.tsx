@@ -1,3 +1,5 @@
+import { RatingStar } from "@/components/ui/rating-star";
+
 const SkeletonBar = ({
   width = "w-full",
   className = "",
@@ -16,7 +18,7 @@ export const TextPreview = () => (
 
 export const Heading1Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-lg leading-tight font-bold">Heading 1</div>
+    <div className="text-lg leading-tight font-bold">Heading 1</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[80%]" className="h-[5px]" />
   </div>
@@ -24,7 +26,7 @@ export const Heading1Preview = () => (
 
 export const Heading2Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-base leading-tight font-semibold">Heading 2</div>
+    <div className="text-base leading-tight font-semibold">Heading 2</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[85%]" className="h-[5px]" />
   </div>
@@ -32,7 +34,7 @@ export const Heading2Preview = () => (
 
 export const Heading3Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-sm leading-tight font-semibold">Heading 3</div>
+    <div className="text-sm leading-tight font-semibold">Heading 3</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[70%]" className="h-[5px]" />
   </div>
@@ -399,33 +401,75 @@ export const FormMultiChoicePreview = () => (
   </div>
 );
 
-export const FormDropdownPreview = () => (
+export const FormMatrixPreview = () => (
   <div className="flex h-[130px] flex-col justify-center px-3">
     <FormFieldLabel />
-    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
-      <span className="flex-1 text-xs text-muted-foreground">Select an option</span>
-      <svg
-        className="size-3 shrink-0 text-muted-foreground"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
-        <title>Dropdown</title>
-        <path d="m6 9 6 6 6-6" />
-      </svg>
+    <div className="overflow-hidden rounded-md border border-input">
+      <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr] border-b border-input bg-muted/40">
+        <span />
+        {["A", "B", "C"].map((c) => (
+          <span key={c} className="py-1 text-center text-[10px] text-muted-foreground">
+            {c}
+          </span>
+        ))}
+      </div>
+      {["Row 1", "Row 2"].map((row, rowIdx) => (
+        <div
+          key={row}
+          className={`grid grid-cols-[1.4fr_1fr_1fr_1fr] items-center ${
+            rowIdx > 0 ? "border-t border-input" : ""
+          }`}
+        >
+          <span className="px-2 py-1 text-[10px] text-muted-foreground">{row}</span>
+          {[0, 1, 2].map((c) => (
+            <span key={c} className="flex justify-center py-1">
+              <span className="size-2.5 rounded-full border border-input" />
+            </span>
+          ))}
+        </div>
+      ))}
     </div>
   </div>
 );
 
-export const FormMultiSelectPreview = () => (
+export const FormLinearScalePreview = () => (
   <div className="flex h-[130px] flex-col justify-center px-3">
     <FormFieldLabel />
-    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
-      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Tag 1</span>
-      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Tag 2</span>
+    <div className="flex flex-wrap gap-1.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          className="flex size-7 items-center justify-center rounded-md border border-input text-xs text-muted-foreground"
+        >
+          {n}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+export const FormRatingPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <RatingStar
+          key={n}
+          filled={n <= 3}
+          className={n <= 3 ? "size-6 text-[#FFC107]" : "size-6 text-muted-foreground/40"}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+export const FormSignaturePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-16 items-center justify-center rounded-[8px] bg-card elevation-sm">
+      <span className="[font-family:'Snell_Roundhand','Segoe_Script','Brush_Script_MT',cursive] text-2xl text-muted-foreground/45 italic">
+        Sign here
+      </span>
     </div>
   </div>
 );

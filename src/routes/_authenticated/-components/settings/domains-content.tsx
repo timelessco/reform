@@ -1,26 +1,38 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle2Icon,
-  ClockIcon,
+  ChevronLeftIcon,
   GlobeIcon,
   Loader2Icon,
-  RefreshCwIcon,
-  SettingsIcon,
-  Trash2Icon,
+  MoreHorizontalIcon,
   UploadIcon,
-  XIcon,
-  AlertCircleIcon,
 } from "@/components/ui/icons";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
+import { useSettingsDialog } from "@/hooks/use-settings-dialog";
 import { auth, useSession } from "@/lib/auth/auth-client";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
 import { getDnsInstructions } from "@/lib/dns-instructions";
+import { detectDnsProvider } from "@/lib/dns-provider";
 import {
   addDomain,
   orgDomainsQueryOptions,
@@ -49,11 +61,25 @@ type DnsRecord = ReturnType<typeof getDnsInstructions>[number];
 
 const MAX_DOMAINS = DOMAIN_LIMITS.maxDomainsPerOrg;
 
+const STATUS_LABEL: Record<DomainStatus, string> = {
+  pending: "Pending",
+  verified: "Verified",
+  failed: "Failed",
+};
+
+// Figma system-flat status pills (node 26156-14047/14120/13590) — pastel fill + saturated text.
+const STATUS_STYLES: Record<DomainStatus, string> = {
+  failed: "bg-[#ffe2dc] text-[#fc3103] dark:bg-[#fc3103]/15 dark:text-[#ff8a6e]",
+  pending: "bg-[#fdf8d8] text-[#b35309] dark:bg-[#b35309]/20 dark:text-[#e0a23c]",
+  verified: "bg-[#e4faeb] text-[#137949] dark:bg-[#137949]/20 dark:text-[#4ec48a]",
+};
+
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       const result = reader.result;
+
       if (typeof result === "string") {
         resolve(result);
       } else {
@@ -66,73 +92,55 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-const StatusBadge = ({ status }: { status: DomainStatus }) => {
-  switch (status) {
-    case "pending":
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-          <ClockIcon className="mr-1 size-3" />
-          Pending
-        </Badge>
-      );
-    case "verified":
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-          <CheckCircle2Icon className="mr-1 size-3" />
-          Verified
-        </Badge>
-      );
-    case "failed":
-      return (
-        <Badge variant="destructive">
-          <AlertCircleIcon className="mr-1 size-3" />
-          Failed
-        </Badge>
-      );
-  }
-};
+const StatusBadge = ({ status }: { status: DomainStatus }) => (
+  <span
+    className={cn(
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma badge type (lh 1.15, 0.24px tracking) has no scale equivalent
+      "inline-flex shrink-0 items-center rounded-full px-1.5 py-0.75 text-xs leading-[1.15] font-medium tracking-[0.24px]",
+      STATUS_STYLES[status],
+    )}
+  >
+    {STATUS_LABEL[status]}
+  </span>
+);
 
 export const DomainsContent = () => {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = useSession();
+  const { setDomainsDetailOpen } = useSettingsDialog();
   const domainInputId = useId();
 
   const [newDomain, setNewDomain] = useState("");
-  // Per-domain DNS records (TXT challenge + CNAME) from add/check/recheckDomainStatus, keyed by domain.id for inline render.
+  // Per-domain DNS records (TXT challenge + CNAME) from add/check/recheckDomainStatus, keyed by domain.id.
   const [dnsRecordsByDomainId, setDnsRecordsByDomainId] = useState<Record<string, DnsRecord[]>>({});
+
   const clearDnsRecords = useCallback((id: string) => {
     setDnsRecordsByDomainId((prev) => {
       if (!(id in prev)) return prev;
       const next = { ...prev };
       delete next[id];
+
       return next;
     });
   }, []);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
 
-  const cancelDeleteButtonRef = useRef<HTMLButtonElement>(null);
+  // Stacked detail screen: the domain whose DNS records / config is open (null = list).
+  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
 
-  // Focus Cancel on confirm-delete — else trash button unmounts, focus drops to body, keyboard users must tab from top.
-  // eslint-disable-next-line react-doctor/no-effect-event-handler -- focus restoration must wait for the trash→cancel-button mount swap; can't run inside the click handler
-  useEffect(() => {
-    if (confirmDeleteId) {
-      cancelDeleteButtonRef.current?.focus();
-    }
-  }, [confirmDeleteId]);
+  // Keep the dialog title in sync: the detail screen owns its own header (Figma 26281-7612).
+  const openDetail = useCallback(
+    (id: string) => {
+      setSelectedDomainId(id);
+      setDomainsDetailOpen(true);
+    },
+    [setDomainsDetailOpen],
+  );
 
-  const handleCancelDelete = useCallback(() => {
-    const cancelledId = confirmDeleteId;
-    setConfirmDeleteId(null);
-    if (!cancelledId) return;
-    // Trash button re-mounts after state flip; restore focus so tab order continues from the confirm invocation.
-    requestAnimationFrame(() => {
-      const trashBtn = document.querySelector<HTMLButtonElement>(
-        `[data-trash-for="${cancelledId}"]`,
-      );
-      trashBtn?.focus();
-    });
-  }, [confirmDeleteId]);
+  const closeDetail = useCallback(() => {
+    setSelectedDomainId(null);
+    setDomainsDetailOpen(false);
+  }, [setDomainsDetailOpen]);
 
   const orgId = session?.session?.activeOrganizationId as string | undefined;
 
@@ -144,9 +152,11 @@ export const DomainsContent = () => {
 
   const isOwner = useMemo(() => {
     if (!membersData?.members || !session?.user?.id) return false;
+
     const currentMember = membersData.members.find(
       (m: { userId: string; role: string }) => m.userId === session.user.id,
     );
+
     return currentMember?.role === "owner";
   }, [membersData, session?.user?.id]);
 
@@ -164,6 +174,7 @@ export const DomainsContent = () => {
       setNewDomain("");
       const records = getDnsInstructions(result.domain, result.verification);
       setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
+
       if (result.warning) {
         toast.error(result.warning);
       } else {
@@ -179,8 +190,9 @@ export const DomainsContent = () => {
     mutationFn: (domainId: string) => removeDomain({ data: { domainId } }),
     onSuccess: (_data, domainId) => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
-      setConfirmDeleteId(null);
       clearDnsRecords(domainId);
+
+      if (selectedDomainId === domainId) closeDetail();
       toast.success("Domain removed");
     },
     onError: (error: unknown) => {
@@ -196,13 +208,17 @@ export const DomainsContent = () => {
       verification?: { type: string; domain: string; value: string }[];
     }) => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
+
       if (result.status === "verified") {
         clearDnsRecords(result.id);
         toast.success("Domain verified!");
+
         return;
       }
+
       const records = getDnsInstructions(result.domain, result.verification);
       setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
+
       if (result.status === "failed") {
         toast.error("Domain verification failed. Check your DNS records.");
       } else {
@@ -232,7 +248,6 @@ export const DomainsContent = () => {
     }) => updateDomainMeta({ data }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
-      // Keep panel open — inline save (like account-settings), user iterates.
       toast.success("Saved");
     },
     onError: (error: unknown) => {
@@ -241,13 +256,20 @@ export const DomainsContent = () => {
   });
 
   const { mutate: mutateAddDomain } = addMutation;
+  const { mutate: mutateRemoveDomain } = removeMutation;
+  const { mutate: mutateRecheck } = recheckMutation;
   const { mutate: mutateUpdateMeta } = updateMetaMutation;
 
   const handleAddDomain = useCallback(() => {
     const trimmed = newDomain.trim();
+
     if (!trimmed) return;
     mutateAddDomain(trimmed);
   }, [newDomain, mutateAddDomain]);
+
+  // Open the confirm dialog; the actual removal fires from the dialog's action (AlertDialog pattern,
+  // consistent with the workspace/form delete confirms).
+  const handleDelete = useCallback((domain: Domain) => setDomainToDelete(domain), []);
 
   if (isSessionPending) {
     return (
@@ -257,12 +279,28 @@ export const DomainsContent = () => {
     );
   }
 
-  if (!isOwner && !isSessionPending) {
+  if (!isOwner) {
     return (
       <div className="py-8 text-center text-sm text-muted-foreground">
         <GlobeIcon className="mx-auto mb-3 size-8 opacity-50" />
         <p>Only the organization owner can manage domains.</p>
       </div>
+    );
+  }
+
+  const selectedDomain = (domains as Domain[]).find((d) => d.id === selectedDomainId);
+
+  if (selectedDomain) {
+    return (
+      <DomainDetail
+        domain={selectedDomain}
+        dnsRecords={dnsRecordsByDomainId[selectedDomain.id]}
+        isRecheckPending={recheckMutation.isPending}
+        isUpdateMetaPending={updateMetaMutation.isPending}
+        onBack={closeDetail}
+        onRecheck={() => mutateRecheck(selectedDomain.id)}
+        onUpdateMeta={mutateUpdateMeta}
+      />
     );
   }
 
@@ -277,45 +315,62 @@ export const DomainsContent = () => {
         onAdd={handleAddDomain}
       />
 
-      {isLoadingDomains ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : domains.length === 0 ? (
-        <div className="py-8 text-center text-sm text-muted-foreground">
-          <GlobeIcon className="mx-auto mb-3 size-8 opacity-50" />
-          <p>No custom domains yet</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {(domains as Domain[]).map((domain) => (
-            <DomainListItem
-              key={domain.id}
-              domain={domain}
-              state={{
-                confirmingDelete: confirmDeleteId === domain.id,
-                configuring: expandedConfigId === domain.id,
+      <div className="h-px w-full bg-(--color-gray-100)" />
+
+      <div className="flex flex-col gap-4">
+        <p className="font-case text-base font-medium text-foreground">Added domains</p>
+        {isLoadingDomains ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : domains.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            <GlobeIcon className="mx-auto mb-3 size-8 opacity-50" />
+            <p>No custom domains yet</p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {(domains as Domain[]).map((domain, i) => (
+              <DomainRow
+                key={domain.id}
+                domain={domain}
+                isLast={i === domains.length - 1}
+                isRecheckPending={recheckMutation.isPending}
+                onOpen={() => openDetail(domain.id)}
+                onRecheck={() => mutateRecheck(domain.id)}
+                onDelete={() => handleDelete(domain)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <AlertDialog
+        open={domainToDelete !== null}
+        onOpenChange={(open) => !open && setDomainToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove domain</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove <strong>{domainToDelete?.domain}</strong>? This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (domainToDelete) mutateRemoveDomain(domainToDelete.id);
+                setDomainToDelete(null);
               }}
-              pending={{
-                recheck: recheckMutation.isPending,
-                remove: removeMutation.isPending,
-                updateMeta: updateMetaMutation.isPending,
-              }}
-              dnsRecords={dnsRecordsByDomainId[domain.id]}
-              cancelDeleteButtonRef={cancelDeleteButtonRef}
-              handlers={{
-                onRecheck: () => recheckMutation.mutate(domain.id),
-                onRequestDelete: () => setConfirmDeleteId(domain.id),
-                onConfirmDelete: () => removeMutation.mutate(domain.id),
-                onCancelDelete: handleCancelDelete,
-                onOpenConfig: () => setExpandedConfigId(domain.id),
-                onCloseConfig: () => setExpandedConfigId(null),
-              }}
-              onUpdateMeta={mutateUpdateMeta}
-            />
-          ))}
-        </div>
-      )}
+              disabled={removeMutation.isPending}
+              className="bg-destructive text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -337,82 +392,112 @@ const AddDomainCard = ({
   onNewDomainChange,
   onAdd,
 }: AddDomainCardProps) => {
-  const trimmedDomain = newDomain.trim();
-  const canAddDomain = trimmedDomain.length > 0 && domainCount < MAX_DOMAINS;
+  const atLimit = domainCount >= MAX_DOMAINS;
+  const canAddDomain = newDomain.trim().length > 0 && !atLimit;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <label
-          className="text-base tracking-[0.28px] text-muted-foreground"
-          htmlFor={domainInputId}
-        >
-          Add a custom domain
-        </label>
-        <span className="text-xs text-muted-foreground">
-          {domainCount} of {MAX_DOMAINS} domains used
-        </span>
-      </div>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px label tracking has no scale equivalent */}
+      <label className="text-base tracking-[0.28px] text-muted-foreground" htmlFor={domainInputId}>
+        Add a custom domain
+      </label>
       <InputGroup
         variant="borderless"
-        className={cn(
-          "h-[30px] overflow-clip border-0 bg-secondary ring-0",
-          canAddDomain && "pr-[3px]",
-        )}
+        className="h-[30px] overflow-clip border-0 bg-secondary pr-0.75 ring-0"
       >
         <InputGroupInput
           id={domainInputId}
+          // Flat like Figma; also kills elevation-sm's right-edge hairline that reads as a line
+          // next to the always-visible Save button (the group, not the input, owns the focus ring).
+          className="[box-shadow:none]!"
           placeholder="forms.acme.com"
           value={newDomain}
           onChange={(e) => onNewDomainChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") onAdd();
           }}
-          disabled={domainCount >= MAX_DOMAINS || isAdding}
+          disabled={atLimit || isAdding}
           variant="secondary"
         />
-        {canAddDomain && (
-          <InputGroupButton
-            variant="default"
-            onClick={onAdd}
-            disabled={isAdding}
-            className="h-[24px] w-[47px] rounded-lg bg-neutral-50 px-3 text-sm text-neutral-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-neutral-200"
-          >
-            {isAdding ? <Loader2Icon className="size-3 animate-spin" /> : "Add"}
-          </InputGroupButton>
-        )}
+        <InputGroupButton
+          variant="default"
+          onClick={onAdd}
+          disabled={!canAddDomain || isAdding}
+          className="h-[24px] w-[47px] rounded-lg bg-popover px-3 text-sm text-popover-foreground elevation-pop hover:bg-muted"
+        >
+          {isAdding ? <Loader2Icon className="size-3 animate-spin" /> : "Save"}
+        </InputGroupButton>
       </InputGroup>
     </div>
   );
 };
 
-type DomainItemState = {
-  confirmingDelete: boolean;
-  configuring: boolean;
-};
-
-type DomainItemPending = {
-  recheck: boolean;
-  remove: boolean;
-  updateMeta: boolean;
-};
-
-type DomainItemHandlers = {
-  onRecheck: () => void;
-  onRequestDelete: () => void;
-  onConfirmDelete: () => void;
-  onCancelDelete: () => void;
-  onOpenConfig: () => void;
-  onCloseConfig: () => void;
-};
-
-interface DomainListItemProps {
+interface DomainRowProps {
   domain: Domain;
-  state: DomainItemState;
-  pending: DomainItemPending;
+  isLast: boolean;
+  isRecheckPending: boolean;
+  onOpen: () => void;
+  onRecheck: () => void;
+  onDelete: () => void;
+}
+
+const DomainRow = ({
+  domain,
+  isLast,
+  isRecheckPending,
+  onOpen,
+  onRecheck,
+  onDelete,
+}: DomainRowProps) => (
+  <div className={cn("flex items-center py-1.5", !isLast && "border-b border-(--color-gray-100)")}>
+    {/* Figma: domain 14/420/gray-800/opsz-24; flex-1 (Figma's fixed 200px → responsive) so the
+        fixed-width status slot below keeps every badge column-aligned across rows. */}
+    <button
+      type="button"
+      onClick={onOpen}
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent
+      className="min-w-0 flex-1 truncate text-left text-base font-[420] text-foreground transition-colors font-opsz-24 hover:text-foreground"
+    >
+      {domain.domain}
+    </button>
+    {/* Fixed 100px status slot, badge left-aligned (Figma node 26156:14119) — aligns the badge column. */}
+    <div className="w-[100px] shrink-0">
+      <StatusBadge status={domain.status} />
+    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
+            aria-label={`Actions for ${domain.domain}`}
+          />
+        }
+      >
+        <MoreHorizontalIcon className="size-[18px]" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={4} className="w-40" positionerClassName="z-103">
+        {domain.status !== "verified" && (
+          <DropdownMenuItem onClick={onRecheck} disabled={isRecheckPending}>
+            Verify now
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+);
+
+interface DomainDetailProps {
+  domain: Domain;
   dnsRecords: DnsRecord[] | undefined;
-  cancelDeleteButtonRef: React.RefObject<HTMLButtonElement | null>;
-  handlers: DomainItemHandlers;
+  isRecheckPending: boolean;
+  isUpdateMetaPending: boolean;
+  onBack: () => void;
+  onRecheck: () => void;
   onUpdateMeta: (data: {
     domainId: string;
     siteTitle?: string;
@@ -421,210 +506,157 @@ interface DomainListItemProps {
   }) => void;
 }
 
-const DomainListItem = ({
+const DomainDetail = ({
   domain,
-  state,
-  pending,
   dnsRecords,
-  cancelDeleteButtonRef,
-  handlers,
+  isRecheckPending,
+  isUpdateMetaPending,
+  onBack,
+  onRecheck,
   onUpdateMeta,
-}: DomainListItemProps) => (
-  <div className="rounded-xl border">
-    <div className="flex items-center justify-between px-4 py-3">
-      <div className="flex items-center gap-3">
-        <GlobeIcon className="size-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{domain.domain}</span>
-        <StatusBadge status={domain.status} />
-      </div>
-      <DomainItemActions
-        domain={domain}
-        state={state}
-        pending={pending}
-        cancelDeleteButtonRef={cancelDeleteButtonRef}
-        handlers={handlers}
-      />
-    </div>
-
-    {dnsRecords && dnsRecords.length > 0 && domain.status !== "verified" && (
-      <DomainDnsRecords records={dnsRecords} />
-    )}
-
-    {state.configuring && (
-      <DomainConfigPanel
-        domain={domain}
-        isUpdateMetaPending={pending.updateMeta}
-        onUpdateMeta={onUpdateMeta}
-      />
-    )}
-  </div>
-);
-
-interface DomainItemActionsProps {
-  domain: Domain;
-  state: DomainItemState;
-  pending: Pick<DomainItemPending, "recheck" | "remove">;
-  cancelDeleteButtonRef: React.RefObject<HTMLButtonElement | null>;
-  handlers: DomainItemHandlers;
-}
-
-const DomainItemActions = ({
-  domain,
-  state,
-  pending,
-  cancelDeleteButtonRef,
-  handlers,
-}: DomainItemActionsProps) => {
-  const { confirmingDelete, configuring } = state;
-  const { recheck: isRecheckPending, remove: isRemovePending } = pending;
-  const {
-    onRecheck,
-    onRequestDelete,
-    onConfirmDelete,
-    onCancelDelete,
-    onOpenConfig,
-    onCloseConfig,
-  } = handlers;
-  if (confirmingDelete) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="mr-1 text-xs text-muted-foreground">Are you sure?</span>
-        <Button
-          ref={cancelDeleteButtonRef}
-          variant="outline"
-          size="icon"
-          className="size-7"
-          onClick={onCancelDelete}
-          disabled={isRemovePending}
-          aria-label="Cancel removing domain"
-        >
-          <XIcon className="size-3.5" />
-        </Button>
-        <Button
-          variant="destructive"
-          size="icon"
-          className="size-7"
-          onClick={onConfirmDelete}
-          disabled={isRemovePending}
-          aria-label="Confirm remove domain"
-        >
-          {isRemovePending ? (
-            <Loader2Icon className="size-3.5 animate-spin" />
-          ) : (
-            <Trash2Icon className="size-3.5" />
-          )}
-        </Button>
-      </div>
-    );
-  }
+}: DomainDetailProps) => {
+  // Fall back to the base routing record so DNS shows even before the first verify check.
+  const records = dnsRecords ?? getDnsInstructions(domain.domain);
 
   return (
-    <div className="flex items-center gap-1.5">
-      {(domain.status === "pending" || domain.status === "failed") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRecheck}
-          disabled={isRecheckPending}
-          prefix={
-            isRecheckPending ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : (
-              <RefreshCwIcon className="size-4" />
-            )
-          }
-        >
-          Verify now
-        </Button>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to domains"
+            className="-ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-secondary"
+          >
+            <ChevronLeftIcon className="size-4" />
+          </button>
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
+          <span className="truncate text-xl font-[420] text-foreground">{domain.domain}</span>
+        </div>
+        {domain.status !== "verified" && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onRecheck}
+            disabled={isRecheckPending}
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.14px tracking have no scale equivalent
+            className="h-7 rounded-lg bg-(--color-gray-200) px-2 text-base font-[450] tracking-[0.14px] text-foreground hover:bg-(--color-gray-300)"
+            prefix={isRecheckPending ? <Loader2Icon className="size-4 animate-spin" /> : undefined}
+          >
+            Verify Now
+          </Button>
+        )}
+      </div>
+
+      {domain.status === "verified" ? (
+        <DomainConfigPanel
+          domain={domain}
+          isUpdateMetaPending={isUpdateMetaPending}
+          onUpdateMeta={onUpdateMeta}
+        />
+      ) : (
+        <DomainDnsRecords records={records} domain={domain.domain} />
       )}
-      {domain.status === "verified" && (
-        <Button
-          variant="outline"
-          size="icon-sm"
-          onClick={configuring ? onCloseConfig : onOpenConfig}
-          prefix={<SettingsIcon className="size-4" />}
-        ></Button>
-      )}
-      <Button
-        data-trash-for={domain.id}
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={onRequestDelete}
-        aria-label={`Remove ${domain.domain}`}
-      >
-        <Trash2Icon className="size-3.5" />
-      </Button>
     </div>
   );
 };
 
-const DomainDnsRecords = ({ records }: { records: DnsRecord[] }) => {
-  const hasTxt = records.some((r) => r.type === "TXT");
-  const hasCname = records.some((r) => r.type === "CNAME");
-  const hasShortName = records.some((r) => r.shortName);
+const DnsKeyValueRow = ({
+  label,
+  value,
+  copyText,
+}: {
+  label: string;
+  value: string;
+  copyText?: string;
+}) => (
+  <div className="flex items-center gap-3 py-1.75">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
+    <span className="min-w-0 flex-1 text-base font-[420] text-muted-foreground font-opsz-24">
+      {label}
+    </span>
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight has no scale equivalent */}
+    <span className="flex items-center gap-1.5 text-base font-[420] whitespace-nowrap text-foreground font-opsz-24">
+      <span className="truncate">{value}</span>
+      {copyText && (
+        <CopyButton text={copyText} variant="ghost" size="icon-xs" aria-label={`Copy ${label}`} />
+      )}
+    </span>
+  </div>
+);
 
-  return (
-    <div className="space-y-3 border-t bg-muted/40 px-4 py-3">
-      <p className="text-xs text-muted-foreground">
-        Add {records.length > 1 ? "all records" : "the record"} below at your DNS provider, then
-        click <strong className="text-foreground">Verify now</strong>.
-        {hasTxt && hasCname && (
-          <> The TXT proves ownership; the CNAME makes the subdomain resolve, both are required.</>
-        )}
-        {hasShortName && (
-          <>
-            {" "}
-            Some providers strip your zone from the Name and store it in the short form, both work.
-          </>
-        )}
+const DomainDnsRecords = ({ records, domain }: { records: DnsRecord[]; domain: string }) => (
+  <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-1">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight has no scale equivalent */}
+      <p className="text-base font-[450] text-foreground">DNS records</p>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+      <p className="text-base leading-normal font-[420] tracking-[0.28px] text-muted-foreground font-opsz-24">
+        Add these records to your domain name provider&rsquo;s DNS settings.
       </p>
-      <div className="flex items-start gap-2 rounded-md border border-dashed border-foreground/25 bg-background px-3 py-2 text-xs text-muted-foreground">
-        <AlertCircleIcon className="mt-0.5 size-3.5 shrink-0" />
-        <span>
-          If your DNS provider offers a proxy or CDN feature on individual records, keep it{" "}
-          <strong className="text-foreground">disabled</strong> for this record. A proxied record
-          blocks the SSL handshake and the domain will stay unverified.
-        </span>
-      </div>
-      <div className="overflow-hidden rounded-md border bg-background text-xs">
-        <div className="grid grid-cols-[80px_minmax(0,1fr)_minmax(0,2fr)_36px] border-b bg-muted font-medium text-foreground">
-          <div className="border-r border-border px-3 py-2">Type</div>
-          <div className="border-r border-border px-3 py-2">Name</div>
-          <div className="border-r border-border px-3 py-2">Value</div>
-          <div />
-        </div>
+    </div>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         {records.map((rec, i) => (
-          <div
-            key={`${rec.type}-${rec.name}-${rec.value}`}
-            className={cn(
-              "grid grid-cols-[80px_minmax(0,1fr)_minmax(0,2fr)_36px] items-center",
-              i > 0 && "border-t",
-            )}
-          >
-            <div className="border-r px-3 py-2 font-mono">{rec.type}</div>
-            <div className="min-w-0 space-y-0.5 border-r px-3 py-2 font-mono break-all">
-              <div>{rec.name}</div>
-              {rec.shortName && (
-                <div className="text-[10px] font-normal text-muted-foreground">
-                  or just <span className="font-mono">{rec.shortName}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex min-w-0 items-center gap-1 border-r px-3 py-2">
-              <span className="min-w-0 flex-1 font-mono break-all">{rec.value}</span>
-            </div>
-            <div className="flex items-center justify-center">
-              <CopyButton
-                text={rec.value}
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`Copy ${rec.type} value`}
-              />
-            </div>
+          <div key={`${rec.type}-${rec.name}-${rec.value}`} className="flex flex-col">
+            {i > 0 && <div className="mb-2 h-px w-full bg-(--color-gray-100)" />}
+            <DnsKeyValueRow label="Record type" value={rec.type} />
+            <DnsKeyValueRow label="Name" value={rec.shortName ?? rec.name} />
+            <DnsKeyValueRow label="Value" value={rec.value} copyText={rec.value} />
+            <DnsKeyValueRow label="TTL" value="Auto" />
           </div>
         ))}
       </div>
+      <DetectedProviderRow domain={domain} />
+    </div>
+  </div>
+);
+
+// Figma node 26286:8070 — a pastel "Detected provider" hint resolved client-side (DoH NS lookup).
+// While detecting we show a loading row; if no provider is found we render nothing.
+const DetectedProviderRow = ({ domain }: { domain: string }) => {
+  const {
+    data: provider,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["dns-provider", domain],
+    queryFn: ({ signal }) => detectDnsProvider(domain, signal),
+    enabled: Boolean(domain),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.14px tracking have no scale equivalent
+      <div className="flex items-center gap-1.5 rounded-lg bg-(--color-gray-100) px-2.5 py-1.75 text-base font-[420] tracking-[0.14px] text-muted-foreground font-opsz-24">
+        <Loader2Icon className="size-3.5 animate-spin" />
+        Detecting provider&hellip;
+      </div>
+    );
+  }
+
+  if (isError || !provider) return null;
+
+  return (
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.14px tracking have no scale equivalent
+    <div className="flex items-center gap-3 rounded-lg bg-(--color-gray-100) px-2.5 py-1.75 text-base font-[420] tracking-[0.14px] font-opsz-24">
+      <span className="min-w-0 flex-1 text-muted-foreground">
+        Detected provider:{" "}
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.16px tracking has no scale equivalent */}
+        <span className="tracking-[0.16px] text-foreground">{provider.name}</span>
+      </span>
+      {provider.dashboardUrl && (
+        <a
+          href={provider.dashboardUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="whitespace-nowrap text-foreground hover:underline"
+        >
+          {provider.dashboardUrl}
+        </a>
+      )}
     </div>
   );
 };
@@ -662,8 +694,10 @@ const DomainConfigPanel = ({
       const metaField = type === "favicon" ? "faviconUrl" : "ogImageUrl";
 
       setUploading(true);
+
       try {
         const base64 = await fileToBase64(file);
+
         const result = await uploadEditorMedia({
           data: {
             base64,
@@ -671,6 +705,7 @@ const DomainConfigPanel = ({
             contentType: file.type || "image/png",
           },
         });
+
         setUrl(result.url);
         // Auto-commit URL to domain row — no second Save click. Mirrors account-settings inline save.
         onUpdateMeta({ domainId: domain.id, [metaField]: result.url });
@@ -690,9 +725,10 @@ const DomainConfigPanel = ({
   const titleDirty = siteTitle !== (domain.siteTitle ?? "");
 
   return (
-    <div className="space-y-5 border-t p-4">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <label
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent
           className="text-base tracking-[0.28px] text-muted-foreground"
           htmlFor={siteTitleInputId}
         >
@@ -702,7 +738,7 @@ const DomainConfigPanel = ({
           variant="borderless"
           className={cn(
             "h-[30px] overflow-clip border-0 bg-secondary ring-0",
-            titleDirty && "pr-[3px]",
+            titleDirty && "pr-0.75",
           )}
         >
           <InputGroupInput
@@ -719,7 +755,7 @@ const DomainConfigPanel = ({
                 onUpdateMeta({ domainId: domain.id, siteTitle: siteTitle || undefined })
               }
               disabled={isUpdateMetaPending}
-              className="h-[24px] w-[47px] rounded-lg bg-neutral-50 px-3 text-sm text-neutral-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-neutral-200"
+              className="h-[24px] w-[47px] rounded-lg bg-popover px-3 text-sm text-popover-foreground elevation-pop hover:bg-muted"
             >
               {isUpdateMetaPending ? <Loader2Icon className="size-3 animate-spin" /> : "Save"}
             </InputGroupButton>
@@ -775,6 +811,7 @@ const DomainAssetUpload = ({
   buttonLabel,
 }: DomainAssetUploadProps) => (
   <div className="flex flex-1 flex-col gap-2">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
     <span className="text-base tracking-[0.28px] text-muted-foreground">{label}</span>
     <div className="flex items-center gap-3">
       {previewUrl && <img src={previewUrl} alt={previewAlt} className={previewClassName} />}
@@ -783,7 +820,7 @@ const DomainAssetUpload = ({
         size="sm"
         onClick={() => inputRef.current?.click()}
         disabled={isUploading}
-        className="h-[30px] rounded-lg bg-neutral-50 px-3 text-sm text-neutral-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-neutral-200"
+        className="h-[30px] rounded-lg bg-popover px-3 text-sm text-popover-foreground elevation-pop hover:bg-muted"
         prefix={
           isUploading ? (
             <Loader2Icon className="size-3 animate-spin" />
@@ -801,6 +838,7 @@ const DomainAssetUpload = ({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
+
           if (file) onChoose(file);
         }}
       />

@@ -1,6 +1,15 @@
+import { useStore } from "@tanstack/react-form";
+import { Fragment } from "react";
+import * as v from "valibot";
+
+import { getOptionOrdinal } from "@/components/ui/form-option-item-constants";
+import type { OptionLabelStyle } from "@/components/ui/form-option-item-constants";
+import { CheckIcon, ImageIcon } from "@/components/ui/icons";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AppForm } from "@/hooks/use-form-builder";
+import { resolveMentions } from "@/lib/editor/resolve-mentions";
+import type { LabelTokenNode } from "@/lib/editor/resolve-mentions";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { cn } from "@/lib/utils";
 
@@ -16,16 +25,35 @@ export type FieldRendererProps<
   name?: string;
 };
 
+// Canonical single-line text control class (Figma 30px pill). Shared so a spacing change is one edit.
+export const FORM_INPUT_CLS = "h-[30px] form-input pr-[8px] pl-[10px]";
+
+// Shared field wiring: standalone vs repeatable-array-item binding + aria plumbing. Not a stateful
+// hook (no React state), but `use`-named since it's the per-field binding entry point.
+export const useFieldBinding = (element: PlateFormField, name?: string) => {
+  const fieldName = name ?? element.name;
+  const isArrayItem = name !== undefined;
+
+  return {
+    fieldName,
+    ariaLabel: getAriaLabelFallback(element),
+    ariaLabelledBy: isArrayItem ? fieldLabelId(element.name) : getAriaLabelledBy(element),
+  };
+};
+
 export const getFieldLabelProps = (element: PlateFormField) => ({
   label: "label" in element ? (element.label ?? "") : "",
   required: "required" in element ? !!element.required : false,
   labelType: "labelType" in element ? element.labelType : undefined,
+  labelNodes: "labelNodes" in element ? element.labelNodes : undefined,
 });
 
 export const getAriaLabelFallback = (element: PlateFormField): string | undefined => {
   const label = "label" in element ? element.label : undefined;
+
   if (label) return undefined;
   const placeholder = "placeholder" in element ? element.placeholder : undefined;
+
   return placeholder ?? "Field";
 };
 
@@ -54,13 +82,17 @@ const AUTOCOMPLETE_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 // Map label/placeholder → autocomplete token for browser/password-manager fill (else `name` is a random id and autofill no-ops).
 // No match → "on" (browser heuristics), never "off" — public forms collect personal details, not secrets.
 export const guessAutocomplete = (element: PlateFormField): string => {
-  const text = (("label" in element && element.label) ||
+  const text =
+    ("label" in element && element.label) ||
     ("placeholder" in element && element.placeholder) ||
-    "") as string;
+    "";
+
   if (!text) return "on";
+
   for (const [pattern, token] of AUTOCOMPLETE_PATTERNS) {
     if (pattern.test(text)) return token;
   }
+
   return "on";
 };
 
@@ -68,7 +100,9 @@ export const guessAutocomplete = (element: PlateFormField): string => {
 export const getAriaLabelledBy = (element: PlateFormField): string | undefined => {
   const labelType = "labelType" in element ? element.labelType : undefined;
   const label = "label" in element ? element.label : undefined;
+
   if (!label) return undefined;
+
   if (
     labelType === "h1" ||
     labelType === "h2" ||
@@ -77,33 +111,21 @@ export const getAriaLabelledBy = (element: PlateFormField): string | undefined =
   ) {
     return fieldLabelId(element.name);
   }
+
   return undefined;
 };
 
+// Small inline asterisk right after the label text (Tally/Typeform style) — not a right-pinned
+// badge. The editor keeps its larger toggle button (RequiredBadgeButton); this is preview/live.
 const RequiredBadge = () => (
   <Tooltip>
     <TooltipTrigger
       render={
         <span
           aria-label="Required field"
-          className={cn(
-            "flex size-4 shrink-0 items-center justify-center rounded-[8px] bg-destructive/15 text-destructive",
-            "mr-1 ml-auto",
-          )}
+          className="shrink-0 leading-none text-destructive select-none"
         >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <title>Required</title>
-            <path
-              d="M12.39 5.69L12.79 6.93L9.02 8.22L11.47 11.53L10.42 12.34L7.95 8.92L5.58 12.31L4.53 11.5L6.9 8.22L3.16 6.95L3.59 5.69L7.28 7.01V3.02H8.65V6.98L12.39 5.69Z"
-              fill="currentColor"
-            />
-          </svg>
+          *
         </span>
       }
     />
@@ -113,6 +135,18 @@ const RequiredBadge = () => (
 
 // Stable id for label-less variants (h1/h2/h3/blockquote, group fields) to wire aria-labelledby.
 export const fieldLabelId = (fieldName: string): string => `${fieldName}-label`;
+
+/** Fisher-Yates copy — memoize at the call site so order stays stable while answering. */
+export const shuffleOptions = <T,>(items: T[]): T[] => {
+  const out = [...items];
+
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+
+  return out;
+};
 
 // Leading marker for option groups when "Labels" = Letters/Numbers (Figma 25578:9710 / 25578:9688).
 export const OptionOrdinalBadge = ({
@@ -126,10 +160,14 @@ export const OptionOrdinalBadge = ({
 }) => (
   <span
     className={cn(
-      "flex size-4 shrink-0 items-center justify-center rounded-[4px] text-[9px]! leading-none font-semibold",
+      // Match the editor badge (form-option-item-node): 12px Medium, flat. Default fill/ink is derived
+      // from the Input color (--bf-badge/-foreground, auto-contrast; falls back to secondary) so the
+      // badge follows form customization and stays legible. Selected flips to a neutral white highlight
+      // on the selected row pill (Figma 25578:9719/9720) — kept pinned so the "lit" state always reads.
+      "flex size-4 shrink-0 items-center justify-center rounded-xs text-xs! leading-none font-medium",
       selected
-        ? "bg-primary text-primary-foreground"
-        : "bg-[var(--form-input-bg,var(--color-gray-50))] text-muted-foreground elevation-sm",
+        ? "bg-white text-foreground"
+        : "bg-(--bf-badge,var(--color-secondary)) text-(--bf-badge-foreground,var(--color-secondary-foreground))",
       hasErrors && !selected && "ring-1 ring-destructive",
     )}
   >
@@ -156,12 +194,175 @@ export const OptionRadioMark = ({
   </span>
 );
 
+// Square checkbox marker for multi-choice when "Labels" = None — presentational twin of the
+// interactive <Checkbox> (image-grid tiles are buttons, so a real checkbox would nest interactives).
+export const OptionCheckMark = ({
+  selected,
+  hasErrors,
+}: {
+  selected: boolean;
+  hasErrors?: boolean;
+}) => (
+  <span
+    className={cn(
+      "flex size-4 shrink-0 items-center justify-center rounded-xs border bg-card",
+      selected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+      hasErrors && !selected && "border-destructive",
+    )}
+  >
+    {selected && <CheckIcon className="size-3" />}
+  </span>
+);
+
+// Picture-choice grid (Typeform/Tally-style): options as a responsive grid of fixed-aspect,
+// cover-cropped image tiles so portrait, landscape, and square uploads all read uniformly. Shared
+// by Checkbox (multi) and MultiChoice (single); each field owns its selection + hotkey wiring.
+export const ImageOptionGrid = ({
+  options,
+  multi,
+  labelStyle,
+  hasErrors,
+  isSelected,
+  onToggle,
+  optionRefs,
+  onKeyDown,
+}: {
+  options: { value: string; label: string; image?: string }[];
+  multi: boolean;
+  labelStyle: OptionLabelStyle;
+  hasErrors: boolean;
+  isSelected: (value: string) => boolean;
+  onToggle: (value: string) => void;
+  optionRefs?: React.RefObject<(HTMLButtonElement | null)[]>;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
+}) => (
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    {options.map((option, idx) => {
+      const selected = isSelected(option.value);
+
+      return (
+        <button
+          key={option.value}
+          ref={
+            optionRefs
+              ? (el) => {
+                  optionRefs.current[idx] = el;
+                }
+              : undefined
+          }
+          type="button"
+          onKeyDown={onKeyDown}
+          onClick={() => onToggle(option.value)}
+          aria-pressed={selected}
+          aria-invalid={hasErrors}
+          className={cn(
+            // Tile pill: 2px border doubles as the selected ring (no layout shift on select).
+            "flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 p-1.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            selected ? "border-primary bg-muted" : "border-transparent hover:bg-accent",
+            hasErrors && "text-destructive",
+          )}
+        >
+          <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
+            {option.image ? (
+              <img src={option.image} alt="" className="absolute inset-0 size-full object-cover" />
+            ) : (
+              <span className="flex size-full items-center justify-center text-muted-foreground">
+                <ImageIcon className="size-6" />
+              </span>
+            )}
+          </span>
+          <span className="flex items-center gap-1.5 px-0.5">
+            {labelStyle === "none" ? (
+              multi ? (
+                <OptionCheckMark selected={selected} hasErrors={hasErrors} />
+              ) : (
+                <OptionRadioMark selected={selected} hasErrors={hasErrors} />
+              )
+            ) : (
+              <OptionOrdinalBadge
+                text={getOptionOrdinal(labelStyle, idx)}
+                selected={selected}
+                hasErrors={hasErrors}
+              />
+            )}
+            <span className="min-w-0 flex-1 truncate text-base">{option.label}</span>
+          </span>
+        </button>
+      );
+    })}
+  </div>
+);
+
+/** Label/description body. With `@`-mention tokens (labelNodes) it subscribes to the live
+ * form values and swaps each token for its answer — a faint placeholder until answered. */
+const LabelBody = ({
+  text,
+  labelNodes,
+  form,
+}: {
+  text: string;
+  labelNodes?: LabelTokenNode[];
+  form?: AppForm;
+}) => {
+  // Gate the hook in a child so its order stays stable — removing a label's last mention flips
+  // labelNodes to undefined, and a conditional useStore here would change the hook count → crash.
+  if (!labelNodes || !form) return <>{text}</>;
+
+  return <LabelBodyWithMentions labelNodes={labelNodes} form={form} />;
+};
+
+const mentionAnswerSchema = v.nullish(
+  v.union([v.string(), v.number(), v.boolean(), v.array(v.unknown())]),
+);
+
+const mentionValuesSchema = v.record(v.string(), v.unknown());
+
+const LabelBodyWithMentions = ({
+  labelNodes,
+  form,
+}: {
+  labelNodes: LabelTokenNode[];
+  form: AppForm;
+}) => {
+  // Subscribe to all values so a token re-renders the moment its source field changes.
+  const rawValues = useStore(form.store, (s) => s.values);
+  const values = v.parse(mentionValuesSchema, rawValues);
+
+  const runs = resolveMentions(labelNodes, {
+    getValue: (name) => {
+      const value = values[name];
+      const parsed = v.safeParse(mentionAnswerSchema, value);
+
+      return parsed.success ? parsed.output : String(value);
+    },
+    getLabel: () => undefined,
+  });
+
+  return (
+    <>
+      {runs.map((run, i) => (
+        <Fragment key={i}>
+          {run.kind === "placeholder" ? (
+            <span className="text-muted-foreground" data-bf-mention-placeholder>
+              {run.text}
+            </span>
+          ) : (
+            run.text
+          )}
+        </Fragment>
+      ))}
+    </>
+  );
+};
+
 export const FieldLabelText = ({
   text,
   labelType,
   htmlFor,
   required,
   asGroupLabel = false,
+  labelNodes,
+  form,
 }: {
   text: string;
   labelType?: string;
@@ -169,47 +370,56 @@ export const FieldLabelText = ({
   required?: boolean;
   /** Render label as non-<label> w/ stable id. Group fields (Checkbox/MultiChoice/Ranking) have no single <input id>; role="group" wrapper uses aria-labelledby. */
   asGroupLabel?: boolean;
+  /** Raw label children when the label carries `@`-mention tokens (see transform). */
+  labelNodes?: LabelTokenNode[];
+  /** Live form instance — required to resolve mention tokens to answers. */
+  form?: AppForm;
 }) => {
-  if (!text) return null;
+  // A mention-only label flattens to "" but still has content to render.
+  if (!text && !labelNodes) return null;
   const badge = required ? <RequiredBadge /> : null;
   const labelId = fieldLabelId(htmlFor);
+  const body = <LabelBody text={text} labelNodes={labelNodes} form={form} />;
 
   // Heading/blockquote labels are non-<label>, can't use htmlFor. Stable id; input wires aria-labelledby (see RenderStepPreviewInput).
   if (labelType === "h1") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h1 id={labelId} className="font-heading flex-1 text-4xl font-semibold">
-          {text}
+        <h1 id={labelId} className="flex-1 text-4xl font-semibold">
+          {body}
         </h1>
         {badge}
       </div>
     );
   }
+
   if (labelType === "h2") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h2 id={labelId} className="font-heading flex-1 text-2xl font-semibold">
-          {text}
+        <h2 id={labelId} className="flex-1 text-2xl font-semibold">
+          {body}
         </h2>
         {badge}
       </div>
     );
   }
+
   if (labelType === "h3") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h3 id={labelId} className="font-heading flex-1 text-xl font-semibold">
-          {text}
+        <h3 id={labelId} className="flex-1 text-xl font-semibold">
+          {body}
         </h3>
         {badge}
       </div>
     );
   }
+
   if (labelType === "blockquote") {
     return (
       <div className="flex w-full items-center py-2.5">
         <blockquote id={labelId} className="flex-1 border-l-2 pl-6 italic">
-          {text}
+          {body}
         </blockquote>
         {badge}
       </div>
@@ -221,28 +431,36 @@ export const FieldLabelText = ({
     return (
       <span
         id={labelId}
-        className="flex w-full items-center gap-2 py-2.5 text-sm select-none"
+        className="flex w-full items-center gap-1 py-2.5 text-sm text-(--bf-foreground,var(--color-gray-800)) select-none"
         data-bf-field-label
       >
-        <span className="flex-1">{text}</span>
+        <span>{body}</span>
         {badge}
       </span>
     );
   }
 
   return (
-    <Label htmlFor={htmlFor} id={labelId} className="w-full" data-bf-field-label>
-      <span className="flex-1">{text}</span>
+    <Label
+      htmlFor={htmlFor}
+      id={labelId}
+      className="w-full gap-1 text-(--bf-foreground,var(--color-gray-800))"
+      data-bf-field-label
+    >
+      <span>{body}</span>
       {badge}
     </Label>
   );
 };
 
-// Field types whose control isn't a labelable element (checkbox/single-pick/ranking lists; MultiSelect trigger is <div role="button"> due to nested remove-tag buttons — see multi-select.tsx). Render as groups: role="group" aria-labelledby, not <label htmlFor>.
+// Field types whose control isn't a labelable element (checkbox/single-pick/ranking lists; the
+// dropdown display modes keep group semantics — MultiSelect trigger is <div role="button"> due to
+// nested remove-tag buttons, see multi-select.tsx). Render as groups: role="group"
+// aria-labelledby, not <label htmlFor>.
 export const GROUP_FIELD_TYPES = new Set<PlateFormField["fieldType"]>([
   "Checkbox",
   "MultiChoice",
   "Ranking",
-  "MultiSelect",
-  "Dropdown",
+  "LinearScale",
+  "Matrix",
 ]);

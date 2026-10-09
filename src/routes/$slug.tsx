@@ -16,13 +16,13 @@ import {
 } from "@/lib/theme/generate-theme-css";
 import { seo } from "@/lib/seo";
 import { getCoverPreloadLinks } from "@/lib/vercel-image";
+import { buildThemeBootScript, themeStorageKey } from "@/lib/theme/public-form-theme";
 
 type PublicTheme = "light" | "dark" | "system";
 
-const themeStorageKey = (formId: string) => `bf-form-theme:${formId}`;
-
 const resolveSystemTheme = (): "light" | "dark" => {
   if (typeof window === "undefined") return "light";
+
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
@@ -36,16 +36,19 @@ const CustomDomainSlugRoute = () => {
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
     const saved = window.localStorage.getItem(themeStorageKey(formId)) as PublicTheme | null;
+
     return saved ?? defaultMode;
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
     if (viewerTheme === "system") return resolveSystemTheme();
+
     return viewerTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
+
     const apply = (resolved: "light" | "dark") => {
       root.classList.remove("light", "dark");
       root.classList.add(resolved);
@@ -59,12 +62,14 @@ const CustomDomainSlugRoute = () => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = () => apply(mq.matches ? "dark" : "light");
       mq.addEventListener("change", handler);
+
       return () => mq.removeEventListener("change", handler);
     }
   }, [viewerTheme]);
 
   useEffect(() => {
     document.body.style.backgroundColor = "var(--color-background)";
+
     return () => {
       document.body.style.backgroundColor = "";
     };
@@ -73,6 +78,7 @@ const CustomDomainSlugRoute = () => {
   const handleThemeChange = useCallback(
     (next: PublicTheme) => {
       setViewerTheme(next);
+
       try {
         window.localStorage.setItem(themeStorageKey(formId), next);
       } catch {
@@ -97,6 +103,7 @@ const CustomDomainSlugRoute = () => {
 
   return (
     <>
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- Intentional <style> injection: build CSS bundle / generated per-form theme CSS */}
       {themeCss && <style>{themeCss}</style>}
       <PublicFormPage
         form={loaderData?.form ?? null}
@@ -153,6 +160,7 @@ export const Route = createFileRoute("/$slug")({
     const formOgImage = loaderData?.form?.ogImageUrl;
     const domainOgImage = loaderData?.domainMeta?.ogImageUrl ?? undefined;
     const googleFontUrl = getGoogleFontLinkUrl(loaderData?.form?.customization ?? null);
+
     return {
       meta: seo({
         formTitle,
@@ -175,11 +183,7 @@ export const Route = createFileRoute("/$slug")({
           : []),
         ...getCoverPreloadLinks(loaderData?.form?.cover),
       ],
-      scripts: [
-        {
-          children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
-        },
-      ],
+      scripts: [{ children: buildThemeBootScript(formId, defaultMode) }],
     };
   },
   staleTime: 60_000,

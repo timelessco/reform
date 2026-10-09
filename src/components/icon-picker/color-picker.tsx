@@ -63,6 +63,7 @@ export const ColorPicker = ({ onChange, selectedColor, colors }: ColorPickerProp
             className={cn(
               "h-4",
               "w-4",
+              "bg-(--swatch)",
               "rounded-full",
               "border",
               "p-1",
@@ -74,7 +75,7 @@ export const ColorPicker = ({ onChange, selectedColor, colors }: ColorPickerProp
               },
             )}
             onClick={() => onChange(swapFirstTwo(colorItem))}
-            style={{ backgroundColor: colorItem }}
+            style={{ "--swatch": colorItem } as React.CSSProperties}
             type="button"
           />
         </div>

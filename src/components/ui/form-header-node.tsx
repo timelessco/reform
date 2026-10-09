@@ -4,6 +4,7 @@ import { Activity, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
+import * as v from "valibot";
 import { Button } from "@/components/ui/button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,10 +17,12 @@ import {
   ImageCropApply,
   ImageCropReset,
 } from "@/components/ui/image-crop";
+import { DEFAULT_COVER_POSITION } from "@/lib/form-schema/form-header-factory";
 import type { FormHeaderElementData } from "@/lib/form-schema/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme/theme-presets";
 import { DEFAULT_ICON } from "@/lib/config/app-config";
 import { cn, isValidUrl } from "@/lib/utils";
+
 export {
   createFormHeaderNode,
   type FormHeaderElementData,
@@ -27,6 +30,23 @@ export {
 
 // Hoisted to module scope to avoid re-computing on every render
 const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
+
+// CSS custom properties are missing from React's CSSProperties; these aliases name the vars used.
+type TabPillStyle = React.CSSProperties & {
+  "--tab-pill-left": string;
+  "--tab-pill-width": string;
+};
+
+type CoverObjectPositionStyle = React.CSSProperties & { "--bf-cover-object-position": string };
+
+type CoverFallbackStyle = React.CSSProperties & { "--bf-cover-fallback-bg": string };
+
+type CoverPillStyle = React.CSSProperties & {
+  "--bf-pill-top": string;
+  "--bf-pill-left"?: string;
+  "--bf-pill-right"?: string;
+};
+
 const PRIMARY_TO_THEME_NAME = new Map(
   Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
 );
@@ -76,6 +96,7 @@ const CoverUpload = ({
   onCancel: () => void;
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [
     { isDragging, errors },
     { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
@@ -85,8 +106,10 @@ const CoverUpload = ({
     accept: "image/*",
     multiple: false,
     onFilesChange: (files) => {
-      if (files[0]?.file) {
-        setPreviewUrl(URL.createObjectURL(files[0].file as File));
+      const uploaded = files[0]?.file;
+
+      if (uploaded instanceof File) {
+        setPreviewUrl(URL.createObjectURL(uploaded));
       }
     },
   });
@@ -94,19 +117,25 @@ const CoverUpload = ({
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
+
       if (!items) return;
+
       for (const item of items) {
         if (item.type.startsWith("image/")) {
           e.preventDefault();
           const file = item.getAsFile();
+
           if (file) {
             setPreviewUrl(URL.createObjectURL(file));
           }
+
           return;
         }
       }
     };
+
     document.addEventListener("paste", handlePaste);
+
     return () => document.removeEventListener("paste", handlePaste);
   }, []);
 
@@ -224,6 +253,7 @@ const CoverUpload = ({
 };
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
+
 const PASTE_HINT = IS_MAC ? "\u2318+V" : "Ctrl+V";
 
 const IconUploadTab = ({
@@ -239,6 +269,7 @@ const IconUploadTab = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // eslint-disable-next-line react-doctor/rerender-state-only-in-handlers -- value is read in JSX to gate the crop dialog
   const [showCrop, setShowCrop] = useState(false);
+
   const [
     { isDragging, errors },
     { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
@@ -248,10 +279,11 @@ const IconUploadTab = ({
     accept: "image/*",
     multiple: false,
     onFilesChange: (files) => {
-      if (files[0]?.file) {
-        const file = files[0].file as File;
-        setSelectedFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+      const uploaded = files[0]?.file;
+
+      if (uploaded instanceof File) {
+        setSelectedFile(uploaded);
+        setPreviewUrl(URL.createObjectURL(uploaded));
       }
     },
   });
@@ -259,20 +291,26 @@ const IconUploadTab = ({
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
+
       if (!items) return;
+
       for (const item of items) {
         if (item.type.startsWith("image/")) {
           e.preventDefault();
           const file = item.getAsFile();
+
           if (file) {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
           }
+
           return;
         }
       }
     };
+
     document.addEventListener("paste", handlePaste);
+
     return () => document.removeEventListener("paste", handlePaste);
   }, []);
 
@@ -282,9 +320,11 @@ const IconUploadTab = ({
     },
     [previewUrl],
   );
+
   const resetState = () => {
     setSelectedFile(null);
     setShowCrop(false);
+
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
   };
@@ -418,11 +458,16 @@ const IconTabBar = ({ value, onChange }: { value: string; onChange: (v: string) 
   const pillLeft = `calc(${(activeIndex / count) * 100}% + 3px)`;
   const pillWidth = `calc(${100 / count}% - ${6 / count}px)`;
 
+  const pillStyle: TabPillStyle = {
+    "--tab-pill-left": pillLeft,
+    "--tab-pill-width": pillWidth,
+  };
+
   return (
     <div className="relative flex flex-1 rounded-[10px] bg-secondary p-[3px]">
       <div
-        className="absolute top-[3px] bottom-[3px] z-0 rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] dark:bg-background"
-        style={{ left: pillLeft, width: pillWidth }}
+        className="absolute top-[3px] bottom-[3px] left-[var(--tab-pill-left)] z-0 w-[var(--tab-pill-width)] rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] dark:bg-background"
+        style={pillStyle}
       />
       {items.map((tab) => (
         <button
@@ -444,6 +489,7 @@ const IconTabBar = ({ value, onChange }: { value: string; onChange: (v: string) 
 export const FormHeaderElement = (props: PlateElementProps) => {
   const { element, children } = props;
   const editor = useEditorRef();
+
   const {
     hasCustomization,
     themeVars,
@@ -451,10 +497,13 @@ export const FormHeaderElement = (props: PlateElementProps) => {
     updateThemeColor,
   } = useEditorTheme();
 
-  const title = (element.title as string) || "";
-  const icon = (element.icon as string | null) || null;
-  const iconColor = (element.iconColor as string | null) || null;
-  const cover = (element.cover as string | null) || null;
+  const title = v.is(v.string(), element.title) && element.title ? element.title : "";
+  const icon = v.is(v.string(), element.icon) && element.icon ? element.icon : null;
+
+  const iconColor =
+    v.is(v.string(), element.iconColor) && element.iconColor ? element.iconColor : null;
+
+  const cover = v.is(v.string(), element.cover) && element.cover ? element.cover : null;
 
   const hasCover = !!cover;
   const hasLogo = !!icon;
@@ -462,6 +511,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
   const updateHeader = useCallback(
     (updates: Partial<FormHeaderElementData>) => {
       const path = editor.api.findPath(element);
+
       if (path) {
         editor.tf.setNodes(updates, { at: path });
       }
@@ -473,6 +523,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
 
   const autoResizeTitle = useCallback(() => {
     const el = titleRef.current;
+
     if (!el) return;
     /* eslint-disable react-doctor/js-batch-dom-css -- auto-resize needs write→read→write to measure scrollHeight */
     el.style.height = "auto";
@@ -521,7 +572,10 @@ export const FormHeaderElement = (props: PlateElementProps) => {
     [handleCoverChange],
   );
 
-  const coverPosition = (element.coverPosition as number | undefined) ?? 50;
+  const coverPosition = v.is(v.number(), element.coverPosition)
+    ? element.coverPosition
+    : DEFAULT_COVER_POSITION;
+
   const handleCoverPositionChange = useCallback(
     (pos: number) => updateHeader({ coverPosition: pos }),
     [updateHeader],
@@ -529,8 +583,10 @@ export const FormHeaderElement = (props: PlateElementProps) => {
 
   const accentColors = hasCustomization ? ACCENT_COLORS : undefined;
   const activeThemeColorName = editorCustomization?.themeColor || "zinc";
+
   const activeAccentColor =
     THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
+
   const isLogoMinimal =
     hasCustomization &&
     editorCustomization?.logoWidth &&
@@ -543,9 +599,10 @@ export const FormHeaderElement = (props: PlateElementProps) => {
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [iconTab, setIconTab] = useState("icon");
-  // Lazy-mount Upload tab on first use, then keep alive via <Activity> so drag-state and
-  // in-flight uploads survive Icon ↔ Upload switches.
+  // Lazy-mount Upload tab on first use, then keep alive via <Activity> so drag state and
+  // in-flight uploads survive Icon and Upload switches.
   const [openedUploadTab, setOpenedUploadTab] = useState(false);
+
   if (iconTab === "upload" && !openedUploadTab) setOpenedUploadTab(true);
   const [coverPopoverOpen, setCoverPopoverOpen] = useState(false);
 
@@ -566,6 +623,8 @@ export const FormHeaderElement = (props: PlateElementProps) => {
             onCoverPopoverOpenChange={setCoverPopoverOpen}
             onCoverChange={handleCoverChange}
             onCoverPositionChange={handleCoverPositionChange}
+            // Right-aligned form puts the logo bottom-right, so flip the pill to the left.
+            pillSide={editorCustomization?.textAlign === "right" ? "left" : "right"}
           />
         )}
         <div className={cn("relative flex w-full flex-col")}>
@@ -573,7 +632,13 @@ export const FormHeaderElement = (props: PlateElementProps) => {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6")}
+                  // pointer-events-none: this block is full content-width but the circle is only
+                  // ~100px (text-align centered). Left auto, its transparent flanks overlap the
+                  // cover's bottom strip and would swallow the pill region. The button re-enables.
+                  className={cn(
+                    "pointer-events-none relative z-10 mb-1",
+                    hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6",
+                  )}
                   data-bf-logo-emoji-container={
                     hasCover && icon && !isValidUrl(icon) ? "true" : undefined
                   }
@@ -583,7 +648,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                     render={
                       <button
                         type="button"
-                        className="cursor-pointer transition-colors"
+                        className="pointer-events-auto cursor-pointer transition-colors"
                         onMouseDown={(e) => e.preventDefault()}
                         aria-label="Change icon"
                       />
@@ -625,9 +690,8 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                 </div>
               )}
 
-              {/* Toolbar carries no bottom gap; the title owns its top gap (mt-4 below),
-                  so the title→cover/logo spacing is constant whether or not the toolbar
-                  has any buttons. */}
+              {/* Toolbar carries no bottom gap; the title owns its top gap (mt-4 below), so
+                  title-to-cover/logo spacing is constant whether or not the toolbar has buttons. */}
               <div
                 className={cn(
                   "flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
@@ -642,7 +706,8 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        prefix={<CircleUserRoundIcon />}
+                        className="ps-2! pe-2! hover:text-foreground"
+                        prefix={<CircleUserRoundIcon className="size-4" />}
                         onMouseDown={(e) => e.preventDefault()}
                       />
                     }
@@ -654,8 +719,9 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="ps-2! pe-2! hover:text-foreground"
                     onClick={handleAddCover}
-                    prefix={<ImageIcon />}
+                    prefix={<ImageIcon className="size-4" />}
                     onMouseDown={(e) => e.preventDefault()}
                   >
                     Add cover
@@ -696,6 +762,155 @@ export const FormHeaderElement = (props: PlateElementProps) => {
   );
 };
 
+/**
+ * Cover gallery + upload popover body. Shared by the editor's in-cover Change button and the
+ * Customize sidebar's Cover row so both open the same picker. Render inside a <Popover>;
+ * pass onClose to dismiss after a pick/remove.
+ */
+export const CoverPickerContent = ({
+  cover,
+  onCoverChange,
+  onClose,
+}: {
+  cover: string | null;
+  onCoverChange: (cover: string | null) => void;
+  onClose: () => void;
+}) => (
+  <PopoverContent align="end" side="bottom" className="w-[310px] p-0" sideOffset={8}>
+    <Tabs defaultValue="gallery" className="w-full">
+      <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+        <TabsList className="w-full">
+          <TabsTrigger value="gallery">Gallery</TabsTrigger>
+          <TabsTrigger value="upload">Upload</TabsTrigger>
+          <TabsIndicator />
+        </TabsList>
+        <Button
+          variant="ghost-flat"
+          size="icon"
+          className="shrink-0 rounded-lg p-1.25 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => {
+            onCoverChange(null);
+            onClose();
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+          aria-label="Remove cover"
+        >
+          <Trash2Icon />
+        </Button>
+      </div>
+
+      <TabsContent value="gallery" className="mt-0 px-3 pb-3">
+        <p className="mt-1 mb-2 text-xs text-muted-foreground">Abstract</p>
+        <div className="grid grid-cols-3 gap-2">
+          {COVER_GALLERY.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                onCoverChange(item.src);
+                onClose();
+              }}
+              className="relative h-16 cursor-pointer overflow-hidden rounded-lg bg-muted ring-primary ring-offset-1 ring-offset-background transition-all hover:scale-[1.02] hover:ring-2"
+              aria-label={item.label}
+            >
+              <div className="pointer-events-none absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color" />
+              <img
+                src={item.src}
+                alt={item.label}
+                width={200}
+                height={64}
+                className="relative z-0 size-full object-cover brightness-60 grayscale"
+              />
+            </button>
+          ))}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="upload" className="mt-0 px-3 pb-3">
+        <CoverUpload
+          currentCover={cover}
+          onUpload={(url) => {
+            onCoverChange(url);
+            onClose();
+          }}
+          onCancel={onClose}
+        />
+      </TabsContent>
+    </Tabs>
+  </PopoverContent>
+);
+
+/**
+ * Logo (icon + upload) picker popover body for the Customize sidebar. Mirrors the editor's
+ * in-header icon popover but without the theme-color coupling (the sidebar mounts above the
+ * editor theme provider). Render inside a <Popover>; pass onClose to dismiss after a pick.
+ */
+export const LogoPickerContent = ({
+  icon,
+  iconColor,
+  onIconChange,
+  onIconColorChange,
+  onClose,
+}: {
+  icon: string | null;
+  iconColor: string | null;
+  onIconChange: (icon: string | null) => void;
+  onIconColorChange: (color: string) => void;
+  onClose: () => void;
+}) => {
+  const [tab, setTab] = useState("icon");
+  // Lazy-mount Upload tab, then keep alive via <Activity> so in-flight uploads survive tab switches.
+  const [openedUpload, setOpenedUpload] = useState(false);
+
+  if (tab === "upload" && !openedUpload) setOpenedUpload(true);
+
+  return (
+    <PopoverContent align="end" side="bottom" keepMounted className="w-[310px] p-0" sideOffset={8}>
+      <div className="w-full">
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+          <IconTabBar value={tab} onChange={setTab} />
+          <Button
+            variant="ghost-flat"
+            size="icon"
+            className="shrink-0 rounded-lg p-1.25 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => {
+              onIconChange(null);
+              onClose();
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+            aria-label="Remove logo"
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
+        <Activity mode={tab === "icon" ? "visible" : "hidden"}>
+          <IconPickerContent
+            iconValue={icon && icon !== DEFAULT_ICON && !isValidUrl(icon) ? icon : null}
+            iconColor={iconColor || "#000000"}
+            onIconChange={(newIcon) => {
+              onIconChange(newIcon);
+              onClose();
+            }}
+            onColorChange={onIconColorChange}
+          />
+        </Activity>
+        {openedUpload && (
+          <Activity mode={tab === "upload" ? "visible" : "hidden"}>
+            <IconUploadTab
+              currentIcon={icon && isValidUrl(icon) ? icon : null}
+              onUpload={(url) => {
+                onIconChange(url);
+                onClose();
+              }}
+              onCancel={onClose}
+            />
+          </Activity>
+        )}
+      </div>
+    </PopoverContent>
+  );
+};
+
 interface HeaderCoverSectionProps {
   cover: string;
   coverPosition: number;
@@ -703,6 +918,8 @@ interface HeaderCoverSectionProps {
   onCoverPopoverOpenChange: (open: boolean) => void;
   onCoverChange: (cover: string | null) => void;
   onCoverPositionChange: (pos: number) => void;
+  /** Which cover corner the Change·Reposition pill anchors to (opposite the logo). */
+  pillSide: "left" | "right";
 }
 
 const HeaderCoverSection = ({
@@ -712,6 +929,7 @@ const HeaderCoverSection = ({
   onCoverPopoverOpenChange,
   onCoverChange,
   onCoverPositionChange,
+  pillSide,
 }: HeaderCoverSectionProps) => {
   const coverRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startY: number; startPos: number } | null>(null);
@@ -721,32 +939,40 @@ const HeaderCoverSection = ({
   const position = repositioning ? draftPosition : coverPosition;
 
   // The pill is portaled to <body> and anchored to the cover's visible bottom-right corner.
-  // We clamp to the editor viewport's right edge (which shrinks when the Customize sidebar
-  // opens) so the pill never lands on top of the sidebar: Fill is clipped to that edge, Fit
-  // rides 12px inside the cover; either way it stays 16px off the viewport at minimum.
+  // Clamp to the editor viewport's right edge (it shrinks when the Customize sidebar opens) so
+  // the pill never covers the sidebar. Fill clips to that edge, Fit rides 12px inside the cover.
   const [coverHovered, setCoverHovered] = useState(false);
   const [pillTop, setPillTop] = useState(0);
   const [pillRight, setPillRight] = useState(16);
+  const [pillLeft, setPillLeft] = useState(16);
   const showPill = coverHovered || repositioning || coverPopoverOpen;
+
   const measurePill = useCallback(() => {
     const el = coverRef.current;
+
     if (!el) return;
     const rect = el.getBoundingClientRect();
     setPillTop(rect.bottom);
-    const editorRight = el.closest(".slate-editor")?.getBoundingClientRect().right;
-    const visibleRight = Math.min(rect.right, editorRight ?? rect.right);
+    const editorRect = el.closest(".slate-editor")?.getBoundingClientRect();
+    const visibleRight = Math.min(rect.right, editorRect?.right ?? rect.right);
     setPillRight(Math.max(16, window.innerWidth - visibleRight + 12));
+    // Left anchor (right-aligned forms) rides 12px inside the cover's visible left edge.
+    const visibleLeft = Math.max(rect.left, editorRect?.left ?? rect.left);
+    setPillLeft(Math.max(16, visibleLeft + 12));
   }, []);
+
   useEffect(() => {
     if (!showPill) return;
     measurePill();
     window.addEventListener("scroll", measurePill, true);
     window.addEventListener("resize", measurePill);
     // Sidebar open/close reflows the editor pane without a window resize, and a full-bleed
-    // cover's own size doesn't change — observe the pane so the pill re-measures regardless.
+    // cover's size doesn't change; observe the pane so the pill re-measures regardless.
     const pane = coverRef.current?.closest(".slate-editor") ?? coverRef.current;
     const ro = pane ? new ResizeObserver(measurePill) : null;
+
     if (pane && ro) ro.observe(pane);
+
     return () => {
       window.removeEventListener("scroll", measurePill, true);
       window.removeEventListener("resize", measurePill);
@@ -757,19 +983,36 @@ const HeaderCoverSection = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!repositioning || !hasImage) return;
     e.preventDefault();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = { startY: e.clientY, startPos: draftPosition };
   };
+
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     const el = coverRef.current;
+
     if (!drag || !el) return;
-    // Drag down → reveal more of the image's top → lower object-position-y.
+    // Dragging down reveals more of the image's top, lowering object-position-y.
     const delta = ((e.clientY - drag.startY) / (el.offsetHeight || 1)) * 100;
     setDraftPosition(Math.max(0, Math.min(100, drag.startPos - delta)));
   };
+
   const endDrag = () => {
     dragRef.current = null;
+  };
+
+  const objectPositionStyle: CoverObjectPositionStyle = {
+    "--bf-cover-object-position": `center ${position}%`,
+  };
+
+  const fallbackStyle: CoverFallbackStyle | undefined = cover?.startsWith("#")
+    ? { "--bf-cover-fallback-bg": cover }
+    : undefined;
+
+  const pillStyle: CoverPillStyle = {
+    "--bf-pill-top": `${pillTop - 12}px`,
+    "--bf-pill-left": pillSide === "left" ? `${pillLeft}px` : undefined,
+    "--bf-pill-right": pillSide === "left" ? undefined : `${pillRight}px`,
   };
 
   return (
@@ -777,7 +1020,7 @@ const HeaderCoverSection = ({
       <div
         ref={coverRef}
         className={cn(
-          "group/cover relative right-[50%] left-[50%] -mr-[50vw] -ml-[50vw] h-[120px] w-screen bg-muted/20 sm:h-[200px]",
+          "group/cover relative right-[50%] left-[50%] -mr-[50cqw] -ml-[50cqw] h-[146px] w-[100cqw] bg-muted/20 sm:h-[243px]",
           repositioning && "cursor-grab touch-none active:cursor-grabbing",
         )}
         data-bf-cover
@@ -788,6 +1031,19 @@ const HeaderCoverSection = ({
         onMouseEnter={() => setCoverHovered(true)}
         onMouseLeave={() => setCoverHovered(false)}
       >
+        {/* Ambient glow (Figma 25690:11807), a blurred copy of the cover behind the card so the
+            shadow takes the photo's colours. Fit-only; styles.css gates it via --bf-cover-glow. */}
+        {hasImage && (
+          <img
+            src={cover}
+            alt=""
+            aria-hidden
+            data-bf-cover-glow
+            draggable={false}
+            className="[object-position:var(--bf-cover-object-position)]"
+            style={objectPositionStyle}
+          />
+        )}
         {hasImage ? (
           <>
             {cover.includes("tint=true") && (
@@ -800,26 +1056,27 @@ const HeaderCoverSection = ({
               height={200}
               draggable={false}
               className={cn(
-                "size-full border-0 object-cover select-none",
+                "size-full border-0 object-cover [object-position:var(--bf-cover-object-position)] select-none",
                 cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
               )}
-              style={{ objectPosition: `center ${position}%` }}
+              style={objectPositionStyle}
             />
           </>
         ) : (
           <div
-            className="size-full"
-            style={{
-              backgroundColor: cover?.startsWith("#") ? cover : "#FFE4E1",
-            }}
+            className={cn(
+              "size-full",
+              cover?.startsWith("#") ? "bg-[var(--bf-cover-fallback-bg)]" : "bg-[#FFE4E1]",
+            )}
+            style={fallbackStyle}
           />
         )}
         {/* Cover fade lives in CSS on [data-bf-cover] (styles.css) so the editor, Preview,
             and public render share one definition. */}
       </div>
 
-      {/* Change | Reposition (Figma 25424:13193) — portaled to <body>, fixed and anchored to
-          the cover's measured bottom-right corner (see measurePill for the Fit/Fill clamp).
+      {/* Change | Reposition (Figma 25424:13193). Portaled to <body>, fixed and anchored to the
+          cover's measured bottom-right corner (see measurePill for the Fit/Fill clamp).
           createPortal keeps it inside the Popover's React context. */}
       {showPill &&
         typeof document !== "undefined" &&
@@ -827,13 +1084,8 @@ const HeaderCoverSection = ({
           <div
             onMouseEnter={() => setCoverHovered(true)}
             onMouseLeave={() => setCoverHovered(false)}
-            style={{
-              position: "fixed",
-              top: pillTop - 12,
-              right: pillRight,
-              transform: "translateY(-100%)",
-              zIndex: 50,
-            }}
+            className="fixed top-[var(--bf-pill-top)] [right:var(--bf-pill-right)] [left:var(--bf-pill-left)] z-50 -translate-y-full"
+            style={pillStyle}
           >
             {repositioning ? (
               <button
@@ -879,68 +1131,11 @@ const HeaderCoverSection = ({
           document.body,
         )}
 
-      <PopoverContent align="end" side="bottom" className="w-[310px] p-0" sideOffset={8}>
-        <Tabs defaultValue="gallery" className="w-full">
-          <div className="flex items-center gap-2 px-3 pt-2 pb-1">
-            <TabsList className="w-full">
-              <TabsTrigger value="gallery">Gallery</TabsTrigger>
-              <TabsTrigger value="upload">Upload</TabsTrigger>
-              <TabsIndicator />
-            </TabsList>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => {
-                onCoverChange(null);
-                onCoverPopoverOpenChange(false);
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              aria-label="Remove cover"
-            >
-              <Trash2Icon />
-            </Button>
-          </div>
-
-          <TabsContent value="gallery" className="mt-0 px-3 pb-3">
-            <p className="mt-1 mb-2 text-xs text-muted-foreground">Abstract</p>
-            <div className="grid grid-cols-3 gap-2">
-              {COVER_GALLERY.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => {
-                    onCoverChange(item.src);
-                    onCoverPopoverOpenChange(false);
-                  }}
-                  className="relative h-16 cursor-pointer overflow-hidden rounded-lg bg-muted ring-primary ring-offset-1 ring-offset-background transition-all hover:scale-[1.02] hover:ring-2"
-                  aria-label={item.label}
-                >
-                  <div className="pointer-events-none absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color" />
-                  <img
-                    src={item.src}
-                    alt={item.label}
-                    width={200}
-                    height={64}
-                    className="relative z-0 size-full object-cover brightness-60 grayscale"
-                  />
-                </button>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="upload" className="mt-0 px-3 pb-3">
-            <CoverUpload
-              currentCover={cover}
-              onUpload={(url) => {
-                onCoverChange(url);
-                onCoverPopoverOpenChange(false);
-              }}
-              onCancel={() => onCoverPopoverOpenChange(false)}
-            />
-          </TabsContent>
-        </Tabs>
-      </PopoverContent>
+      <CoverPickerContent
+        cover={cover}
+        onCoverChange={onCoverChange}
+        onClose={() => onCoverPopoverOpenChange(false)}
+      />
     </Popover>
   );
 };
@@ -961,19 +1156,30 @@ const HeaderTitleTextarea = ({
   editor,
 }: HeaderTitleTextareaProps) => {
   const moveToFirstBlock = useCallback(() => {
-    const firstBlockPath = [1];
-    // eslint-disable-next-line typescript-eslint/no-explicit-any
-    const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
-    if (startPoint) {
-      editor.tf.select(startPoint);
-      editor.tf.focus();
+    // The block under the header must be an editable caret target. A void block
+    // (the submit button, page break, etc.) or no block means dropping a paragraph in.
+    const firstBlock = editor.children[1];
+
+    if (!firstBlock || editor.api.isVoid(firstBlock)) {
+      editor.tf.insertNodes({ type: "p", children: [{ text: "" }] }, { at: [1] });
     }
+
+    // Structural edits (insert above, or the onboarding re-init) re-render async;
+    // wait a frame so the target block's DOM exists before placing the caret.
+    requestAnimationFrame(() => {
+      const startPoint = editor.api.edges([1])?.[0];
+
+      if (startPoint) {
+        editor.tf.select(startPoint);
+        editor.tf.focus();
+      }
+    });
   }, [editor]);
 
   return (
     // mt-4 (16px, Figma) is the title's own top gap. When the toolbar above is empty
     // (cover + logo both present) its zero height lets this margin collapse through, so
-    // the cover/logo→title spacing is anchored to the title, not the toolbar's contents.
+    // cover/logo-to-title spacing anchors to the title, not the toolbar's contents.
     <div className="group/title relative mt-4">
       <textarea
         ref={ref}
@@ -988,24 +1194,32 @@ const HeaderTitleTextarea = ({
           if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
             e.preventDefault();
             moveToFirstBlock();
+
             return;
           }
+
           if (e.key === "Enter") {
             e.preventDefault();
-            const secondBlock = editor.children[1] as { type?: string };
-            const isOnboarding = secondBlock?.type === "onboardingContent";
+
+            const secondBlock = editor.children[1];
+
+            const isOnboarding =
+              secondBlock !== undefined &&
+              "type" in secondBlock &&
+              secondBlock.type === "onboardingContent";
+
             if (isOnboarding) {
               const currentHeader = editor.children[0];
+
               const emptyContent = [
                 currentHeader,
                 { type: "p", children: [{ text: "" }] },
-                createFormButtonNode("submit"),
+                { ...createFormButtonNode("submit") },
               ];
-              editor.tf.init({
-                // eslint-disable-next-line typescript-eslint/no-explicit-any
-                value: emptyContent as any,
-              });
+
+              editor.tf.init({ value: emptyContent });
             }
+
             moveToFirstBlock();
           }
         }}
@@ -1057,15 +1271,16 @@ const HeaderIconPopoverContent = ({
       hasCustomization && "bf-themed",
       hasCustomization && themeMode === "dark" && "dark",
     )}
+    // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
     style={hasCustomization ? themeVars : undefined}
   >
     <div className="w-full">
       <div className="flex items-center gap-2 px-3 pt-2 pb-1">
         <IconTabBar value={iconTab} onChange={onIconTabChange} />
         <Button
-          variant="ghost"
+          variant="ghost-flat"
           size="icon"
-          className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="shrink-0 rounded-lg p-1.25 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           onClick={() => {
             onIconChange(null);
             onClose();
@@ -1087,6 +1302,7 @@ const HeaderIconPopoverContent = ({
           onColorChange={(color) => {
             if (hasCustomization && updateThemeColor) {
               const themeName = PRIMARY_TO_THEME_NAME.get(color);
+
               if (themeName) updateThemeColor(themeName);
             } else {
               onIconColorChange(color);

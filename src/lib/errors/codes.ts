@@ -53,12 +53,20 @@ export type ErrorCode =
   | "submissions/draft-too-large"
   | "submissions/missing-draft-id"
   | "submissions/invalid"
+  | "submissions/email-not-verified" // verifyEmail field submitted without a valid verification token
+
+  // --- Email OTP (public-form "Verify email") ---------------------------
+  | "otp/rate-limited"
+  | "otp/not-applicable" // form has no verify-email field — refuse to send
+  | "otp/invalid-code"
+  | "otp/expired"
 
   // --- Notifications ---------------------------------------------------
   | "notifications/forbidden"
 
   // --- AI quota / generation ------------------------------------------
   | "quota/ai-daily-limit"
+  | "quota/ai-rate-limited" // per-org short-window burst limit on AI form-generate
 
   // --- Vercel infrastructure (custom-domains via Vercel API) ----------
   // Wrap upstream Vercel SDK failures; status mirrors upstream, else 502.
