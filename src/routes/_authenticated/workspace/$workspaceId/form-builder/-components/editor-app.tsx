@@ -212,7 +212,7 @@ const EditorAppInner = ({
         draft.content = val;
 
         if (workspaceId) draft.workspaceId = workspaceId;
-        draft.updatedAt = new Date().toISOString();
+        // The server stamps recency; body-only saves leave sidebar ordering stable.
 
         if (headerNode) {
           if (headerNode.title !== undefined) draft.title = headerNode.title;

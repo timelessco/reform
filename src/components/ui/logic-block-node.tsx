@@ -4,7 +4,7 @@ import type { PlateElementProps } from "platejs/react";
 import {
   PlateElement,
   useEditorRef,
-  useEditorVersion,
+  useEditorSelector,
   useFocused,
   useSelected,
 } from "platejs/react";
@@ -69,7 +69,7 @@ interface FieldInfo {
 
 const FIRST_STEP_ID = "step-0";
 
-const collectFields = (editor: ReturnType<typeof useEditorRef>): FieldInfo[] => {
+const collectFields = (editor: Pick<ReturnType<typeof useEditorRef>, "children">): FieldInfo[] => {
   const out: FieldInfo[] = [];
   const { steps } = transformPlateForPreview(editor.children);
 
@@ -89,7 +89,9 @@ const collectFields = (editor: ReturnType<typeof useEditorRef>): FieldInfo[] => 
   return out;
 };
 
-const collectStepOptions = (editor: ReturnType<typeof useEditorRef>): Option[] => {
+const collectStepOptions = (
+  editor: Pick<ReturnType<typeof useEditorRef>, "children">,
+): Option[] => {
   const options: Option[] = [{ value: FIRST_STEP_ID, label: "Step 1" }];
   let stepNumber = 2;
 
@@ -776,9 +778,6 @@ export const LogicBlockElement = (props: PlateElementProps) => {
   const focused = useFocused();
   const blockRef = React.useRef<HTMLDivElement>(null);
 
-  // Re-render on editor edits so renamed fields / new steps update pickers.
-  useEditorVersion();
-
   // Navigating into the block (keyboard selection from an adjacent block) lands focus on
   // the first control instead of leaving the whole block ring-selected. Layout effect so
   // the control focuses before paint, avoiding a one-frame flash of the selection ring.
@@ -804,7 +803,12 @@ export const LogicBlockElement = (props: PlateElementProps) => {
 
   const actions = isActionList(element.actions) ? element.actions : [];
 
-  const fields = collectFields(editor);
+  const { fields, stepOptions } = useEditorSelector(
+    (ed) => ({ fields: collectFields(ed), stepOptions: collectStepOptions(ed) }),
+    [],
+    { equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+
   const sources = fields.filter((f) => !f.isFieldArray); // Wave 1: repeatable can't be a source
   const sourceOptions = sources.map((f) => ({ value: f.name, label: f.label }));
   const fieldOptions = fields.map((f) => ({ value: f.name, label: f.label }));
@@ -813,7 +817,6 @@ export const LogicBlockElement = (props: PlateElementProps) => {
     .filter(isSetTarget)
     .map((f) => ({ value: f.name, label: f.label }));
 
-  const stepOptions = collectStepOptions(editor);
   const fieldTypeByName = new Map(fields.map((f) => [f.name, f.fieldType]));
   const fieldChoicesByName = new Map(fields.map((f) => [f.name, f.options ?? []]));
 

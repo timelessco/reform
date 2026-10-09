@@ -10,7 +10,7 @@ import {
   useFocused,
   usePluginOption,
 } from "platejs/react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import * as v from "valibot";
 
 import {
@@ -563,81 +563,86 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
 
   const editor = useEditorRef();
 
-  // Subscribe to every editor change so optionIndex tracks reorders. props.path (useNodePath)
-  // doesn't update on reorder (slate-react memoizes by identity); look up index by node identity.
-  const version = useEditorVersion();
-  // Reactive focus index: useEditorVersion bumps on CONTENT only, not selection — read the focus via
-  // useEditorSelector so moving the caret into an option re-renders and shows the "Add option" ghost.
-  const focusIndex = useEditorSelector((ed) => ed.selection?.focus.path[0], []);
+  const { optionIndex, isLastInGroup, isGroupFocused, isStandalone, chipsMode } = useEditorSelector(
+    (ed) => {
+      const nodes = ed.children;
+      const pathIdx = nodes.indexOf(element);
 
-  const { optionIndex, isLastInGroup, isGroupFocused, isStandalone, chipsMode } = useMemo(() => {
-    const nodes = editor.children;
-    const pathIdx = nodes.indexOf(element);
+      if (pathIdx < 0)
+        return {
+          optionIndex: 0,
+          isLastInGroup: false,
+          isGroupFocused: false,
+          isStandalone: false,
+          chipsMode: false,
+        };
 
-    if (pathIdx < 0)
-      return {
-        optionIndex: 0,
-        isLastInGroup: false,
-        isGroupFocused: false,
-        isStandalone: false,
-        chipsMode: false,
-      };
+      let idx = 0;
 
-    let idx = 0;
-
-    for (let i = pathIdx - 1; i >= 0; i--) {
-      if (nodes[i]?.type === "formOptionItem") idx++;
-      else break;
-    }
-
-    // Group shown as dropdown → the whole group collapses into the chips control
-    // (flags live on the group's first node; ranking has no dropdown mode).
-    const first = nodes[pathIdx - idx];
-
-    const rawVariant = first && "variant" in first ? first.variant : undefined;
-
-    const firstVariant = v.is(v.string(), rawVariant) && rawVariant ? rawVariant : "checkbox";
-
-    const chips =
-      first?.type === "formOptionItem" &&
-      (firstVariant === "checkbox" || firstVariant === "multiChoice") &&
-      "showAsDropdown" in first &&
-      first.showAsDropdown === true;
-
-    const nextNode = nodes[pathIdx + 1];
-    const isLast = !nextNode || nextNode.type !== "formOptionItem";
-
-    // Standalone = no formLabel above AND no sibling option — decides whether to anchor the
-    // required badge inline (grouped options' badge floats over the formLabel instead).
-    const prevNode = pathIdx > 0 ? nodes[pathIdx - 1] : null;
-    const standalone = idx === 0 && isLast && prevNode?.type !== "formLabel";
-
-    let groupFocused = false;
-
-    if (focusIndex !== undefined) {
-      const focusNode = nodes[focusIndex];
-
-      if (focusNode?.type === "formOptionItem") {
-        let groupStart = pathIdx;
-
-        while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
-        let groupEnd = pathIdx;
-
-        while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
-          groupEnd++;
-        groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
+      for (let i = pathIdx - 1; i >= 0; i--) {
+        if (nodes[i]?.type === "formOptionItem") idx++;
+        else break;
       }
-    }
 
-    return {
-      optionIndex: idx,
-      isLastInGroup: isLast,
-      isGroupFocused: groupFocused,
-      isStandalone: standalone,
-      chipsMode: chips,
-    };
-    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- version forces recompute on every editor change
-  }, [editor, element, focusIndex, version]);
+      // Group shown as dropdown → the whole group collapses into the chips control
+      // (flags live on the group's first node; ranking has no dropdown mode).
+      const first = nodes[pathIdx - idx];
+
+      const rawVariant = first && "variant" in first ? first.variant : undefined;
+
+      const firstVariant = v.is(v.string(), rawVariant) && rawVariant ? rawVariant : "checkbox";
+
+      const chips =
+        first?.type === "formOptionItem" &&
+        (firstVariant === "checkbox" || firstVariant === "multiChoice") &&
+        "showAsDropdown" in first &&
+        first.showAsDropdown === true;
+
+      const nextNode = nodes[pathIdx + 1];
+      const isLast = !nextNode || nextNode.type !== "formOptionItem";
+
+      // Standalone = no formLabel above AND no sibling option — decides whether to anchor the
+      // required badge inline (grouped options' badge floats over the formLabel instead).
+      const prevNode = pathIdx > 0 ? nodes[pathIdx - 1] : null;
+      const standalone = idx === 0 && isLast && prevNode?.type !== "formLabel";
+
+      let groupFocused = false;
+
+      const focusIndex = ed.selection?.focus.path[0];
+
+      if (focusIndex !== undefined) {
+        const focusNode = nodes[focusIndex];
+
+        if (focusNode?.type === "formOptionItem") {
+          let groupStart = pathIdx;
+
+          while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
+          let groupEnd = pathIdx;
+
+          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
+            groupEnd++;
+          groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
+        }
+      }
+
+      return {
+        optionIndex: idx,
+        isLastInGroup: isLast,
+        isGroupFocused: groupFocused,
+        isStandalone: standalone,
+        chipsMode: chips,
+      };
+    },
+    [element],
+    {
+      equalityFn: (a, b) =>
+        a.optionIndex === b.optionIndex &&
+        a.isLastInGroup === b.isLastInGroup &&
+        a.isGroupFocused === b.isGroupFocused &&
+        a.isStandalone === b.isStandalone &&
+        a.chipsMode === b.chipsMode,
+    },
+  );
 
   // Suppress "Add option" ghost during any drag — Plate snapshots the option DOM for the
   // preview and would capture a visible ghost row alongside it.

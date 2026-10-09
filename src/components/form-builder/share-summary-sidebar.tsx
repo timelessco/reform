@@ -27,7 +27,7 @@ import { ToggleSelect } from "@/components/ui/toggle-select";
 import { FeatureGate } from "@/components/ui/feature-gate";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useForm } from "@/hooks/use-live-hooks";
+import { useFormShareMeta } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
@@ -125,7 +125,7 @@ interface ShareSummarySidebarProps {
 
 export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
-  const { data: savedDocs } = useForm(formId);
+  const { data: savedDocs } = useFormShareMeta(formId);
   const doc = savedDocs?.[0];
   const { data: session } = useSession();
   const orgId = session?.session?.activeOrganizationId ?? undefined;

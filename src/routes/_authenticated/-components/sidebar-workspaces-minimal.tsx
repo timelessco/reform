@@ -801,7 +801,6 @@ type FavoriteFormItem = {
   title: string | null;
   workspaceId: string;
   status: string;
-  updatedAt: string;
   icon: string | null;
   customization: unknown;
   favoriteId: string;

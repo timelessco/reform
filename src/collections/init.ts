@@ -95,6 +95,7 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
       const realKeys = Object.keys(changes).filter((k) => k !== "updatedAt");
 
       if (realKeys.length === 0) return { refetch: false };
+      const isContentOnly = realKeys.length === 1 && realKeys[0] === "content";
       const isCustomizationOnly = realKeys.length === 1 && realKeys[0] === "customization";
 
       const data = stripNulls({
@@ -107,7 +108,8 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
       if (!isCustomizationOnly) {
         await serverFns.updateForm(data);
 
-        return;
+        // Keep persisted content without refreshing list recency on each body edit.
+        return isContentOnly ? { refetch: false } : undefined;
       }
 
       const formId = m.original.id;

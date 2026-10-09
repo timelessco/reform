@@ -2,7 +2,7 @@ import type { PlateElementProps } from "platejs/react";
 import {
   PlateElement,
   useEditorRef,
-  useEditorVersion,
+  useEditorSelector,
   useFocused,
   useReadOnly,
   useSelected,
@@ -40,28 +40,24 @@ export const PageBreakElement = (props: PlateElementProps) => {
   // SAFETY: hasFormFields is written as a boolean by the form normalizer, absent as undefined
   const hasFormFields = (element.hasFormFields as boolean) ?? false;
 
-  // Subscribe to editor changes so the page number tracks reorders/deletes. Plate memoizes by
-  // identity — without this version dep, a pageBreak after a deleted sibling shows a stale number.
-  useEditorVersion();
+  const pageNumber = useEditorSelector(
+    (ed) => {
+      const index = ed.children.indexOf(element);
 
-  const pageNumber = (() => {
-    const path = editor.api.findPath(element);
+      if (index < 0) return 2;
 
-    if (!path) return 2;
+      let count = 2; // Page 1 is before first pageBreak, so this starts at 2
 
-    let count = 2; // Page 1 is before first pageBreak, so this starts at 2
-
-    for (const [, nodePath] of editor.api.nodes({
-      at: [],
-      match: { type: "pageBreak" },
-    })) {
-      if (nodePath[0] < path[0]) {
-        count++;
+      for (const node of ed.children.slice(0, index)) {
+        if (node.type === "pageBreak") {
+          count++;
+        }
       }
-    }
 
-    return count;
-  })();
+      return count;
+    },
+    [element],
+  );
 
   const handleThankYouToggle = (checked: boolean) => {
     const path = editor.api.findPath(element);
