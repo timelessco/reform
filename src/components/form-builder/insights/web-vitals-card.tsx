@@ -51,12 +51,15 @@ const formatValue = (metric: WebVitalName, value: number | null): string => {
   if (value === null) {
     return "—";
   }
+
   if (metric === "lcp") {
     return `${(value / 1000).toFixed(1)}s`;
   }
+
   if (metric === "inp") {
     return `${Math.round(value)}ms`;
   }
+
   return value.toFixed(2);
 };
 
@@ -70,19 +73,25 @@ interface DeltaLine {
 
 const describeDelta = (metric: WebVitalName, summary: VitalMetricSummary): DeltaLine | null => {
   const delta = summary.deltaVsPrev;
+
   if (delta === null) {
     return null;
   }
+
   const magnitude = Math.abs(delta);
   const magnitudeText = formatMagnitude(metric, magnitude);
+
   // A rounded-away magnitude reads as no movement.
   if (magnitudeText === "0ms" || magnitudeText === "0.00") {
     return { text: "no change vs prior period", improved: null };
   }
+
   // Lower is better for all three metrics.
   const improved = delta < 0;
+
   const direction =
     metric === "cls" ? (improved ? "lower" : "higher") : improved ? "faster" : "slower";
+
   return { text: `${magnitudeText} ${direction} vs prior period`, improved };
 };
 
@@ -103,6 +112,7 @@ const dateLabelFormatter = new Intl.DateTimeFormat("en-US", {
 
 const formatDateLabel = (value: string): string => {
   const parsed = new Date(`${value}T00:00:00.000Z`);
+
   return Number.isNaN(parsed.getTime()) ? value : dateLabelFormatter.format(parsed);
 };
 
@@ -111,6 +121,7 @@ const seriesKeyFor = (metric: WebVitalName): keyof FormVitalsMetrics["series"][n
 
 const StatTile = ({ meta, summary }: { meta: MetricMeta; summary: VitalMetricSummary }) => {
   const delta = describeDelta(meta.name, summary);
+
   return (
     <li className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
@@ -134,8 +145,9 @@ const StatTile = ({ meta, summary }: { meta: MetricMeta; summary: VitalMetricSum
             delta.improved === null
               ? "text-muted-foreground"
               : delta.improved
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-amber-600 dark:text-amber-400",
+                ? "text-(--color-success)"
+                : // oxlint-disable-next-line shadcn/no-raw-colors -- no warning/amber token; needs design decision
+                  "text-amber-600 dark:text-amber-400",
           )}
         >
           {delta.text}
@@ -170,6 +182,7 @@ const VitalTrendChart = ({
   }
 
   const meta = METRICS.find((m) => m.name === metric);
+
   const chartConfig = {
     value: {
       label: `${meta?.label ?? metric} (p75)`,
@@ -202,6 +215,7 @@ export const WebVitalsCard = ({ vitals }: WebVitalsCardProps) => {
     inp: vitals.inp,
     cls: vitals.cls,
   };
+
   const hasAnySample = METRICS.some((meta) => summaries[meta.name].sampleCount > 0);
 
   return (

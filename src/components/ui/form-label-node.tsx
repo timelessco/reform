@@ -6,6 +6,7 @@ import { LabelRequiredBadge } from "@/components/ui/required-badge-button";
 
 export const FormLabelElement = ({ children, ...props }: PlateElementProps) => {
   const { editor, element } = props;
+  // SAFETY: the schema stores placeholder as a string when present, absent otherwise
   const placeholder = element.placeholder as string | undefined;
   const isEmpty = editor.api.isEmpty(element);
   const isSelected = useSelected();

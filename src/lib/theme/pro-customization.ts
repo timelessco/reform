@@ -55,11 +55,15 @@ export const proSectionForKey = (key: string): string | null => {
   // Basic Theme controls are free everywhere (single source of truth) — never strip/flag them.
   if (FREE_CUSTOMIZATION_KEYS.has(key)) return null;
   const plain = PRO_PLAIN_KEY_SECTION.get(key);
+
   if (plain) return plain;
   // strip optional light:/dark: mode prefix for token + customCss matching
   const bare = key.replace(/^(?:light|dark):/, "");
+
   if (bare === "customCss") return "Custom CSS";
+
   if (PRO_COLOR_TOKENS.has(bare)) return "Colors";
+
   return null;
 };
 
@@ -68,12 +72,16 @@ export const getProCustomizationSections = (
   customization: Record<string, string> | null | undefined,
 ): string[] => {
   const found = new Set<string>();
+
   for (const [key, value] of Object.entries(customization ?? {})) {
     if (!value) continue; // mode-migration leaves ""-valued keys behind — not active styles
     const section = proSectionForKey(key);
+
     if (section) found.add(section);
   }
+
   const order = ["Typography", "Colors", "Inputs", "Buttons", "Custom CSS"];
+
   return order.filter((s) => found.has(s));
 };
 

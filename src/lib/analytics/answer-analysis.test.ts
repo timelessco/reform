@@ -72,6 +72,7 @@ describe("capWithOthers", () => {
       { label: "a", value: 3 },
       { label: "b", value: 1 },
     ];
+
     expect(capWithOthers(rows, 6)).toBe(rows);
   });
 
@@ -82,6 +83,7 @@ describe("capWithOthers", () => {
       { label: "c", value: 2 },
       { label: "d", value: 1 },
     ];
+
     expect(capWithOthers(rows, 2)).toEqual([
       { label: "a", value: 5 },
       { label: "b", value: 3 },
@@ -113,6 +115,7 @@ describe("buildAnswerDistribution", () => {
       ["Short", 2],
       ["Detailed", 1],
     ]);
+
     expect(
       buildAnswerDistribution({
         analysis: "length",
@@ -154,6 +157,7 @@ describe("buildAnswerDistribution", () => {
         ["g", 6],
       ].map(([k, v]) => [k as string, v as number]),
     );
+
     const result = buildAnswerDistribution({
       analysis: "choice",
       counts,
@@ -161,6 +165,7 @@ describe("buildAnswerDistribution", () => {
       submissionCount: 28,
       optionLabel,
     });
+
     expect(result).toEqual([
       { label: "B", value: 7 },
       { label: "G", value: 6 },
@@ -174,6 +179,7 @@ describe("buildAnswerDistribution", () => {
 
   it("raw: desc sort, top 8 distinct values, no relabeling", () => {
     const counts = new Map(Array.from({ length: 10 }, (_, i) => [`v${i}`, i + 1] as const));
+
     const result = buildAnswerDistribution({
       analysis: "raw",
       counts,
@@ -181,6 +187,7 @@ describe("buildAnswerDistribution", () => {
       submissionCount: 55,
       optionLabel,
     });
+
     expect(result).toHaveLength(8);
     expect(result[0]).toEqual({ label: "v9", value: 10 });
     expect(result.at(-1)).toEqual({ label: "v2", value: 3 });

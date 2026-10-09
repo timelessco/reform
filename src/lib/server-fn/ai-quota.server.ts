@@ -18,6 +18,7 @@ export const getAiCount = async (orgId: string, day: string = utcDayKey()): Prom
     .select({ count: aiGenerationCounts.count })
     .from(aiGenerationCounts)
     .where(eq(aiGenerationCounts.id, rowKey(orgId, day)));
+
   return row?.count ?? 0;
 };
 
@@ -58,9 +59,12 @@ export const checkAiQuota = async (
 ): Promise<AiQuotaCheck> => {
   const { aiGenerationsPerDay: limit } = aiQuotaForPlan(plan);
   const used = await getAiCount(orgId, day);
+
   if (limit === null) return { allowed: true, plan, used, limit: null };
+
   if (used >= limit) {
     return { allowed: false, plan, used, limit, reason: "daily_limit_exceeded" };
   }
+
   return { allowed: true, plan, used, limit };
 };

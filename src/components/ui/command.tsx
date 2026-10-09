@@ -64,7 +64,7 @@ export const CommandInput = ({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "placeholder:text-gray-550 min-w-0 flex-1 border-0 bg-transparent p-0 text-base tracking-[0.28px] text-foreground outline-none placeholder:font-[420] placeholder:tracking-[0.28px] disabled:cursor-not-allowed disabled:opacity-50",
+          "min-w-0 flex-1 border-0 bg-transparent p-0 text-base tracking-[0.28px] text-foreground outline-none placeholder:font-[420] placeholder:tracking-[0.28px] placeholder:text-(--color-gray-550) disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
         {...props}
@@ -137,7 +137,7 @@ export const CommandItem = ({
   <CommandPrimitive.Item
     data-slot="command-item"
     className={cn(
-      "group/command-item relative flex cursor-default items-center gap-2 rounded-[8px] px-1.5 py-[9px] text-base font-[450] tracking-[0.21px] text-gray-700 outline-hidden select-none hover:bg-secondary data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-secondary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "group/command-item relative flex cursor-default items-center gap-2 rounded-[8px] px-1.5 py-[9px] text-base font-[450] tracking-[0.21px] text-popover-foreground outline-hidden select-none hover:bg-secondary data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-secondary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
       className,
     )}
     {...props}
@@ -160,7 +160,7 @@ export const CommandShortcut = ({ className, ...props }: React.ComponentProps<"s
 export const CommandFooter = ({ className, ...props }: React.ComponentProps<"div">) => (
   <div
     data-slot="command-footer"
-    className={cn("flex items-center gap-4 border-t border-gray-200 px-2.5 py-1.5", className)}
+    className={cn("flex items-center gap-4 border-t border-border-soft px-2.5 py-1.5", className)}
     {...props}
   >
     <div className="flex flex-1 items-center gap-2">
@@ -176,10 +176,10 @@ export const CommandFooter = ({ className, ...props }: React.ComponentProps<"div
     <span className="flex items-center gap-1.5 text-xs font-[420] tracking-[0.24px] text-muted-foreground">
       Actions
       <span className="flex items-center gap-0.5">
-        <kbd className="flex size-4 items-center justify-center rounded-[4px] bg-gray-300 text-[10px] leading-none text-muted-foreground">
+        <kbd className="flex size-4 items-center justify-center rounded-[4px] bg-muted text-[10px] leading-none text-muted-foreground">
           ⌘
         </kbd>
-        <kbd className="flex h-4 min-w-4 items-center justify-center rounded-[4px] bg-gray-300 px-1 text-[9px] leading-none text-muted-foreground">
+        <kbd className="flex h-4 min-w-4 items-center justify-center rounded-[4px] bg-muted px-1 text-[9px] leading-none text-muted-foreground">
           K
         </kbd>
       </span>

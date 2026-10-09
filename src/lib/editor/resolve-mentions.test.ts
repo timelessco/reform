@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { MentionAnswer } from "./resolve-mentions";
 import { fieldsBefore, formatMentionValue, hasMention, resolveMentions } from "./resolve-mentions";
 
-const ctx = (values: Record<string, unknown>, labels: Record<string, string> = {}) => ({
+const ctx = (values: Record<string, MentionAnswer>, labels: Record<string, string> = {}) => ({
   getValue: (name: string) => values[name],
   getLabel: (name: string) => labels[name],
 });
@@ -19,6 +20,7 @@ describe("resolveMentions", () => {
       { type: "mention", fieldName: "name", value: "Name", children: [{ text: "" }] },
       { text: " !" },
     ];
+
     const runs = resolveMentions(nodes, ctx({ name: "Ada" }));
     expect(runs).toEqual([
       { kind: "text", text: "hi , " },
@@ -37,6 +39,7 @@ describe("resolveMentions", () => {
     const nodes = [
       { type: "mention", fieldName: "gone", value: "Old Field", children: [{ text: "" }] },
     ];
+
     const runs = resolveMentions(nodes, ctx({}));
     expect(runs).toEqual([{ kind: "placeholder", text: "Old Field" }]);
   });
@@ -45,6 +48,7 @@ describe("resolveMentions", () => {
     const nodes = [
       { type: "mention", fieldName: "tools", value: "Tools", children: [{ text: "" }] },
     ];
+
     const runs = resolveMentions(nodes, ctx({ tools: ["Vim", "VSCode"] }));
     expect(runs).toEqual([{ kind: "value", text: "Vim, VSCode" }]);
   });
@@ -53,6 +57,7 @@ describe("resolveMentions", () => {
     const nodes = [
       { type: "mention", fieldName: "score", value: "Score", children: [{ text: "" }] },
     ];
+
     const runs = resolveMentions(nodes, ctx({ score: 0 }));
     expect(runs).toEqual([{ kind: "value", text: "0" }]);
   });

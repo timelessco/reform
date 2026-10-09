@@ -119,11 +119,10 @@ export const WorkspaceItemMinimal = ({
     isDragging: isThisDragging,
   } = useSortable({ id: workspace.id, data: { type: "workspace" } });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isThisDragging ? 0.5 : 1,
-  };
+  const style = {
+    "--sortable-transform": CSS.Transform.toString(transform),
+    "--sortable-transition": transition,
+  } as React.CSSProperties;
 
   const sortOptions = [
     { value: "recent", label: "Recent First", icon: CalendarIcon },
@@ -136,6 +135,7 @@ export const WorkspaceItemMinimal = ({
 
   const handleCreateForm = useCallback(async () => {
     setIsCreatingForm(true);
+
     try {
       const { form: newForm } = createFormLocal(workspace.id);
       void router.navigate({
@@ -160,13 +160,25 @@ export const WorkspaceItemMinimal = ({
   );
 
   const formIds = useMemo(() => workspace.forms.map((f) => f.id), [workspace.forms]);
+
   const otherWorkspaces = useMemo(
     () => allWorkspaces.filter((w) => w.id !== workspace.id),
     [allWorkspaces, workspace.id],
   );
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} tabIndex={-1}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      tabIndex={-1}
+      className={cn(
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- dnd-kit sortable transition var has no utility equivalent ([transform:...] passes as layout)
+        "[transform:var(--sortable-transform)] [transition:var(--sortable-transition)]",
+        isThisDragging && "opacity-50",
+      )}
+    >
       <LiteSidebarSection
         label={workspace.name}
         initialOpen={true}
@@ -175,7 +187,7 @@ export const WorkspaceItemMinimal = ({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="overflow-hidden rounded-lg p-[5px] text-muted-foreground"
+              className="overflow-hidden rounded-lg p-1.25 text-muted-foreground"
               title="New form"
               aria-label="New form"
               disabled={isCreatingForm}
@@ -197,7 +209,7 @@ export const WorkspaceItemMinimal = ({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="hover:bg-sidebar-active mr-1 overflow-hidden rounded-lg p-[5px] text-muted-foreground hover:text-foreground"
+                    className="mr-1 overflow-hidden rounded-lg p-1.25 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
                     title="More options"
                     onPointerDown={(e) => e.stopPropagation()}
                   />
@@ -207,7 +219,7 @@ export const WorkspaceItemMinimal = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48" sideOffset={4}>
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="text-[13px]">
+                  <DropdownMenuSubTrigger className="text-sm">
                     <currentSort.icon className="size-4 shrink-0" />
                     <span className="flex-1 text-left whitespace-nowrap">{currentSort.label}</span>
                   </DropdownMenuSubTrigger>
@@ -278,16 +290,14 @@ export const WorkspaceItemMinimal = ({
           </SortableContext>
         </DndContext>
         {workspace.forms.length === 0 && (
-          <span className="px-8 py-1 text-[11px] text-muted-foreground/50 italic">
-            No forms yet
-          </span>
+          <span className="px-8 py-1 text-2xs text-muted-foreground/50 italic">No forms yet</span>
         )}
       </LiteSidebarSection>
     </div>
   );
 };
 
-// Lightweight section mirroring SidebarSection without Base UI Accordion/Collapsible — those broadcast context to every descendant on internal state changes, re-rendering all ~26 form rows + useSortable subscribers on no real change. Dominant sidebar cost.
+// Lightweight section mirroring SidebarSection without Base UI Accordion/Collapsible; those broadcast context to every descendant on internal state changes, re-rendering all ~26 form rows + useSortable subscribers on no real change. Dominant sidebar cost.
 const LiteSidebarSection = ({
   label,
   children,
@@ -311,12 +321,12 @@ const LiteSidebarSection = ({
           aria-expanded={open}
           onClick={toggle}
           className={cn(
-            "group/accordion-trigger relative mx-[0.55px] flex h-7.5 flex-1 cursor-pointer items-center gap-1 overflow-hidden rounded-lg border border-transparent px-1 py-1.5 text-start text-[13px] transition-all outline-none",
+            "group/accordion-trigger relative mx-[0.55px] flex h-7.5 flex-1 cursor-pointer items-center gap-1 overflow-hidden rounded-lg border border-transparent px-1 py-1.5 text-start text-sm transition-all outline-none",
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
           )}
         >
           <span className="flex min-w-0 flex-1 items-center gap-1">
-            <span className="truncate font-case text-[13px] font-medium tracking-4 text-muted-foreground">
+            <span className="truncate font-case text-sm font-medium tracking-4 text-muted-foreground">
               {label}
             </span>
             <ChevronDownIcon
@@ -340,12 +350,8 @@ const LiteSidebarSection = ({
   );
 };
 
-// Shared sidebar form glyph — the single source of truth for how a form icon renders in the
-// sidebar (workspaces, Favorites, Personal). Monochrome (Figma 25380:8709 / 25390:13897): a
-// constant 12px glyph in currentColor on an 18px bg-sidebar disc, in every row state.
-// currentColor → black in light / white in dark. The disc matches the sidebar surface, so it's
-// invisible at rest and only reads as a circle on the active/hover row; the glyph size never
-// changes. Uploaded image icons fall through ThemedFormIcon to a small rounded <img>.
+// Shared sidebar form glyph, single source of truth for sidebar form icons (workspaces, Favorites, Personal).
+// Monochrome per Figma 25380:8709 / 25390:13897, constant 12px currentColor glyph on an 18px bg-sidebar disc (invisible at rest). Uploaded images fall through to a rounded <img>.
 export const SidebarFormIcon = ({
   icon,
   customization,
@@ -408,19 +414,20 @@ const WorkspaceFormMinimal = ({
     data: { type: "form", workspaceId },
   });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
+  const style = {
+    "--sortable-transform": CSS.Transform.toString(transform),
+    "--sortable-transition": transition,
+  } as React.CSSProperties;
 
   const isPublishedForm = form.status === "published";
+
   const linkOptions = {
     to: isPublishedForm
       ? "/workspace/$workspaceId/form-builder/$formId/submissions"
       : "/workspace/$workspaceId/form-builder/$formId/edit",
     params: { workspaceId, formId: form.id },
   } as const;
+
   const label = form.title || "Untitled";
 
   const prefix = <SidebarFormIcon icon={form.icon} customization={form.customization} />;
@@ -451,7 +458,11 @@ const WorkspaceFormMinimal = ({
       // dnd-kit's attributes add tabIndex=0; override so only the inner link is a tab stop
       // (avoids the duplicate square focus ring). Pointer drag still works via listeners.
       tabIndex={-1}
-      className="group/row relative"
+      className={cn(
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- dnd-kit sortable transition var has no utility equivalent ([transform:...] passes as layout)
+        "group/row relative [transform:var(--sortable-transform)] [transition:var(--sortable-transition)]",
+        isDragging && "opacity-40",
+      )}
     >
       <SidebarItem
         label={label}
@@ -463,7 +474,7 @@ const WorkspaceFormMinimal = ({
       >
         {/* eslint-disable-next-line react-doctor/rendering-conditional-render -- showCount is a derived boolean (isPublished && submissionCount > 0); cannot render numeric 0 */}
         {showCount && (
-          <span className="shrink-0 font-case text-[11px] tracking-5 text-muted-foreground transition-opacity group-hover/row:opacity-0 group-has-[[data-state=open]]/row:opacity-0">
+          <span className="shrink-0 font-case text-2xs tracking-5 text-muted-foreground transition-opacity group-hover/row:opacity-0 group-has-[[data-state=open]]/row:opacity-0">
             {submissionCount}
           </span>
         )}
@@ -478,7 +489,7 @@ const WorkspaceFormMinimal = ({
               tabIndex={-1}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={stopBubble}
-              className="hover:bg-sidebar-active absolute top-1/2 right-2 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:text-foreground data-[state=open]:opacity-100"
+              className="absolute top-1/2 right-2 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-sidebar-accent hover:text-foreground data-[state=open]:opacity-100"
             />
           }
         >
@@ -509,7 +520,7 @@ const WorkspaceFormMinimal = ({
             </DropdownMenuItem>
             {otherWorkspaces.length > 0 && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="text-[13px]">
+                <DropdownMenuSubTrigger className="text-sm">
                   <FolderIcon className="size-3.5 shrink-0" />
                   <span className="flex-1 text-left whitespace-nowrap">Move to workspace</span>
                 </DropdownMenuSubTrigger>

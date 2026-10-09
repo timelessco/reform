@@ -3,6 +3,7 @@ import { completionRate, dropoffRate } from "@/lib/analytics/metrics";
 import type { QuestionDropoffMetrics } from "@/types/analytics";
 
 type DropoffDailyRow = typeof formDropoffDaily.$inferSelect;
+
 type QuestionProgressRow = typeof formQuestionProgress.$inferSelect;
 
 interface FilterByCutDateInput {
@@ -21,6 +22,7 @@ interface FilterByCutDateOutput {
 export const filterByCutDate = (input: FilterByCutDateInput): FilterByCutDateOutput => {
   const cutDateKey = input.cutTs.slice(0, 10);
   const cutDate = new Date(input.cutTs);
+
   return {
     dailyRows: input.dailyRows.filter((row) => row.date >= cutDateKey),
     todayProgressRows: input.todayProgressRows.filter((row) => row.viewedAt >= cutDate),
@@ -55,9 +57,11 @@ const getOrCreateAggregate = (
   questionIndex: number,
 ): QuestionAggregate => {
   const existing = byQuestion.get(questionId);
+
   if (existing) {
     return existing;
   }
+
   const created: QuestionAggregate = {
     questionId,
     questionIndex,
@@ -68,7 +72,9 @@ const getOrCreateAggregate = (
     completeCount: 0,
     terminalDropoffCount: 0,
   };
+
   byQuestion.set(questionId, created);
+
   return created;
 };
 
@@ -83,9 +89,11 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     agg.startCount += row.startCount;
     agg.completeCount += row.completeCount;
     agg.terminalDropoffCount += row.terminalDropoffCount;
+
     if (agg.stepId === null && row.stepId !== null) {
       agg.stepId = row.stepId;
     }
+
     if (agg.stepIndex === null && row.stepIndex !== null) {
       agg.stepIndex = row.stepIndex;
     }
@@ -94,15 +102,19 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
   for (const row of todayProgressRows) {
     const agg = getOrCreateAggregate(byQuestion, row.questionId, row.questionIndex);
     agg.viewCount += 1;
+
     if (row.startedAt !== null) {
       agg.startCount += 1;
     }
+
     if (row.completedAt !== null) {
       agg.completeCount += 1;
     }
+
     if (agg.stepId === null && row.stepId !== null) {
       agg.stepId = row.stepId;
     }
+
     if (agg.stepIndex === null && row.stepIndex !== null) {
       agg.stepIndex = row.stepIndex;
     }
@@ -124,12 +136,15 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     const cohort = prev ? prev.completeCount : agg.viewCount;
     const reached = prev ? agg.viewCount : agg.completeCount;
     const dropoffCount = Math.max(0, cohort - reached);
+
     const rowDropoffRate =
       dropoffRate(
         { viewCount: cohort, startCount: cohort, completeCount: reached },
         "single-page",
       ) ?? 0;
+
     const rowCompletionRate = completionRate(agg.completeCount, agg.viewCount, false);
+
     return {
       questionId: agg.questionId,
       questionIndex: agg.questionIndex,

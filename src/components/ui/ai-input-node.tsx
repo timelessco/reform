@@ -19,11 +19,13 @@ const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 type AttachedImage = { url: string; name: string };
 
-/** Plugin's afterEditable slot. Mounts the popover body only when state.open — closing unmounts it,
- *  resetting prompt state with no leftover node in the tree. */
+/** Plugin's afterEditable slot. Mounts the popover body only while state.open so closing unmounts
+ *  it, resetting prompt state with no leftover node in the tree. */
 export const AIInputOverlay = () => {
   const state = usePluginOption(AIInputPlugin, "ui");
+
   if (!state.open) return null;
+
   return <AIInputPopoverBody state={state} />;
 };
 
@@ -34,11 +36,14 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const [input, setInput] = useState("");
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+
   const lastPromptRef = useRef<{ prompt: string; images: AttachedImage[] }>({
     prompt: "",
     images: [],
   });
+
   const [hasPendingPreview, setHasPendingPreview] = useState(false);
+
   const anchorRect = useMemo(
     () =>
       state.anchor
@@ -58,10 +63,12 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   }, [editor]);
 
   const getCapturedPath = useCallback((): number[] => state.insertAt, [state.insertAt]);
+
   const getSelectionContext = useCallback(
     (): string | null => state.selectionContext,
     [state.selectionContext],
   );
+
   const getSelectedBlockPaths = useCallback(
     (): number[][] => state.selectedPaths,
     [state.selectedPaths],
@@ -115,6 +122,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     const timer = setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
+
     return () => clearTimeout(timer);
   });
 
@@ -122,9 +130,11 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     (file: File): Promise<AttachedImage | null> =>
       new Promise((resolve) => {
         if (!file.type.startsWith("image/")) return resolve(null);
+
         if (file.size > MAX_FILE_SIZE) return resolve(null);
         const reader = new FileReader();
         reader.addEventListener("load", () => {
+          // SAFETY: readAsDataURL always produces a string data URL result
           resolve({ url: reader.result as string, name: file.name });
         });
         reader.readAsDataURL(file);
@@ -134,6 +144,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
+
     if ((!trimmed && attachedImages.length === 0) || isLoading) return;
     const prompt = trimmed || "Extract theme from this image";
     runPrompt(prompt, attachedImages);
@@ -160,6 +171,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const handleTryAgain = useCallback(() => {
     discardPreview();
     const { prompt, images } = lastPromptRef.current;
+
     if (prompt) runPrompt(prompt, images);
   }, [discardPreview, runPrompt]);
 
@@ -175,8 +187,10 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   // Mirror the previous window-level keybinds so Enter/Cmd+Z/Cmd+R work during a pending preview.
   useEffect(() => {
     if (!hasPendingPreview) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
+
       if (e.key === "Enter" && !e.shiftKey && !isMod) {
         e.preventDefault();
         e.stopPropagation();
@@ -191,7 +205,9 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
         onTryAgainEvent();
       }
     };
+
     window.addEventListener("keydown", onKeyDown, true);
+
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [hasPendingPreview]);
 
@@ -200,18 +216,24 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
       if (e.key === "Escape") {
         e.preventDefault();
         hide();
+
         return;
       }
+
       if (isHotkey("mod+j")(e.nativeEvent)) {
         e.preventDefault();
         hide();
+
         return;
       }
+
       if (e.key === "Backspace" && input.length === 0 && attachedImages.length === 0) {
         e.preventDefault();
         hide();
+
         return;
       }
+
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
@@ -224,9 +246,11 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []);
       e.target.value = "";
+
       if (files.length === 0) return;
       const processed = await Promise.all(files.map((f) => processFile(f)));
       const valid = processed.filter((img): img is AttachedImage => img !== null);
+
       if (valid.length === 0) return;
       setAttachedImages((prev) => [...prev, ...valid]);
       inputRef.current?.focus();
@@ -241,7 +265,8 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) return;
-      // Block outside-click dismissal during a stream/pending preview — must Stop or
+
+      // Block outside-click dismissal during a stream or pending preview. Must Stop or
       // Accept/Discard explicitly; silent dismissal would kill the gen or drop the diff.
       if (isLoading || hasPendingPreview) return;
       hide();
@@ -256,8 +281,13 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
         align="start"
         side="bottom"
         sideOffset={-anchorRect.height}
-        className="z-30 p-0"
-        style={{ width: anchorRect.width || undefined }}
+        className={cn("z-30 p-0", anchorRect.width > 0 && "w-[var(--ai-input-width)]!")}
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+        style={
+          anchorRect.width > 0
+            ? ({ "--ai-input-width": `${anchorRect.width}px` } as React.CSSProperties)
+            : undefined
+        }
       >
         <div
           className={cn(
@@ -378,7 +408,7 @@ const PendingPreviewActions = ({
       onClick={handleAccept}
       className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
     >
-      <CheckIcon className="size-4 text-emerald-600" />
+      <CheckIcon className="size-4 text-[var(--color-success)]" />
       Accept
       <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
         ↵

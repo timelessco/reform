@@ -8,6 +8,7 @@ interface FormClosedProps {
 
 export const FormClosed = ({ message }: FormClosedProps) => {
   const { t } = useTranslation();
+
   return (
     <FormEmptyState
       icon={<BanIcon />}
@@ -19,6 +20,7 @@ export const FormClosed = ({ message }: FormClosedProps) => {
 
 export const AlreadySubmitted = () => {
   const { t } = useTranslation();
+
   return (
     <FormEmptyState
       icon={<BanIcon />}

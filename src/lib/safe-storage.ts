@@ -6,6 +6,7 @@ type StorageArea = "local" | "session";
 
 const resolve = (area: StorageArea): Storage | undefined => {
   if (typeof window === "undefined") return undefined;
+
   try {
     return area === "session" ? window.sessionStorage : window.localStorage;
   } catch {
@@ -40,7 +41,9 @@ export const safeStorage = {
 
   getJson<T>(key: string, area: StorageArea = "local"): T | null {
     const raw = safeStorage.get(key, area);
+
     if (raw === null) return null;
+
     try {
       return JSON.parse(raw) as T;
     } catch {

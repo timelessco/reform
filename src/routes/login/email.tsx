@@ -35,9 +35,11 @@ const EmailLoginPage = () => {
         email: emailAddress,
         callbackURL,
       });
+
       if (result.error) {
         throw new Error(result.error.message || "Failed to send magic link");
       }
+
       return result;
     },
     onError: (error: Error) => {
@@ -55,6 +57,7 @@ const EmailLoginPage = () => {
     validators: { onDynamic: emailSchema, onDynamicAsyncDebounceMs: 500 },
     onSubmit: async ({ value }) => {
       const result = await magicLinkMutation.mutateAsync(value.email);
+
       if (result) {
         setSentEmail(value.email);
         setSent(true);
@@ -96,6 +99,7 @@ const EmailLoginPage = () => {
           <form.AppField name="email">
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
               return (
                 <field.FieldSet className="gap-1">
                   <field.Field data-invalid={isInvalid}>

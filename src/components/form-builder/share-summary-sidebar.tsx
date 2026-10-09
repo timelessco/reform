@@ -37,11 +37,7 @@ import { getFormListings } from "@/collections";
 import { useSession } from "@/lib/auth/auth-client";
 import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
 import { Switch } from "@/components/ui/switch";
-import {
-  formFieldsToEmbedOptions,
-  selectTriggerFigmaCls,
-  triggerLabels,
-} from "./embed-config-panel";
+import { formFieldsToEmbedOptions, triggerLabels } from "./embed-config-panel";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { isValidUrl } from "@/lib/utils";
@@ -80,7 +76,7 @@ const EmojiIconPicker = ({
         render={
           <button
             type="button"
-            className="flex items-center gap-1.5 font-case text-[14px] font-medium text-foreground"
+            className="flex items-center gap-1.5 font-case text-base font-medium text-foreground"
           />
         }
       >
@@ -116,8 +112,10 @@ const EmojiIconPicker = ({
 };
 
 const selectValues = (state: { values: ReturnType<typeof searchToFormValues> }) => state.values;
+
 const selectEmbedType = (state: { values: ReturnType<typeof searchToFormValues> }) =>
   state.values.embedType;
+
 const selectDynamicHeight = (state: { values: ReturnType<typeof searchToFormValues> }) =>
   state.values.dynamicHeight;
 
@@ -206,6 +204,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   );
 
   const queryClient = useQueryClient();
+
   const handleAnalyticsChange = useCallback(
     (value: boolean) => {
       if (docAnalytics === value) return;
@@ -281,6 +280,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   if (!doc) return null;
 
   const isDraft = doc.status === "draft";
+
   const shareUrl =
     selectedDomainName && activeSlug
       ? `https://${selectedDomainName}/${activeSlug}`
@@ -291,6 +291,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
       side="right"
       collapsible="none"
       // [font-variation-settings:normal] un-pins the global opsz20/wght450 so font-weight utils + Figma optical size apply
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-variation-settings unpin + 40% slide distance have no tokens; needs design decision
       className="size-full animate-in border-none duration-200 ease-out [font-variation-settings:normal] slide-in-from-right-[40%]"
     >
       <ShareSidebarHeader
@@ -341,6 +342,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                     />
                   );
                 }
+
                 if (embedType === "popup") {
                   return (
                     <PopupTab
@@ -363,6 +365,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                     />
                   );
                 }
+
                 // Embed (standard iframe) tab.
                 return (
                   <EmbedTab
@@ -425,11 +428,14 @@ interface ShareSidebarHeaderProps {
 const ShareSidebarHeader = ({ isDraft, form, navigate, closeSidebar }: ShareSidebarHeaderProps) => (
   <SidebarHeader className="shrink-0 gap-2.25 space-y-2 pt-2 pr-2 pb-2 pl-4">
     <div className="flex items-center justify-between">
-      <h2 className="text-base leading-[1.15] font-[450] tracking-[0.14px] text-gray-800">Share</h2>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/font/tracking tokens for 1.15/450/0.14px; needs design decision */}
+      <h2 className="text-base leading-[1.15] font-[450] tracking-[0.14px] text-sidebar-foreground">
+        Share
+      </h2>
       <Button
         variant="ghost-flat"
         size="icon-xs"
-        className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+        className="size-7 rounded-lg p-1.25 text-sidebar-foreground hover:text-foreground"
         onClick={closeSidebar}
         aria-label="Close"
       >
@@ -460,6 +466,7 @@ const ShareSidebarHeader = ({ isDraft, form, navigate, closeSidebar }: ShareSide
                   });
                 });
               };
+
               // Scoped: only "preview-content" cross-fades; the app sidebar/header stay static.
               startScopedViewTransition(update);
             }}
@@ -474,7 +481,8 @@ const ShareSidebarHeader = ({ isDraft, form, navigate, closeSidebar }: ShareSide
                   // #7c7c7c dark, so override; dark:data-active reasserts active so the override skips it.
                   // min-w-0 → equal-width tabs so the indicator only slides (no width-stretch jitter).
                   className={
-                    "min-w-0 text-base font-medium tracking-[0.21px] text-[color:var(--color-gray-550)] dark:text-[#7c7c7c] data-active:text-gray-700 dark:data-active:text-gray-700"
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- no tracking token for 0.21px; no dark token for #7c7c7c (see above)
+                    "min-w-0 text-base font-medium tracking-[0.21px] text-(--color-gray-550) dark:text-[#7c7c7c] data-active:text-sidebar-foreground dark:data-active:text-sidebar-foreground"
                   }
                 >
                   {tab.label}
@@ -492,8 +500,7 @@ const ShareSidebarHeader = ({ isDraft, form, navigate, closeSidebar }: ShareSide
 const DraftPublishCta = ({ handlePublish }: { handlePublish: () => void }) => (
   <div className="flex flex-col items-center justify-center gap-y-6 rounded-2xl border-2 border-dashed bg-muted/20 px-4 py-10 text-center">
     <div className="rounded-full bg-primary/10 p-3 text-primary">
-      {/* eslint-disable-next-line react-doctor/no-inline-bounce-easing -- "animate-bounce-subtle" is a custom easing utility (cubic-bezier ease-out), not the default tacky bounce */}
-      <RocketIcon className="animate-bounce-subtle size-8" />
+      <RocketIcon className="size-8" />
     </div>
     <div className="space-y-2">
       <h3 className="font-semibold">Ready to go live?</h3>
@@ -519,7 +526,8 @@ const PreferenceRow = ({
 }) => (
   <div className="flex h-7 items-center justify-between gap-3">
     <div className="flex min-w-0 items-center gap-1.5">
-      <span className="truncate font-case text-[14px] leading-[1.15] font-[400] text-muted-foreground">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading token for 1.15; needs design decision */}
+      <span className="truncate font-case text-base leading-[1.15] font-normal text-muted-foreground">
         {label}
       </span>
       {hint}
@@ -544,23 +552,29 @@ const InlineNumberInput = ({
 }) => {
   const [text, setText] = useState(String(value));
   const [previousValue, setPreviousValue] = useState(value);
+
   if (previousValue !== value) {
     setPreviousValue(value);
     setText(String(value));
   }
+
   const commit = () => {
     const parsed = parseInt(text, 10);
+
     if (isNaN(parsed)) {
       setText(String(value));
+
       return;
     }
+
     const clamped = Math.min(max, Math.max(min, parsed));
     onChange(clamped);
     setText(String(clamped));
   };
+
   // Number + unit share one color (gray-700) so the value reads uniform and matches other rows.
   return (
-    <span className="inline-flex items-center gap-0.5 font-case text-[14px] font-medium text-gray-700">
+    <span className="inline-flex items-center gap-0.5 font-case text-base font-medium text-sidebar-foreground">
       <input
         type="text"
         inputMode="numeric"
@@ -613,7 +627,8 @@ const PresentationRows = ({
         value={docPresentationMode}
         onChange={(v) => onModeChange(v as PresentationMode)}
         options={PRESENTATION_OPTIONS}
-        className={selectTriggerFigmaCls}
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- no font token for 450; needs design decision
+        className="w-auto shrink-0 gap-1 rounded-sm border-none bg-transparent px-0 py-0 font-case text-base font-[450] whitespace-nowrap text-foreground shadow-none font-opsz-16 data-[size=default]:h-[24px] [&_svg]:size-[10px]"
         aria-label="Question layout"
       />
     </PreferenceRow>
@@ -764,7 +779,8 @@ const FullPagePreferences = ({
           value={docPresentationMode}
           onChange={(v) => handlePresentationModeChange(v as PresentationMode)}
           options={PRESENTATION_OPTIONS}
-          className={selectTriggerFigmaCls}
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- no font token for 450; needs design decision
+          className="w-auto shrink-0 gap-1 rounded-sm border-none bg-transparent px-0 py-0 font-case text-base font-[450] whitespace-nowrap text-foreground shadow-none font-opsz-16 data-[size=default]:h-[24px] [&_svg]:size-[10px]"
           aria-label="Question layout"
         />
       </PreferenceRow>
@@ -836,6 +852,7 @@ const PopupTab = ({
     <form.Subscribe selector={selectValues}>
       {(values: ReturnType<typeof searchToFormValues>) => {
         const options = formFieldsToEmbedOptions(values);
+
         return (
           <MemoEmbedPreviewMockup
             key="popup"
@@ -918,7 +935,8 @@ const PopupTab = ({
                 if (v) field.handleChange(v);
               }}
             >
-              <SelectTrigger className={selectTriggerFigmaCls}>
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no 450 token */}
+              <SelectTrigger className="w-auto shrink-0 gap-1 rounded-sm border-none bg-transparent px-0 py-0 font-case text-base font-[450] whitespace-nowrap text-foreground shadow-none font-opsz-16 data-[size=default]:h-[24px] [&_svg]:size-[10px]">
                 {triggerLabels[field.state.value] ?? field.state.value}
               </SelectTrigger>
               <SelectContent align="end">
@@ -942,7 +960,8 @@ const PopupTab = ({
                 if (v) field.handleChange(v);
               }}
             >
-              <SelectTrigger className={selectTriggerFigmaCls}>
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no 450 token */}
+              <SelectTrigger className="w-auto shrink-0 gap-1 rounded-sm border-none bg-transparent px-0 py-0 font-case text-base font-[450] whitespace-nowrap text-foreground shadow-none font-opsz-16 data-[size=default]:h-[24px] [&_svg]:size-[10px]">
                 {POSITION_LABELS[field.state.value] ?? field.state.value}
               </SelectTrigger>
               <SelectContent align="end">
@@ -1114,6 +1133,7 @@ interface CustomDomainRowProps {
 
 // Sentinel dropdown row: opens workspace domain settings instead of selecting a domain.
 const ADD_DOMAIN_VALUE = "__add_domain__";
+
 // Sentinel value assigned to the *currently-selected* domain item so re-clicking it is a real
 // value change (Base UI never fires onValueChange for the already-selected value) → unlinks it.
 const REMOVE_DOMAIN_VALUE = "__remove_domain__";
@@ -1138,17 +1158,21 @@ const CustomDomainRow = ({
     () => (domains ?? []).filter((d) => d.status === "verified"),
     [domains],
   );
+
   // Always list the currently-assigned domain — even if it lost "verified" status or was deleted —
   // so there's an unlink path (click it to deselect); else a stale customDomainId gets stranded.
   const listedDomains = useMemo<{ id: string; domain: string }[]>(() => {
     const base = verifiedDomains.map((d) => ({ id: d.id, domain: d.domain }));
+
     if (!customDomainId || base.some((d) => d.id === customDomainId)) return base;
     const assigned = (domains ?? []).find((d) => d.id === customDomainId);
+
     return [
       { id: customDomainId, domain: assigned?.domain ?? selectedDomainName ?? customDomainId },
       ...base,
     ];
   }, [verifiedDomains, domains, customDomainId, selectedDomainName]);
+
   const hasDomains = listedDomains.length > 0;
 
   const assignDomainMutation = useMutation({
@@ -1167,12 +1191,16 @@ const CustomDomainRow = ({
     (value: string | null) => {
       if (value === ADD_DOMAIN_VALUE) {
         settingsDialogStore.open("domains");
+
         return;
       }
+
       if (value === REMOVE_DOMAIN_VALUE) {
         assignDomain(null);
+
         return;
       }
+
       assignDomain(value || null);
     },
     [assignDomain],
@@ -1180,7 +1208,8 @@ const CustomDomainRow = ({
 
   return (
     <div className="flex h-7 items-center gap-3">
-      <span className="shrink-0 font-case text-[14px] leading-[1.15] font-[400] text-muted-foreground">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading token for 1.15; needs design decision */}
+      <span className="shrink-0 font-case text-base leading-[1.15] font-normal text-muted-foreground">
         Custom domain
       </span>
       <div className="flex min-w-0 flex-1 justify-end">
@@ -1193,18 +1222,19 @@ const CustomDomainRow = ({
               onValueChange={handleValueChange}
               disabled={!orgId}
             >
-              <SelectTrigger className="h-7 max-w-full gap-1.5 border-none bg-transparent px-0 py-0 text-[14px] font-medium shadow-none">
+              <SelectTrigger className="h-7 max-w-full gap-1.5 border-none bg-transparent px-0 py-0 text-base font-medium shadow-none">
                 {selectedDomainName ? (
-                  <span className="truncate text-gray-700">{selectedDomainName}</span>
+                  <span className="truncate text-sidebar-foreground">{selectedDomainName}</span>
                 ) : (
-                  <span className="flex items-center gap-1.5 font-[450] whitespace-nowrap text-gray-700">
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- no font token for 450; needs design decision
+                  <span className="flex items-center gap-1.5 font-[450] whitespace-nowrap text-sidebar-foreground">
                     <PlusIcon className="size-4" />
                     Add Domain
                   </span>
                 )}
               </SelectTrigger>
               <SelectContent align="end" alignItemWithTrigger={false}>
-                <SelectItem value={ADD_DOMAIN_VALUE} className="text-gray-700">
+                <SelectItem value={ADD_DOMAIN_VALUE} className="text-popover-foreground">
                   <PlusIcon className="size-4" />
                   Add domain
                 </SelectItem>
@@ -1213,6 +1243,7 @@ const CustomDomainRow = ({
                     unlinks the domain (freeing it for another form). */}
                 {listedDomains.map((d) => {
                   const selected = customDomainId === d.id;
+
                   return (
                     <SelectItem key={d.id} value={selected ? REMOVE_DOMAIN_VALUE : d.id}>
                       <CheckIcon className={selected ? "size-4" : "size-4 opacity-0"} />
@@ -1228,7 +1259,8 @@ const CustomDomainRow = ({
             type="button"
             onClick={() => settingsDialogStore.open("domains")}
             disabled={!orgId}
-            className="flex h-7 items-center gap-1.5 text-[14px] font-[450] text-gray-700 enabled:cursor-pointer disabled:opacity-50"
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- no font token for 450; needs design decision
+            className="flex h-7 items-center gap-1.5 text-base font-[450] text-sidebar-foreground enabled:cursor-pointer disabled:opacity-50"
           >
             <PlusIcon className="size-4" />
             Add Domain
@@ -1256,7 +1288,8 @@ const ShareSidebarFooter = ({
       // Figma footer (26075:12832): rounded-8, ps-10/pe-8, 14px/500 gray-800, `case` feature.
       // ghost-flat = ghost minus the 1px border, so the box matches the border-none primary Get Code.
       // flex-1 (same as Get Code) so the two share the footer width evenly as the sidebar resizes.
-      className="flex-1 justify-center rounded-lg py-1.5 pe-2 font-case text-[14px] font-medium tracking-[0.14px] text-gray-800 has-data-[icon=inline-start]:ps-2.5"
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- no tracking token for 0.14px; needs design decision
+      className="flex-1 justify-center rounded-lg py-1.5 pe-2 font-case text-base font-medium tracking-[0.14px] text-sidebar-foreground has-data-[icon=inline-start]:ps-2.5"
     >
       Copy Link
     </CopyButton>
@@ -1267,7 +1300,8 @@ const ShareSidebarFooter = ({
       prefix={<CodeXmlIcon className="size-4" />}
       // Figma footer (26075:12837): flex-1, rounded-8, px-8, gray-950 bg, 14px/500 white, `case` feature.
       // No hover/active by design — only Copy Link gets a hover state.
-      className="flex-1 justify-center rounded-lg py-1.5 pe-2 font-case text-[14px] font-medium tracking-[0.14px] has-data-[icon=inline-start]:ps-2"
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- no tracking token for 0.14px; needs design decision
+      className="flex-1 justify-center rounded-lg py-1.5 pe-2 font-case text-base font-medium tracking-[0.14px] has-data-[icon=inline-start]:ps-2"
     >
       Get Code
     </Button>

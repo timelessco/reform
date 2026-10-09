@@ -28,6 +28,7 @@ const getModel = async () => {
   if (provider === "google") {
     const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
     const google = createGoogleGenerativeAI({ apiKey });
+
     return google(modelId);
   }
 
@@ -35,6 +36,7 @@ const getModel = async () => {
     apiKey,
     ...(baseURL ? { baseURL } : {}),
   });
+
   return openai(modelId);
 };
 
@@ -60,6 +62,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         };
 
         const messages = body.messages;
+
         if (!messages || messages.length === 0) {
           return new Response(JSON.stringify({ error: "messages are required" }), {
             status: 400,
@@ -84,6 +87,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         // Burst + daily-quota gating (org-scoped). null orgId (anon/lookup-failed) skips gating, still gates as free.
         if (resolvedOrgId) {
           const gate = await checkAiGating(resolvedOrgId, resolvedPlan);
+
           if (gate) return gate;
         }
 
@@ -107,9 +111,11 @@ export const Route = createFileRoute("/api/ai/form-generate")({
                 : FORM_GEN_SYSTEM_PROMPT;
 
         const contextParts: string[] = [];
+
         if (body.editorContent) {
           contextParts.push(`Current form content:\n${body.editorContent}`);
         }
+
         if (body.selectionContext) {
           if (mode === "replace") {
             contextParts.push(
@@ -125,6 +131,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
             );
           }
         }
+
         const systemWithContext = contextParts.length
           ? `${basePrompt}\n\n${contextParts.join("\n\n")}`
           : basePrompt;
@@ -156,6 +163,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           void incrementAiCount(resolvedOrgId).catch((e) =>
             logger("[ai-quota] increment failed", e),
           );
+
         return result.toTextStreamResponse();
       },
     },

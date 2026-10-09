@@ -2,6 +2,7 @@ import { createCollection } from "@tanstack/db";
 import type { InsertMutationFn, UpdateMutationFn, DeleteMutationFn } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { queryKeys } from "@/lib/query-keys";
 import type { FormSettings } from "@/types/form-settings";
 
 export type FormListing = {
@@ -25,7 +26,7 @@ export type FormListing = {
   customDomainId?: string | null;
   publishedContentHash?: string | null;
   lastPublishedVersionId?: string | null;
-  // Heavy fields — enrichment populates on-demand when editor opens a form.
+  // Heavy fields. Enrichment populates them on demand when the editor opens a form.
   content?: unknown[];
   schemaName?: string | null;
   cover?: string | null;
@@ -53,24 +54,28 @@ type FormListingCollectionConfig = {
 export const createFormListingCollection = (config: FormListingCollectionConfig) => {
   const { queryClient, queryFn, onInsert, onUpdate, onDelete } = config;
 
-  // Closure ref (set post-creation): enrichedQueryFn merges lightweight listings onto enriched records so refetches don't wipe heavy fields.
+  // Closure ref, set post-creation. enrichedQueryFn merges lightweight listings onto enriched records so refetches don't wipe heavy fields.
   let collectionRef: { get: (id: string | number) => FormListing | undefined } | null = null;
 
   const enrichedQueryFn = async () => {
     const listings = await queryFn();
     const ref = collectionRef;
+
     if (!ref) return listings;
-    // Short-circuit: skip per-item merge when no forms have been enriched yet
+
+    // Skip per-item merge when nothing has been enriched yet
     if (!listings.some((l) => ref.get(l.id)?.content !== undefined)) return listings;
+
     return listings.map((listing) => {
       const existing = ref.get(listing.id);
+
       return existing ? { ...existing, ...listing } : listing;
     });
   };
 
   const collection = createCollection(
     queryCollectionOptions<FormListing, unknown, string[]>({
-      queryKey: ["form-listings"],
+      queryKey: queryKeys.formListings(),
       queryFn: enrichedQueryFn,
       queryClient,
       getKey: (item): string | number => item.id,
@@ -82,6 +87,7 @@ export const createFormListingCollection = (config: FormListingCollectionConfig)
   );
 
   collectionRef = collection;
+
   return collection;
 };
 
@@ -98,7 +104,7 @@ export const createFavoriteCollection = (config: FavoriteCollectionConfig) => {
 
   return createCollection(
     queryCollectionOptions<FormFavorite, unknown, string[]>({
-      queryKey: ["favorites"],
+      queryKey: queryKeys.favorites(),
       queryFn: async () => queryFn(),
       queryClient,
       getKey: (item): string | number => item.id,

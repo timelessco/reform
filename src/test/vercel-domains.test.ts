@@ -33,6 +33,7 @@ describe("vercelDomains.remove", () => {
     const urls = requests.map((r) => r.url);
     expect(urls.some((u) => u.includes("/projects/prj_test/domains/acme.com"))).toBeTruthy();
     expect(urls.some((u) => u.includes("/v6/domains/acme.com"))).toBeTruthy();
+
     for (const req of requests) {
       expect(req.method).toBe("DELETE");
     }

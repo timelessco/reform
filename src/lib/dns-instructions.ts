@@ -22,21 +22,26 @@ const APEX_LABEL_COUNT = 2;
 export const isSubdomain = (domain: string): boolean => {
   if (!domain) return false;
   const labels = domain.split(".").filter(Boolean);
+
   return labels.length > APEX_LABEL_COUNT;
 };
 
 /** Apex zone: rightmost two labels. `forms.acme.com` → `acme.com`. */
 const apexOf = (domain: string): string => {
   const labels = domain.split(".").filter(Boolean);
+
   return labels.slice(-APEX_LABEL_COUNT).join(".");
 };
 
 const withShortName = (rec: DnsInstruction, apex: string): DnsInstruction => {
   if (rec.name === "@" || rec.name === apex) return rec;
   const suffix = `.${apex}`;
+
   if (!rec.name.endsWith(suffix)) return rec;
   const shortName = rec.name.slice(0, -suffix.length);
+
   if (!shortName || shortName === rec.name) return rec;
+
   return { ...rec, shortName };
 };
 
@@ -47,6 +52,7 @@ export const getDnsInstructions = (
   // Routing record (CNAME/subdomain, A/apex) ALWAYS required — TXT proves
   // ownership but doesn't resolve; without it visitors get NXDOMAIN.
   const labels = domain.split(".");
+
   const routing: DnsInstruction =
     labels.length <= APEX_LABEL_COUNT
       ? { type: "A", name: "@", value: "76.76.21.21" }
@@ -74,5 +80,6 @@ export const getDnsInstructions = (
       withShortName(routing, apex),
     ];
   }
+
   return [withShortName(routing, apex)];
 };

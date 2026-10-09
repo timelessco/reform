@@ -107,7 +107,7 @@ export const StyleNumberInput = ({
           ? "[&_[data-slot=elastic-slider-label]]:inset-s-1.5 [&_[data-slot=elastic-slider-label]]:text-[14px] [&_[data-slot=elastic-slider-label]]:leading-[1.15] [&_[data-slot=elastic-slider-label]]:font-[400] [&_[data-slot=elastic-slider-label]]:text-muted-foreground"
           : "[&_[data-slot=elastic-slider-label]]:inset-s-2 [&_[data-slot=elastic-slider-label]]:text-base [&_[data-slot=elastic-slider-label]]:font-normal",
         bare
-          ? "[&_[data-slot=elastic-slider-value]]:inset-e-1.5 [&_[data-slot=elastic-slider-value]]:font-case [&_[data-slot=elastic-slider-value]]:text-[14px] [&_[data-slot=elastic-slider-value]]:leading-[1.15] [&_[data-slot=elastic-slider-value]]:font-[450] [&_[data-slot=elastic-slider-value]]:text-gray-700 [&_[data-slot=elastic-slider-value]]:font-opsz-16"
+          ? "[&_[data-slot=elastic-slider-value]]:inset-e-1.5 [&_[data-slot=elastic-slider-value]]:font-case [&_[data-slot=elastic-slider-value]]:text-[14px] [&_[data-slot=elastic-slider-value]]:leading-[1.15] [&_[data-slot=elastic-slider-value]]:font-[450] [&_[data-slot=elastic-slider-value]]:text-sidebar-foreground [&_[data-slot=elastic-slider-value]]:font-opsz-16"
           : "[&_[data-slot=elastic-slider-value]]:inset-e-[11px] [&_[data-slot=elastic-slider-value]]:text-[13px]",
         className,
       )}
@@ -155,6 +155,7 @@ export const StyleColorPicker = ({
           aria-label={`${label} hex value`}
           onChange={(e) => {
             const val = e.target.value.trim();
+
             if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
               onChange(val);
             }
@@ -163,8 +164,11 @@ export const StyleColorPicker = ({
           maxLength={7}
         />
         <div
-          className="relative size-[18px] shrink-0 cursor-pointer overflow-hidden rounded-[4px] border border-border/60"
-          style={{ backgroundColor: hexColor }}
+          className="relative size-[18px] shrink-0 cursor-pointer overflow-hidden rounded-[4px] border border-border/60 bg-(--style-swatch-color)"
+          style={
+            // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+            { "--style-swatch-color": hexColor } as React.CSSProperties
+          }
         >
           <input
             type="color"
@@ -200,21 +204,25 @@ export const StyleSelect = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+
   const [portalTarget] = React.useState<HTMLElement | null>(() =>
     typeof document !== "undefined" ? document.body : null,
   );
+
   const [pos, setPos] = React.useState<{
     top: number;
     left: number;
     width: number;
     above: boolean;
   } | null>(null);
+
   const selectedOption = options.find((o) => o.value === value);
   const hasDescriptions = options.some((o) => o.description);
   const itemHeight = hasDescriptions ? 60 : 36;
 
   const updatePos = React.useCallback(() => {
     const el = triggerRef.current;
+
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const dropdownHeight = 8 + options.length * itemHeight;
@@ -240,6 +248,7 @@ export const StyleSelect = ({
       passive: true,
     });
     window.addEventListener("resize", handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll, { capture: true });
       window.removeEventListener("resize", handleScroll);
@@ -250,9 +259,11 @@ export const StyleSelect = ({
     if (!isOpen) return;
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
+      const target = e.target instanceof Node ? e.target : null;
+
       if (
         triggerRef.current &&
+        target &&
         !triggerRef.current.contains(target) &&
         dropdownRef.current &&
         !dropdownRef.current.contains(target)
@@ -262,6 +273,7 @@ export const StyleSelect = ({
     };
 
     document.addEventListener("mousedown", handleClick);
+
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
@@ -281,8 +293,11 @@ export const StyleSelect = ({
           <div className="ml-auto flex items-center gap-2">
             {selectedOption?.swatchColor && (
               <div
-                className="size-3.5 shrink-0 rounded-full border border-border/60"
-                style={{ backgroundColor: selectedOption.swatchColor }}
+                className="size-3.5 shrink-0 rounded-full border border-border/60 bg-(--style-swatch-color)"
+                style={
+                  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                  { "--style-swatch-color": selectedOption.swatchColor } as React.CSSProperties
+                }
               />
             )}
             <span className="text-foreground">{selectedOption?.label ?? value}</span>
@@ -309,27 +324,28 @@ export const StyleSelect = ({
               {isOpen && pos && (
                 <m.div
                   ref={dropdownRef}
-                  className="z-9999 overflow-hidden rounded-lg bg-background/95 elevation-lg backdrop-blur-md"
+                  className="fixed top-(--style-select-top) bottom-(--style-select-bottom) left-(--style-select-left) z-9999 max-h-80 w-(--style-select-width) [transform-origin:var(--style-select-origin)] overflow-hidden rounded-lg bg-background/95 elevation-lg backdrop-blur-md"
                   initial={{ opacity: 0, y: pos.above ? 8 : -8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: pos.above ? 8 : -8, scale: 0.95 }}
                   transition={{ type: "spring", visualDuration: 0.15, bounce: 0 }}
-                  style={{
-                    position: "fixed",
-                    left: pos.left,
-                    width: pos.width,
-                    maxHeight: 320,
-                    ...(pos.above
-                      ? {
-                          bottom: window.innerHeight - pos.top,
-                          transformOrigin: "bottom",
-                        }
-                      : { top: pos.top, transformOrigin: "top" }),
-                  }}
+                  style={
+                    // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                    {
+                      "--style-select-left": `${pos.left}px`,
+                      "--style-select-top": pos.above ? undefined : `${pos.top}px`,
+                      "--style-select-bottom": pos.above
+                        ? `${window.innerHeight - pos.top}px`
+                        : undefined,
+                      "--style-select-width": `${pos.width}px`,
+                      "--style-select-origin": pos.above ? "bottom" : "top",
+                    } as React.CSSProperties
+                  }
                 >
-                  <div className="custom-scrollbar flex max-h-[312px] flex-col overflow-y-auto p-1">
+                  <div className="flex max-h-[312px] flex-col overflow-y-auto p-1">
                     {options.map((option) => {
                       const isSelected = option.value === value;
+
                       return (
                         <button
                           key={option.value}
@@ -349,8 +365,13 @@ export const StyleSelect = ({
                           <div className="flex min-w-0 items-center gap-2.5">
                             {option.swatchColor && (
                               <div
-                                className="size-5 shrink-0 rounded-full border border-border/60"
-                                style={{ backgroundColor: option.swatchColor }}
+                                className="size-5 shrink-0 rounded-full border border-border/60 bg-(--style-swatch-color)"
+                                style={
+                                  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                                  {
+                                    "--style-swatch-color": option.swatchColor,
+                                  } as React.CSSProperties
+                                }
                               />
                             )}
                             <div className="min-w-0">
@@ -403,15 +424,18 @@ export const StyleToggle = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = useLazyRef(() => new Map<boolean, HTMLButtonElement>());
+
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
+
   const hasAnimated = React.useRef(false);
 
   useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
+
     if (button && container) {
       const containerRect = container.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
@@ -437,8 +461,14 @@ export const StyleToggle = ({
         >
           {pillStyle && (
             <m.div
-              className="absolute top-0.5 bottom-0.5 z-0 rounded bg-white/10"
-              style={{ left: pillStyle.left, width: pillStyle.width }}
+              className="absolute top-0.5 bottom-0.5 left-(--toggle-pill-left) z-0 w-(--toggle-pill-width) rounded bg-white/10"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                {
+                  "--toggle-pill-left": `${pillStyle.left}px`,
+                  "--toggle-pill-width": `${pillStyle.width}px`,
+                } as React.CSSProperties
+              }
               animate={{ left: pillStyle.left, width: pillStyle.width }}
               transition={
                 hasAnimated.current
@@ -495,15 +525,18 @@ export const StyleAlignToggle = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = useLazyRef(() => new Map<string, HTMLButtonElement>());
+
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
+
   const hasAnimated = React.useRef(false);
 
   useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
+
     if (button && container) {
       const containerRect = container.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
@@ -531,8 +564,14 @@ export const StyleAlignToggle = ({
         >
           {pillStyle && (
             <m.div
-              className="absolute top-1.5 bottom-1.5 z-0 rounded border border-border/40 bg-background"
-              style={{ left: pillStyle.left, width: pillStyle.width }}
+              className="absolute top-1.5 bottom-1.5 left-(--align-pill-left) z-0 w-(--align-pill-width) rounded border border-border/40 bg-background"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                {
+                  "--align-pill-left": `${pillStyle.left}px`,
+                  "--align-pill-width": `${pillStyle.width}px`,
+                } as React.CSSProperties
+              }
               animate={{ left: pillStyle.left, width: pillStyle.width }}
               transition={
                 hasAnimated.current

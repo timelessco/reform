@@ -3,6 +3,7 @@ import type { TElement } from "platejs";
 import { redirectInsertBeforeButton } from "./form-blocks-normalizer";
 
 const el = (type: string): TElement => ({ type, children: [{ text: "" }] });
+
 const button = (): TElement => ({ type: "formButton", children: [{ text: "Submit" }] });
 
 describe("redirectInsertBeforeButton", () => {

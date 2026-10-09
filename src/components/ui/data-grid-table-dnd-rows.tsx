@@ -72,6 +72,7 @@ const DataGridTableDndRow = <TData extends RowData>({
     zIndex: isDragging ? 1 : 0,
     position: "relative",
   };
+
   return (
     <DataGridTableBodyRow row={row} dndRef={setNodeRef} dndStyle={style} key={row.id}>
       {row.getVisibleCells().map((cell) => (

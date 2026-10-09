@@ -29,6 +29,7 @@ describe("sanitizeSubmission", () => {
       country: "US",
       vat: "SHOULD_NOT_BE_HERE",
     });
+
     expect(data).toEqual({ country: "US" });
     expect(hiddenStripped).toContain("vat");
     expect(rejected).toContain("vat");

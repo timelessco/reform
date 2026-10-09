@@ -3,6 +3,7 @@ import type { formDropoffDaily, formQuestionProgress } from "@/db/schema";
 import { mergeDropoffMetrics } from "@/lib/analytics/merge-dropoff";
 
 type DropoffDailyRow = typeof formDropoffDaily.$inferSelect;
+
 type QuestionProgressRow = typeof formQuestionProgress.$inferSelect;
 
 const baseTimestamp = new Date("2026-04-27T00:00:00Z");
@@ -15,6 +16,7 @@ const makeDaily = (
   },
 ): DropoffDailyRow => {
   const { questionId, questionIndex, date, ...rest } = overrides;
+
   return {
     id: `daily-${date}-${questionId}`,
     formId: "form-1",
@@ -44,6 +46,7 @@ const makeProgress = (
   },
 ): QuestionProgressRow => {
   const { id, questionId, questionIndex, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -184,6 +187,7 @@ describe("mergeDropoffMetrics", () => {
         completeCount: 6,
       }),
     ];
+
     const todayProgressRows = [
       makeProgress({
         id: "p1",

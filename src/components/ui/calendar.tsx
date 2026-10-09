@@ -178,14 +178,18 @@ export const Calendar = ({
  */
 const CalendarDropdown = ({ value, onChange, options }: DropdownProps) => {
   const themeReanchor = useReanchorThemeProps();
+
   return (
     <Select
       value={String(value)}
       onValueChange={(next) => {
         if (!onChange || next == null) return;
+
+        // SAFETY: RDP reads only target.value from this event; value comes from the selected option
         const synthetic = {
           target: { value: String(next) },
-        } as unknown as React.ChangeEvent<HTMLSelectElement>;
+        } as React.ChangeEvent<HTMLSelectElement>;
+
         onChange(synthetic);
       }}
     >
@@ -201,6 +205,7 @@ const CalendarDropdown = ({ value, onChange, options }: DropdownProps) => {
         align="start"
         alignItemWithTrigger={false}
         className={cn("max-h-60", themeReanchor.className)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
         style={themeReanchor.style}
       >
         {options?.map((option) => (

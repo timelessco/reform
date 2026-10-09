@@ -5,6 +5,7 @@ import type { TImageElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, withHOC } from "platejs/react";
 import type React from "react";
+import * as v from "valibot";
 
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ export const ImageElement = withHOC(
                   focused && selected && "ring-2 ring-ring ring-offset-2",
                   isDragging && "opacity-50",
                 )}
+                // SAFETY: the image schema stores alt as a string when set, absent otherwise
                 alt={props.attributes.alt as string | undefined}
               />
               <ResizeHandle
@@ -59,7 +61,16 @@ export const ImageElement = withHOC(
               />
             </Resizable>
 
-            <Caption style={{ width }} align={align}>
+            <Caption
+              className="w-[var(--caption-width)]"
+              align={align}
+              // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+              style={
+                {
+                  "--caption-width": v.is(v.number(), width) ? `${width}px` : width,
+                } as React.CSSProperties
+              }
+            >
               <CaptionTextarea
                 readOnly={readOnly}
                 onFocus={preventDefaultFocus}

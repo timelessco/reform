@@ -1,4 +1,4 @@
-import type { TElement } from "platejs";
+import type { Descendant } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { DndPlugin } from "@platejs/dnd";
@@ -11,6 +11,7 @@ import {
   usePluginOption,
 } from "platejs/react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import * as v from "valibot";
 
 import {
   findNextFocusTarget,
@@ -105,6 +106,7 @@ const OptionImageSlot = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const open = () => inputRef.current?.click();
+
   return (
     <div contentEditable={false} className="mt-1.5 pl-6 select-none">
       <input
@@ -114,12 +116,13 @@ const OptionImageSlot = ({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
+
           if (file) onPick(file);
           e.target.value = "";
         }}
       />
       {image ? (
-        <div className="group/img relative aspect-[4/3] w-[200px] overflow-hidden rounded-lg bg-gray-100">
+        <div className="group/img relative aspect-[4/3] w-[200px] overflow-hidden rounded-lg bg-muted">
           {/* Fixed-aspect cover crop — matches the live picture-choice tile, so a tall screenshot
               renders as a clean thumbnail instead of a 280px-wide column. */}
           <img src={image} alt="" className="absolute inset-0 size-full object-cover" />
@@ -145,7 +148,7 @@ const OptionImageSlot = ({
           type="button"
           onClick={open}
           disabled={uploading}
-          className="flex aspect-[4/3] w-[200px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-gray-100 text-xs text-muted-foreground hover:bg-gray-200 disabled:opacity-60"
+          className="flex aspect-[4/3] w-[200px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-muted text-xs text-muted-foreground hover:bg-accent disabled:opacity-60"
         >
           {uploading ? (
             <Loader2Icon className="size-4 animate-spin" />
@@ -161,8 +164,8 @@ const OptionImageSlot = ({
   );
 };
 
-const nodeText = (n: TElement | undefined): string =>
-  ((n?.children as Array<{ text?: string }>) ?? []).map((c) => c.text ?? "").join("");
+const nodeText = (node: { children?: Descendant[] } | undefined): string =>
+  (node?.children ?? []).map((c) => ("text" in c ? c.text : "")).join("");
 
 /** Editor control for an option group with "Show as dropdown" on — the chips input (revived from
  * the old formMultiSelectInput node). Chips mirror the sibling option nodes: × or Backspace
@@ -174,8 +177,11 @@ const nodeText = (n: TElement | undefined): string =>
 const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const editor = useEditorRef();
+
   // element is the group's first node — its variant decides the chip treatment.
-  const variant = (element.variant as string) || "checkbox";
+  const variant =
+    v.is(v.string(), element.variant) && element.variant ? element.variant : "checkbox";
+
   const colored = variant === "checkbox";
   // Re-render on every content change so chips track sibling node edits/removals.
   useEditorVersion();
@@ -185,50 +191,60 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
 
   // Fresh group span + chips on every call — node indices shift under edits.
   const collect = useCallback(() => {
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
     const start = nodes.indexOf(element);
     let end = start;
+
     while (end >= 0 && nodes[end + 1]?.type === "formOptionItem") end++;
     const chips: { text: string; nodeIdx: number }[] = [];
+
     if (start >= 0) {
       for (let i = start; i <= end; i++) {
         const t = nodeText(nodes[i]).trim();
+
         if (t) chips.push({ text: t, nodeIdx: i });
       }
     }
+
     return { nodes, start, end, chips };
   }, [editor, element]);
 
   const focused = useFocused();
+
   const isSelected = useEditorSelector(
     (ed) => {
       if (!ed.selection) return false;
       const path = ed.api.findPath(element);
+
       if (!path) return false;
       const focusPath = ed.selection.focus.path;
+
       if (focusPath.length < path.length) return false;
+
       for (let i = 0; i < path.length; i++) {
         if (focusPath[i] !== path[i]) return false;
       }
+
       return true;
     },
-    [(element as { id?: string }).id],
+    [element.id],
   );
 
   // Caret landing in this block (its text is hidden) → hand focus to the inline input.
   useEffect(() => {
     if (isSelected && focused) inputRef.current?.focus();
-  }, [isSelected, focused]);
-
-  // Empty sibling nodes render no chip and would be unreachable (and emit phantom "Option N"
+  }, [isSelected, focused]); // Empty sibling nodes render no chip and would be unreachable (and emit phantom "Option N"
   // entries in the live dropdown) — drop them. The first node may stay empty: it holds the flags.
   useEffect(() => {
     const { nodes, start, end } = collect();
+
     if (start < 0 || end === start) return;
     const empties: number[] = [];
+
     for (let i = end; i > start; i--) {
       if (!nodeText(nodes[i]).trim()) empties.push(i);
     }
+
     if (empties.length === 0) return;
     editor.tf.withoutNormalizing(() => {
       for (const i of empties) editor.tf.removeNodes({ at: [i] });
@@ -238,12 +254,13 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
   // Replace a node's text in place, preserving every other prop (the first node carries the flags).
   const setNodeTextAt = useCallback(
     (at: number, text: string) => {
-      const node = (editor.children as TElement[])[at];
+      const node = editor.children[at];
+
       if (!node) return;
       const { children: _children, ...nodeProps } = node;
       editor.tf.withoutNormalizing(() => {
         editor.tf.removeNodes({ at: [at] });
-        editor.tf.insertNodes({ ...nodeProps, children: [{ text }] } as TElement, { at: [at] });
+        editor.tf.insertNodes({ ...nodeProps, children: [{ text }] }, { at: [at] });
       });
     },
     [editor],
@@ -251,27 +268,38 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
 
   const addOption = (text: string) => {
     const { nodes, start, end } = collect();
+
     if (start < 0) return;
+
     // Fresh group: a single empty node — fill it instead of appending a phantom sibling.
     if (end === start && !nodeText(nodes[start]).trim()) {
       setNodeTextAt(start, text);
+
       return;
     }
+
     editor.tf.insertNodes(
-      { type: "formOptionItem", variant, children: [{ text }] } as unknown as TElement,
-      { at: [end + 1] },
+      { type: "formOptionItem", variant, children: [{ text }] },
+      {
+        at: [end + 1],
+      },
     );
   };
 
   const removeOption = (chipIdx: number) => {
     const { nodes, start, chips } = collect();
     const target = chips[chipIdx];
+
     if (!target) return;
+
     if (target.nodeIdx !== start) {
       editor.tf.removeNodes({ at: [target.nodeIdx] });
+
       return;
     }
+
     const next = nodes[start + 1];
+
     if (next?.type === "formOptionItem") {
       setNodeTextAt(start, nodeText(next));
       editor.tf.removeNodes({ at: [start + 1] });
@@ -283,15 +311,19 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
   // Backspace on an empty input with no chips → delete the whole field, caret to previous block.
   const deleteGroup = () => {
     const { start, end } = collect();
+
     if (start < 0) return;
     inputRef.current?.blur();
     editor.tf.withoutNormalizing(() => {
       for (let i = end; i >= start; i--) editor.tf.removeNodes({ at: [i] });
     });
+
     if (start > 0) {
       const prevPath = findPrevNonButtonPath(editor, [start]);
+
       if (prevPath) {
         const edges = editor.api.edges(prevPath);
+
         if (edges?.[1]) editor.tf.select(edges[1]);
         editor.tf.focus();
       }
@@ -300,39 +332,50 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
 
   const bridgeToBlock = (goPrev: boolean) => {
     const { start, end } = collect();
+
     if (start < 0) return;
     inputRef.current?.blur();
     // Focus targets include the page's buttons (editable label) now.
     const target = goPrev ? findPrevFocusTarget(editor, start) : findNextFocusTarget(editor, end);
+
     if (target) goToFocusTarget(editor, target, goPrev);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const { chips, end } = collect();
+
     // Chip-navigation mode: arrows move between chips, Backspace/Delete removes focused chip.
     if (focusedChipIndex !== null) {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         setFocusedChipIndex(Math.max(0, focusedChipIndex - 1));
+
         return;
       }
+
       if (e.key === "ArrowRight") {
         e.preventDefault();
         setFocusedChipIndex(focusedChipIndex >= chips.length - 1 ? null : focusedChipIndex + 1);
+
         return;
       }
+
       if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         removeOption(focusedChipIndex);
         const remaining = chips.length - 1;
         setFocusedChipIndex(remaining <= 0 ? null : Math.min(focusedChipIndex, remaining - 1));
+
         return;
       }
+
       if (e.key === "Escape") {
         e.preventDefault();
         setFocusedChipIndex(null);
+
         return;
       }
+
       // Any other key — exit chip-nav mode and let the input process it
       setFocusedChipIndex(null);
     }
@@ -346,6 +389,7 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
     ) {
       e.preventDefault();
       setFocusedChipIndex(chips.length - 1);
+
       return;
     }
 
@@ -359,9 +403,10 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
       if (!trimmed) {
         inputRef.current?.blur();
         const at = [end + 1];
-        editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, { at });
+        editor.tf.insertNodes({ type: "p", children: [{ text: "" }] }, { at });
         moveToPath(editor, at);
         editor.tf.focus();
+
         return;
       }
 
@@ -372,6 +417,7 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
       e.preventDefault();
       e.stopPropagation();
       e.nativeEvent.stopImmediatePropagation();
+
       if (chips.length > 0) removeOption(chips.length - 1);
       else deleteGroup();
     } else if (e.key === "Tab" || e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -421,7 +467,9 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
             bg: "bg-[var(--bf-badge,var(--color-secondary))]",
             text: "text-[var(--bf-badge-foreground,var(--color-secondary-foreground))]",
           };
+
           const isChipFocused = focusedChipIndex === chipIdx;
+
           return (
             <span
               key={`${chip.nodeIdx}-${chip.text}`}
@@ -456,10 +504,12 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
           onKeyDown={handleKeyDown}
           onFocus={() => setFocusedChipIndex(null)}
           onBlur={(e) => {
-            const next = e.relatedTarget as Node | null;
+            const next = e.relatedTarget;
+
             if (next && e.currentTarget.closest('[data-bf-input="true"]')?.contains(next)) {
               return;
             }
+
             if (editor.selection) {
               editor.tf.deselect();
             }
@@ -499,11 +549,18 @@ const OptionChipsRow = ({ children, ...props }: PlateElementProps) => {
 
 export const FormOptionItemElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
-  const variant = (element.variant as OptionVariant) || "checkbox";
+
+  const variant = v.is(v.picklist(["checkbox", "multiChoice", "ranking"]), element.variant)
+    ? element.variant
+    : "checkbox";
+
   // Default preserves today's look: multiChoice → letter badges, all others → native control.
-  const optionLabel =
-    (element.optionLabel as OptionLabelStyle | undefined) ??
-    (variant === "multiChoice" ? "letters" : "none");
+  const optionLabel = v.is(v.picklist(["none", "letters", "numbers"]), element.optionLabel)
+    ? element.optionLabel
+    : variant === "multiChoice"
+      ? "letters"
+      : "none";
+
   const editor = useEditorRef();
 
   // Subscribe to every editor change so optionIndex tracks reorders. props.path (useNodePath)
@@ -514,8 +571,9 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
   const focusIndex = useEditorSelector((ed) => ed.selection?.focus.path[0], []);
 
   const { optionIndex, isLastInGroup, isGroupFocused, isStandalone, chipsMode } = useMemo(() => {
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
     const pathIdx = nodes.indexOf(element);
+
     if (pathIdx < 0)
       return {
         optionIndex: 0,
@@ -526,6 +584,7 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
       };
 
     let idx = 0;
+
     for (let i = pathIdx - 1; i >= 0; i--) {
       if (nodes[i]?.type === "formOptionItem") idx++;
       else break;
@@ -533,13 +592,16 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
 
     // Group shown as dropdown → the whole group collapses into the chips control
     // (flags live on the group's first node; ranking has no dropdown mode).
-    const first = nodes[pathIdx - idx] as
-      | (TElement & { variant?: string; showAsDropdown?: boolean })
-      | undefined;
-    const firstVariant = first?.variant || "checkbox";
+    const first = nodes[pathIdx - idx];
+
+    const rawVariant = first && "variant" in first ? first.variant : undefined;
+
+    const firstVariant = v.is(v.string(), rawVariant) && rawVariant ? rawVariant : "checkbox";
+
     const chips =
       first?.type === "formOptionItem" &&
       (firstVariant === "checkbox" || firstVariant === "multiChoice") &&
+      "showAsDropdown" in first &&
       first.showAsDropdown === true;
 
     const nextNode = nodes[pathIdx + 1];
@@ -551,12 +613,16 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
     const standalone = idx === 0 && isLast && prevNode?.type !== "formLabel";
 
     let groupFocused = false;
+
     if (focusIndex !== undefined) {
       const focusNode = nodes[focusIndex];
+
       if (focusNode?.type === "formOptionItem") {
         let groupStart = pathIdx;
+
         while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
         let groupEnd = pathIdx;
+
         while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
           groupEnd++;
         groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
@@ -575,7 +641,7 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
 
   // Suppress "Add option" ghost during any drag — Plate snapshots the option DOM for the
   // preview and would capture a visible ghost row alongside it.
-  const draggingId = usePluginOption(DndPlugin, "draggingId") as string | string[] | undefined;
+  const draggingId: string | string[] | null | undefined = usePluginOption(DndPlugin, "draggingId");
   const isAnyDragging = Array.isArray(draggingId) ? draggingId.length > 0 : Boolean(draggingId);
   const showGhost = isLastInGroup && isGroupFocused && !isAnyDragging && !chipsMode;
 
@@ -587,55 +653,74 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
   // next block's real content top and reserve exactly the overflow + a 4px gap.
   useLayoutEffect(() => {
     let domNode: HTMLElement | null = null;
+
     try {
-      // eslint-disable-next-line typescript-eslint/no-explicit-any
-      domNode = (editor.api as any).toDOMNode?.(element) ?? null;
+      domNode = editor.api.toDOMNode(element) ?? null;
     } catch {
       domNode = null;
     }
+
     const blockWrapper = domNode?.closest(".slate-blockWrapper");
-    const nextSibling = blockWrapper?.parentElement?.nextElementSibling as HTMLElement | null;
+    const rawSibling = blockWrapper?.parentElement?.nextElementSibling;
+    const nextSibling = rawSibling instanceof HTMLElement ? rawSibling : null;
+
     const clear = () => {
       if (nextSibling) nextSibling.style.paddingTop = "";
     };
+
     if (!domNode || !nextSibling) return;
+
     if (!showGhost) {
       clear();
+
       return;
     }
+
     const ghost = domNode.querySelector<HTMLElement>("[data-bf-ghost-row]");
+
     if (!ghost) {
       clear();
+
       return clear;
     }
+
     // Reset to the natural layout, then reserve exactly the overflow. Measure the next block's first
     // rendered element (not its wrapper) — wrappers whose inner node uses a negative margin-top
     // report a misleading box.
     nextSibling.style.paddingTop = "";
+
     const nextContent =
       nextSibling.querySelector<HTMLElement>('[data-slate-node="element"]') ?? nextSibling;
+
     const overflow =
       ghost.getBoundingClientRect().bottom + 4 - nextContent.getBoundingClientRect().top;
+
     nextSibling.style.paddingTop = overflow > 0 ? `${Math.ceil(overflow)}px` : "";
+
     return clear;
   }, [editor, element, showGhost]);
 
   // Per-option image (group "Image" toggle sets showImage on every sibling). Upload via the shared
   // editor-media uploader, then store the URL on this option node.
   const showImage = element.showImage === true;
-  const image = element.image as string | undefined;
+  const image = v.is(v.string(), element.image) ? element.image : undefined;
   const { uploadFile, isUploading } = useUploadFile();
+
   const handleImagePick = useCallback(
     async (file: File) => {
       const uploaded = await uploadFile(file);
+
       if (!uploaded?.url) return;
-      const idx = (editor.children as TElement[]).indexOf(element);
-      if (idx >= 0) editor.tf.setNodes({ image: uploaded.url } as Partial<TElement>, { at: [idx] });
+      const idx = editor.children.indexOf(element);
+
+      if (idx >= 0) editor.tf.setNodes({ image: uploaded.url }, { at: [idx] });
     },
     [uploadFile, editor, element],
   );
+
   const handleImageRemove = useCallback(() => {
-    const idx = (editor.children as TElement[]).indexOf(element);
+    const idx = editor.children.indexOf(element);
+
     if (idx >= 0) editor.tf.unsetNodes(["image"], { at: [idx] });
   }, [editor, element]);
 
@@ -643,6 +728,7 @@ export const FormOptionItemElement = ({ children, ...props }: PlateElementProps)
   // (their text still mounts for Slate, just invisible).
   if (chipsMode) {
     if (optionIndex === 0) return <OptionChipsRow {...props}>{children}</OptionChipsRow>;
+
     return (
       <PlateElement
         attributes={{ ...attributes, "aria-hidden": "true" }}

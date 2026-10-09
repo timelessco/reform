@@ -10,13 +10,14 @@ import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tan
 
 const FormLayout = () => {
   const pathname = useLocation({ select: (s) => s.pathname });
-  // Extract formId from pathname to ensure it's always current
+  // Read formId from pathname; route params can lag in-place form switches
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
   const formId = formIdFromPath || params.formId;
 
   // Hide header on edit route (editor has its own full-screen layout)
   const isEditRoute = pathname.includes("/form-builder/") && pathname.includes("/edit");
+
   if (isEditRoute) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
@@ -39,6 +40,10 @@ const FormLayout = () => {
 export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/form-builder/$formId")(
   {
     ssr: false,
+    context: ({ params }) => ({
+      formQueryOptions: getFormbyIdQueryOption(params.formId),
+      formVersionsQueryOptions: getFormVersionsQueryOption(params.formId),
+    }),
     beforeLoad: async ({ context, params, location }) => {
       const isExactParentRoute =
         location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
@@ -46,6 +51,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
 
       if (isExactParentRoute) {
         let status: FormStatus | undefined;
+
         try {
           const cachedForm = getFormListings().get(params.formId);
           status = cachedForm?.status as FormStatus | undefined;
@@ -66,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
             params: { workspaceId: params.workspaceId, formId: params.formId },
           });
         }
+
         throw redirect({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
           params: { workspaceId: params.workspaceId, formId: params.formId },
@@ -77,20 +84,20 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
       // route (ssr:false), so window is available; covers every open path (dashboard, sidebar, palette, URL).
       pushRecentForm(params.formId);
 
-      // Skip server fetch if collection has this form (e.g. optimistic create/duplicate) — component reads useLiveQuery. Guard: collections may not be init yet (SSR/first load before parent layout).
+      // Skip server fetch if collection has this form (e.g. optimistic create/duplicate); component reads useLiveQuery. Guard: collections may not be init yet (SSR/first load before parent layout).
       if (isInitialized()) {
         const cachedForm = getFormListings().get(params.formId);
+
         if (cachedForm?.content) return;
       }
 
       await Promise.all([
-        context.queryClient.ensureQueryData(getFormbyIdQueryOption(params.formId)),
-        context.queryClient.ensureQueryData(getFormVersionsQueryOption(params.formId)),
+        context.queryClient.ensureQueryData(context.formQueryOptions),
+        context.queryClient.ensureQueryData(context.formVersionsQueryOptions),
       ]);
 
-      // Seed the collection with full content so the editor reads it on first render — avoids the
-      // post-mount enrichment hop that flashes "Loading editor…". Reuses the ensureQueryData cache
-      // above (no extra network). Guarded: collections may not be init yet on SSR/first load.
+      // Seed the collection with full content so the editor reads it on first render; avoids the
+      // post-mount enrichment hop that flashes "Loading editor…". Reuses the ensureQueryData cache above (no extra network). Guarded: collections may not be init yet on SSR/first load.
       if (isInitialized()) {
         await enrichFormDetail(params.formId);
       }

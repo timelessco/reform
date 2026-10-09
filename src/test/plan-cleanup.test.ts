@@ -53,6 +53,7 @@ describe("plan-cleanup", () => {
         .select({ plan: organization.plan })
         .from(organization)
         .where(eq(organization.id, orgId));
+
       expect(org.plan).toBe("free");
     });
 
@@ -111,6 +112,7 @@ describe("plan-cleanup", () => {
         .select({ customization: forms.customization })
         .from(forms)
         .where(eq(forms.id, form.id));
+
       expect(row.customization).toStrictEqual(customization);
     });
 
@@ -156,6 +158,7 @@ describe("plan-cleanup", () => {
         })
         .from(customDomains)
         .where(eq(customDomains.id, domain.id));
+
       expect(row).toStrictEqual({ status: "suspended", previousStatus: "verified" });
     });
 
@@ -203,10 +206,12 @@ describe("plan-cleanup", () => {
         .select({ draftSettings: forms.draftSettings })
         .from(forms)
         .where(eq(forms.id, otherForm.id));
+
       const [otherDomainAfter] = await db
         .select({ status: customDomains.status })
         .from(customDomains)
         .where(eq(customDomains.id, otherDomain.id));
+
       const [otherOrgAfter] = await db
         .select({ plan: organization.plan })
         .from(organization)
@@ -234,6 +239,7 @@ describe("plan-cleanup", () => {
         .select({ plan: organization.plan })
         .from(organization)
         .where(eq(organization.id, orgId));
+
       expect(org.plan).toBe("pro");
     });
 
@@ -242,6 +248,7 @@ describe("plan-cleanup", () => {
         status: "suspended",
         previousStatus: "verified",
       });
+
       const pendingThenSuspended = await createTestCustomDomain(orgId, {
         status: "suspended",
         previousStatus: "pending",
@@ -285,6 +292,7 @@ describe("plan-cleanup", () => {
         })
         .from(customDomains)
         .where(eq(customDomains.id, domain.id));
+
       expect(row).toStrictEqual({ status: "pending", previousStatus: null });
     });
 
@@ -310,6 +318,7 @@ describe("plan-cleanup", () => {
         .select({ draftSettings: forms.draftSettings })
         .from(forms)
         .where(eq(forms.id, form.id));
+
       expect(row.draftSettings?.analytics).toBeFalsy();
       expect(row.draftSettings?.dataRetention).toBeFalsy();
       expect(row.draftSettings?.respondentEmailNotifications).toBeFalsy();
@@ -329,6 +338,7 @@ describe("plan-cleanup", () => {
         })
         .from(customDomains)
         .where(eq(customDomains.id, verified.id));
+
       expect(row).toStrictEqual({ status: "verified", previousStatus: null });
     });
   });

@@ -17,17 +17,19 @@ export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProp
       side="right"
       collapsible="none"
       // [font-variation-settings:normal] un-pins the global opsz20/wght450 so font-weight utils + Figma optical size apply
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-variation-settings unpin + 40% slide distance have no tokens; needs design decision
       className="size-full animate-in border-none duration-200 ease-out [font-variation-settings:normal] slide-in-from-right-[40%]"
     >
       <SidebarHeader className="shrink-0 gap-2.25 space-y-2 pt-2 pr-2 pb-2 pl-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm leading-[1.15] font-medium tracking-[0.14px] text-gray-800">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.14px; needs design decision */}
+          <h2 className="text-sm leading-[1.15] font-medium tracking-[0.14px] text-sidebar-foreground">
             Settings
           </h2>
           <Button
             variant="ghost-flat"
             size="icon-xs"
-            className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+            className="size-7 rounded-lg p-1.25 text-sidebar-foreground hover:text-foreground"
             onClick={closeSidebar}
             aria-label="Close"
           >
@@ -38,7 +40,7 @@ export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProp
 
       <SidebarContent>
         <div className="p-2 [&_button[data-empty]]:!w-auto [&_button[data-empty]]:max-w-[55%]">
-          <p className="px-2 pb-2 text-[11px] text-muted-foreground/80">
+          <p className="px-2 pb-2 text-2xs text-muted-foreground/80">
             Changes apply to the public form on next publish.
           </p>
           <SettingsContent formId={formId} isLocal={isLocal} />

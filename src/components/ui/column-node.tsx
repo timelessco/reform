@@ -44,7 +44,15 @@ export const ColumnElement = withHOC(
     });
 
     return (
-      <div className="group/column relative" style={{ width: width ?? "100%" }}>
+      <div
+        className="group/column relative w-[var(--column-width)]"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          {
+            "--column-width": Number.isFinite(width) ? `${width}px` : (width ?? "100%"),
+          } as React.CSSProperties
+        }
+      >
         {!readOnly && !isSelectionAreaVisible && (
           <div
             ref={handleRef}
@@ -108,6 +116,7 @@ const DropLine = () => {
     <div
       className={cn(
         "slate-dropLine",
+        // oxlint-disable-next-line shadcn/no-raw-colors -- no brand token; needs design decision
         "bg-brand/50 absolute",
         dropLine === "left" && "inset-y-0 left-[-10.5px] w-1 group-first/column:-left-1",
         dropLine === "right" && "inset-y-0 right-[-11px] w-1 group-last/column:-right-1",
@@ -146,12 +155,15 @@ const ColumnFloatingToolbar = ({ children }: React.PropsWithChildren) => {
   );
 
   const handleDouble = React.useCallback(() => onColumnChange(["50%", "50%"]), [onColumnChange]);
+
   const handleTriple = React.useCallback(
     () => onColumnChange(["33%", "33%", "33%"]),
     [onColumnChange],
   );
+
   const handleRightSide = React.useCallback(() => onColumnChange(["70%", "30%"]), [onColumnChange]);
   const handleLeftSide = React.useCallback(() => onColumnChange(["30%", "70%"]), [onColumnChange]);
+
   const handleDoubleSide = React.useCallback(
     () => onColumnChange(["25%", "50%", "25%"]),
     [onColumnChange],

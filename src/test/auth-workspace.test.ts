@@ -24,16 +24,19 @@ describe("authWorkspace", () => {
       email: `owner-${ownerId}@example.com`,
       name: "Owner",
     });
+
     const member = t.createUser({
       id: memberId,
       email: `member-${memberId}@example.com`,
       name: "Member",
     });
+
     const stranger = t.createUser({
       id: strangerId,
       email: `stranger-${strangerId}@example.com`,
       name: "Stranger",
     });
+
     await t.saveUser(owner);
     await t.saveUser(member);
     await t.saveUser(stranger);

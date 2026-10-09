@@ -23,7 +23,8 @@ const Cursor = ({
   selection,
   selectionRects,
 }: CursorOverlayState<CursorData>) => {
-  const { style, selectionStyle = style } = data ?? ({} as CursorData);
+  const style = data?.style;
+  const selectionStyle = data?.selectionStyle ?? style;
   const isCursor = RangeApi.isCollapsed(selection);
 
   return (
@@ -33,11 +34,15 @@ const Cursor = ({
           key={`${position.left}-${position.top}-${position.width}-${position.height}`}
           className={cn(
             "pointer-events-none absolute z-10",
+            // oxlint-disable-next-line shadcn/no-raw-colors -- no brand token; needs design decision
             id === "selection" && "bg-brand/25",
             id === "selection" && isCursor && "bg-primary",
           )}
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Plate CursorData style spread; user-supplied CSS must keep inline precedence
           style={{
+            // oxlint-disable-next-line shadcn/no-inline-styles -- Plate CursorData style spread; user-supplied CSS must keep inline precedence
             ...selectionStyle,
+            // oxlint-disable-next-line shadcn/no-inline-styles -- Plate CursorData style spread; user-supplied CSS must keep inline precedence
             ...position,
           }}
         />
@@ -46,8 +51,10 @@ const Cursor = ({
         <div
           className={cn(
             "pointer-events-none absolute z-10 w-0.5",
+            // oxlint-disable-next-line shadcn/no-raw-colors -- no brand token; needs design decision
             id === "drag" && "bg-brand w-px",
           )}
+          // oxlint-disable-next-line shadcn/no-inline-styles -- Plate CursorData style spread; user-supplied CSS must keep inline precedence
           style={{ ...caretPosition, ...style }}
         />
       )}

@@ -15,10 +15,12 @@ const getStorageKey = (formId: string) => `bf-unlocked-${formId}`;
 
 export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
   const { t } = useTranslation();
+
   // eslint-disable-next-line react-doctor/rerender-state-only-in-handlers -- value gates the children render below
   const [unlocked, setUnlocked] = useState(
     () => safeStorage.get(getStorageKey(formId), "session") === "1",
   );
+
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -32,6 +34,7 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
     // Defer a frame so class lands after setError re-render flush — else recomputed className strips the shake before it plays. `t-shake` = animation-only helper (transitions.css).
     requestAnimationFrame(() => {
       const input = passwordInputRef.current;
+
       if (!input) return;
       input.classList.remove("t-shake");
       void input.offsetWidth;
@@ -44,6 +47,7 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
     if (!password.trim()) {
       setError(t("pleaseEnterPassword"));
       triggerShake();
+
       return;
     }
 
@@ -104,6 +108,7 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
+
                     if (error) setError(null);
                   }}
                   onKeyDown={(e) => {
@@ -125,7 +130,7 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
                   )}
                 </button>
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <Button onClick={handleUnlock} disabled={isPending} className="w-full">
                 {isPending ? t("verifying") : t("unlock")}
               </Button>

@@ -13,13 +13,15 @@ export const TEMPLATE_SETTINGS_ALLOWLIST = [
 
 export type TemplateSettings = Pick<FormSettings, (typeof TEMPLATE_SETTINGS_ALLOWLIST)[number]>;
 
-export const pickTemplateSettings = (settings: FormSettings): TemplateSettings => {
-  const out = {} as TemplateSettings;
-  for (const key of TEMPLATE_SETTINGS_ALLOWLIST) {
-    (out as Record<string, unknown>)[key] = settings[key];
-  }
-  return out;
-};
+// Keyed 1:1 with TEMPLATE_SETTINGS_ALLOWLIST; TemplateSettings is derived from it, so a
+// missing or misspelled key fails this function's return-type check.
+export const pickTemplateSettings = (settings: FormSettings): TemplateSettings => ({
+  language: settings.language,
+  progressBar: settings.progressBar,
+  presentationMode: settings.presentationMode,
+  saveAnswersForLater: settings.saveAnswersForLater,
+  preventDuplicateSubmissions: settings.preventDuplicateSubmissions,
+});
 
 // Clone-side: rebuild full settings from defaults, overlaying only the allowlisted subset.
 export const applyTemplateSettings = (picked: TemplateSettings): FormSettings => ({

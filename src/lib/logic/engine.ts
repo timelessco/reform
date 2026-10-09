@@ -19,10 +19,13 @@ const isBlankSetValue = (v: string | string[]): boolean =>
 const sameSetValue = (a: unknown, b: string | string[]): boolean => {
   if (Array.isArray(b)) {
     const arr = Array.isArray(a) ? a.map(String) : [];
+
     if (arr.length !== b.length) return false;
     const set = new Set(arr);
+
     return b.every((x) => set.has(x));
   }
+
   return asString(a) === b;
 };
 
@@ -33,6 +36,7 @@ const evalCondition = (
 ): boolean => {
   // Fail closed: a condition on an unknown source is false.
   if (!knownNames.has(cond.source)) return false;
+
   return applyOperator(cond.operator, answers[cond.source], cond.value);
 };
 
@@ -43,44 +47,54 @@ const evalGroup = (
 ): boolean => {
   // An empty / incomplete group never fires — no vacuous truth for `all`.
   if (group.children.length === 0) return false;
+
   const results = group.children.map((child) =>
     isGroup(child)
       ? evalGroup(child, answers, knownNames)
       : evalCondition(child, answers, knownNames),
   );
+
   if (group.combinator === "all") return results.every(Boolean);
+
   return results.some(Boolean);
 };
 
 const collectShowTargets = (rules: Rule[]): Set<string> => {
   const set = new Set<string>();
+
   for (const rule of rules) {
     for (const action of rule.actions) {
       if (action.kind === "show") set.add(action.target);
     }
   }
+
   return set;
 };
 
 /** Every field name referenced as a condition source across all rules (recurses groups). */
 const collectConditionSources = (rules: Rule[]): Set<string> => {
   const sources = new Set<string>();
+
   const walk = (node: Condition | ConditionGroup): void => {
     if (isGroup(node)) node.children.forEach(walk);
     else sources.add(node.source);
   };
+
   for (const rule of rules) walk(rule.when);
+
   return sources;
 };
 
 /** Targets of show/hide actions — the only fields whose masking can shift another rule's outcome. */
 const collectHideShowTargets = (rules: Rule[]): Set<string> => {
   const set = new Set<string>();
+
   for (const rule of rules) {
     for (const action of rule.actions) {
       if (action.kind === "show" || action.kind === "hide") set.add(action.target);
     }
   }
+
   return set;
 };
 
@@ -109,8 +123,10 @@ const accumulate = (
     hideSubmit: false,
     redirectUrl: null,
   };
+
   for (const rule of rules) {
     const passes = evalGroup(rule.when, snapshot, knownNames);
+
     for (const action of rule.actions) {
       if (!passes) {
         // Self-CANCELLING set-value latch: a guard like "set X while X is empty" is falsified the
@@ -128,8 +144,10 @@ const accumulate = (
         ) {
           acc.setValues[action.target] = action.value;
         }
+
         continue;
       }
+
       // Only known fields are tracked, so orphaned targets never leak stray keys.
       if (action.kind === "show" && knownNames.has(action.target))
         acc.passingShow.add(action.target);
@@ -151,6 +169,7 @@ const accumulate = (
       else if (action.kind === "redirect") acc.redirectUrl = action.url;
     }
   }
+
   return acc;
 };
 
@@ -161,11 +180,13 @@ const computeVisibility = (
   showTargets: Set<string>,
 ): Record<string, boolean> => {
   const visibility: Record<string, boolean> = {};
+
   for (const field of fields) {
     if (acc.passingHide.has(field.name)) visibility[field.name] = false;
     else if (acc.passingShow.has(field.name)) visibility[field.name] = true;
     else visibility[field.name] = !showTargets.has(field.name);
   }
+
   return visibility;
 };
 
@@ -176,14 +197,17 @@ const maskHidden = (
   fields: ReadonlyArray<EngineField>,
 ): Record<string, unknown> => {
   const masked: Record<string, unknown> = { ...answers };
+
   for (const field of fields) {
     if (visibility[field.name] === false) masked[field.name] = undefined;
   }
+
   return masked;
 };
 
 const sameVisibility = (a: Record<string, boolean>, b: Record<string, boolean>): boolean => {
   for (const key in a) if (a[key] !== b[key]) return false;
+
   return true;
 };
 
@@ -206,6 +230,7 @@ export const evaluate = (
   const hideShowTargets = collectHideShowTargets(ruleset.rules);
   const conditionSources = collectConditionSources(ruleset.rules);
   const needsConvergence = [...hideShowTargets].some((name) => conditionSources.has(name));
+
   if (needsConvergence) {
     for (let i = 0; i < fields.length; i++) {
       const nextSnapshot = maskHidden(answers, visibility, fields);
@@ -213,16 +238,19 @@ export const evaluate = (
       const nextVis = computeVisibility(nextAcc, fields, showTargets);
       snapshot = nextSnapshot;
       acc = nextAcc;
+
       if (sameVisibility(visibility, nextVis)) {
         visibility = nextVis;
         break;
       }
+
       visibility = nextVis;
     }
   }
 
   // Optional wins over require and over the field's base-required flag.
   const effectiveRequired: Record<string, boolean> = {};
+
   for (const field of fields) {
     const authored = field.required === true;
     effectiveRequired[field.name] =
@@ -234,10 +262,13 @@ export const evaluate = (
   const resolveJump = (fromStep: string): string | null => {
     for (const rule of ruleset.rules) {
       if (rule.stepId !== fromStep) continue;
+
       if (!evalGroup(rule.when, snapshot, knownNames)) continue;
       const jump = rule.actions.find((a) => a.kind === "jump");
+
       if (jump && jump.kind === "jump") return jump.toStep;
     }
+
     return null;
   };
 

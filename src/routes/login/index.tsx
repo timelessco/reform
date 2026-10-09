@@ -22,9 +22,11 @@ const LoginPage = () => {
         provider: "google",
         callbackURL: window.location.origin + callbackURL,
       });
+
       if (result.error) {
         throw new Error(result.error.message || "Failed to sign in with Google");
       }
+
       return result;
     },
     onSuccess: () => {

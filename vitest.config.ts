@@ -3,6 +3,7 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 const dbTestFiles = [
+  "src/test/ai-theme-plan-integration.test.ts",
   "src/test/analytics-aggregate-terminal-dropoff.test.ts",
   "src/test/analytics-aggregate-utils.test.ts",
   "src/test/analytics-batch-upsert.test.ts",
@@ -12,7 +13,9 @@ const dbTestFiles = [
   "src/test/analytics-merge-metrics.test.ts",
   "src/test/analytics-option-b.test.ts",
   "src/test/auth-auto-provision.test.ts",
+  "src/test/auth-form.test.ts",
   "src/test/auth-session-active-org.test.ts",
+  "src/test/auth-workspace.test.ts",
   "src/test/custom-domain-status.test.ts",
   "src/test/form-detail-routing.test.ts",
   "src/test/form-listing-favorites.test.ts",

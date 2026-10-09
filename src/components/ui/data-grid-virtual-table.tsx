@@ -1,5 +1,6 @@
 import { log } from "evlog";
 import { memo, ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 // eslint-disable-next-line import/no-cycle -- registered in data-grid.tsx's tableComponents
 import { useDataGrid } from "@/components/ui/data-grid";
 import type { DataGridFeatures, DataGridApi } from "@/components/ui/data-grid";
@@ -27,6 +28,7 @@ import {
   Virtualizer,
   VirtualizerOptions,
 } from "@tanstack/react-virtual";
+import * as v from "valibot";
 
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
@@ -88,7 +90,12 @@ const DataGridApiVirtualSpacer = ({
 
   return (
     <tr aria-hidden="true">
-      <td colSpan={columnCount} style={{ height, padding: 0 }} />
+      <td
+        colSpan={columnCount}
+        className="h-(--virtual-spacer-height) p-0"
+        // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+        style={{ "--virtual-spacer-height": `${height}px` } as CSSProperties}
+      />
     </tr>
   );
 };
@@ -137,10 +144,12 @@ const DataGridApiVirtualBody = <TData extends RowData>({
   const showFetchingRow = isInfiniteMode && isFetchingMore;
   const showCompleteRow = isInfiniteMode && hasMore === false && totalRows > 0;
   const hasMiddleSection = hasCenterRows || showFetchingRow || showCompleteRow;
+
   const leadingSpacerHeight =
     isVirtualizationEnabled && hasCenterRows && virtualItems.length > 0
       ? (virtualItems[0]?.start ?? 0)
       : 0;
+
   const trailingSpacerHeight =
     isVirtualizationEnabled && hasCenterRows && virtualItems.length > 0
       ? Math.max(0, totalSize - (virtualItems[virtualItems.length - 1]?.end ?? 0))
@@ -234,10 +243,11 @@ const DataGridApiVirtualBody = <TData extends RowData>({
 let warnedInfinitePagination = false;
 
 /** Memoized virtual body: skip re-renders during column resize — widths update via CSS vars on <table>. */
+// SAFETY: memo returns the same component with identical runtime behavior; the cast restores the type parameter memo erases
 const MemoizedVirtualBody = memo(
   DataGridApiVirtualBody,
   (_prev, next) => !!next.table.state.columnResizing.isResizingColumn,
-) as typeof DataGridApiVirtualBody;
+) as <TData extends RowData>(props: VirtualBodyProps<TData>) => ReactElement | null;
 
 const DataGridApiVirtual = <TData extends RowData>({
   height,
@@ -251,13 +261,15 @@ const DataGridApiVirtual = <TData extends RowData>({
   fetchMoreOffset = 0,
   virtualizerOptions,
 }: DataGridApiVirtualProps<TData>) => {
-  const { table, props } = useDataGrid();
+  const { table, props } = useDataGrid<TData>();
+
   const { topRows, centerRows, bottomRows } = getDataGridTableRowSections(
     table,
     props.tableLayout?.rowsPinnable,
   );
+
   const columnCount = table.getVisibleFlatColumns().length;
-  const isInfiniteMode = typeof onFetchMore === "function";
+  const isInfiniteMode = onFetchMore !== undefined;
 
   // dev guard: infinite mode needs manualPagination, else paginated row model clips rows silently
   if (
@@ -295,8 +307,7 @@ const DataGridApiVirtual = <TData extends RowData>({
   const handleViewportRef = useCallback((node: HTMLDivElement | null) => {
     setViewportElements({
       containerElement: node,
-      scrollElement:
-        (node?.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null) ?? node,
+      scrollElement: node?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]') ?? node,
     });
   }, []);
 
@@ -318,9 +329,7 @@ const DataGridApiVirtual = <TData extends RowData>({
 
       if (!row) return index;
 
-      return (
-        customGetItemKey?.(index, row as unknown as Row<DataGridFeatures, TData>) ?? row.id ?? index
-      );
+      return customGetItemKey?.(index, row) ?? row.id ?? index;
     },
     [centerRows, customGetItemKey],
   );
@@ -329,10 +338,7 @@ const DataGridApiVirtual = <TData extends RowData>({
     (index: number) => {
       const row = centerRows[index];
 
-      return row
-        ? (customEstimateSize?.(index, row as unknown as Row<DataGridFeatures, TData>) ??
-            estimateSize)
-        : estimateSize;
+      return row ? (customEstimateSize?.(index, row) ?? estimateSize) : estimateSize;
     },
     [centerRows, customEstimateSize, estimateSize],
   );
@@ -349,6 +355,7 @@ const DataGridApiVirtual = <TData extends RowData>({
     resolvedFetchMoreOffset,
     onFetchMore,
   });
+
   fetchMoreRef.current = {
     isVirtualizationEnabled,
     isInfiniteMode,
@@ -369,10 +376,12 @@ const DataGridApiVirtual = <TData extends RowData>({
       resolvedFetchMoreOffset: offset,
       onFetchMore: fetchMore,
     } = fetchMoreRef.current;
+
     if (!enabled || !infinite || more === false || fetching) return;
 
     const items = instance.getVirtualItems();
     const lastItem = items[items.length - 1];
+
     if (!lastItem) return;
 
     if (lastItem.index >= centerRowsLength - 1 - offset) {
@@ -380,7 +389,7 @@ const DataGridApiVirtual = <TData extends RowData>({
     }
   }, []);
 
-  const virtualizer = useVirtualizer({
+  const virtualizer = useVirtualizer<HTMLElement, HTMLTableRowElement>({
     count: centerRows.length,
     getScrollElement: resolveScrollElement,
     getItemKey: resolveItemKey,
@@ -389,19 +398,29 @@ const DataGridApiVirtual = <TData extends RowData>({
     measureElement: customMeasureElement,
     onChange: handleVirtualizerChange,
     ...virtualizerOptionsRest,
-  }) as DataGridApiVirtualizerInstance;
+  });
 
   const virtualItems = isVirtualizationEnabled ? virtualizer.getVirtualItems() : [];
   const totalSize = isVirtualizationEnabled ? virtualizer.getTotalSize() : 0;
+
   const measureRowRef =
     isVirtualizationEnabled && customMeasureElement ? virtualizer.measureElement : undefined;
 
   return (
     <DataGridTableViewport
       viewportRef={handleViewportRef}
-      className={!usesExternalScrollArea ? "block" : undefined}
+      className={
+        !usesExternalScrollArea
+          ? "relative block h-(--virtual-viewport-height) overflow-auto"
+          : undefined
+      }
+      // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
       style={
-        usesExternalScrollArea ? undefined : { height, overflow: "auto", position: "relative" }
+        usesExternalScrollArea
+          ? undefined
+          : ({
+              "--virtual-viewport-height": v.is(v.number(), height) ? `${height}px` : height,
+            } as CSSProperties)
       }
     >
       <DataGridTableBase>
@@ -463,6 +482,7 @@ const DataGridApiVirtual = <TData extends RowData>({
 };
 
 export { DataGridApiVirtual, DataGridApiVirtual as DataGridVirtualTable };
+
 export type {
   DataGridApiVirtualProps,
   DataGridApiVirtualScrollElements,

@@ -24,6 +24,7 @@ const KNOWN_CONFIG_KEYS = new Set([
 
 /** Default wait before the "delay" trigger fires (ms). */
 const DEFAULT_DELAY_MS = 3000;
+
 /** Fraction of page scrolled before the "scroll" trigger fires. */
 const SCROLL_THRESHOLD = 0.5;
 
@@ -59,10 +60,13 @@ interface FormMeta {
 /** Find popup.js script tag. Walks backward so the most recent (re-injected) copy wins. */
 const findScriptTag = (): HTMLScriptElement | null => {
   const scripts = document.getElementsByTagName("script");
+
   for (let i = scripts.length - 1; i >= 0; i--) {
     const src = scripts[i].src || "";
+
     if (src.includes("/embed/popup.js")) return scripts[i];
   }
+
   return null;
 };
 
@@ -74,16 +78,19 @@ const getOriginFromScript = (scriptTag: HTMLScriptElement | null): string => {
       // fall through
     }
   }
+
   return window.location.origin;
 };
 
 const parseConfig = (el: HTMLScriptElement): BubbleConfig | null => {
   const ds = el.dataset || {};
   const formId = ds.formId && FORM_ID_RE.test(ds.formId) ? ds.formId : "";
+
   if (!formId) return null;
 
   // Object.create(null) avoids prototype-pollution surface for unknown keys.
   const hiddenFields: Record<string, string> = Object.create(null);
+
   for (const [k, v] of Object.entries(ds)) {
     if (!KNOWN_CONFIG_KEYS.has(k) && typeof v === "string") {
       hiddenFields[k] = v;
@@ -116,7 +123,9 @@ const fetchMeta = async (origin: string, formId: string): Promise<FormMeta | nul
       method: "GET",
       credentials: "omit",
     });
+
     if (!res.ok) return null;
+
     return (await res.json()) as FormMeta;
   } catch {
     return null;
@@ -170,6 +179,7 @@ const setBubbleContent = (
     img.src = icon;
     img.alt = "";
     replaceBubbleContent(btn, img);
+
     return;
   }
 
@@ -178,12 +188,15 @@ const setBubbleContent = (
     span.className = "bf-bubble__emoji";
     span.textContent = icon;
     replaceBubbleContent(btn, span);
+
     return;
   }
 
   const isSprite = icon && /^[a-z0-9-]+$/i.test(icon);
+
   if (!isSprite) {
     replaceBubbleContent(btn, buildDefaultIcon());
+
     return;
   }
 
@@ -194,6 +207,7 @@ const setBubbleContent = (
       if (!text) return;
       const doc = new DOMParser().parseFromString(text, "image/svg+xml");
       const svgEl = doc.documentElement;
+
       if (!svgEl || svgEl.tagName.toLowerCase() !== "svg") return;
       svgEl.setAttribute("class", "bf-bubble__icon");
       replaceBubbleContent(btn, document.importNode(svgEl, true));
@@ -214,15 +228,18 @@ const createBubble = (
   btn.setAttribute("aria-label", meta?.title || "Open form");
   setBubbleContent(btn, origin, meta?.icon);
   document.body.appendChild(btn);
+
   return btn;
 };
 
 /** Read script-tag config, mount a bubble. No-op when `data-form-id` missing/invalid — preserves click-trigger/openPopup-only pages. */
 export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCallback): void => {
   const scriptTag = findScriptTag();
+
   if (!scriptTag) return;
 
   const cfg = parseConfig(scriptTag);
+
   if (!cfg) return;
 
   const origin = getOriginFromScript(scriptTag);
@@ -243,10 +260,13 @@ export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCa
     autoClose: cfg.autoClose,
     hiddenFields: cfg.hiddenFields,
   };
+
   warmupFormOnIntent(bubble, () => preMountPopup(cfg.formId, popupOptions));
   void fetchMeta(origin, cfg.formId).then((meta) => {
     if (!meta) return;
+
     if (meta.title) bubble.setAttribute("aria-label", meta.title);
+
     if (meta.icon) setBubbleContent(bubble, origin, meta.icon);
   });
 
@@ -271,6 +291,7 @@ export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCa
 /** Fire `open` once when the configured non-button trigger condition is met. */
 const setupAutoOpenTrigger = (cfg: BubbleConfig, open: () => void): void => {
   let fired = false;
+
   const openOnce = () => {
     if (fired) return;
     fired = true;
@@ -288,14 +309,17 @@ const setupAutoOpenTrigger = (cfg: BubbleConfig, open: () => void): void => {
       const onScroll = () => {
         const scrollable = document.documentElement.scrollHeight - window.innerHeight;
         const ratio = scrollable > 0 ? window.scrollY / scrollable : 1;
+
         if (ratio >= SCROLL_THRESHOLD) {
           window.removeEventListener("scroll", onScroll);
           openOnce();
         }
       };
+
       window.addEventListener("scroll", onScroll, { passive: true });
       break;
     }
+
     case "exit-intent": {
       const onMouseOut = (e: MouseEvent) => {
         // Pointer left through the top of the viewport with no related target = exit intent.
@@ -304,6 +328,7 @@ const setupAutoOpenTrigger = (cfg: BubbleConfig, open: () => void): void => {
           openOnce();
         }
       };
+
       document.addEventListener("mouseout", onMouseOut);
       break;
     }

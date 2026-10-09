@@ -26,20 +26,27 @@ import { hmac, pack, timingSafeEqualStr, unpack } from "./email-otp.server";
  */
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
+
 const VERIFIED_TTL_MS = 2 * 60 * 60 * 1000; // long enough to finish a long form
+
 const SEND_MIN_INTERVAL_MS = 30_000;
+
 const SEND_HOURLY_CAP = 5;
+
 const VERIFY_MAX_ATTEMPTS = 5;
+
 const RATE_MAP_MAX_ENTRIES = 10_000;
 
 // In-memory, per-instance rate limits (same best-effort pattern as the draft throttle).
 const sendLog = new Map<string, number[]>();
+
 const verifyAttempts = new Map<string, number>();
 
 const pruneMap = (map: Map<string, unknown>) => {
   if (map.size <= RATE_MAP_MAX_ENTRIES) return;
   // Insertion order ≈ oldest first; drop the front half.
   let toDrop = map.size / 2;
+
   for (const key of map.keys()) {
     if (toDrop-- <= 0) break;
     map.delete(key);
@@ -62,6 +69,7 @@ export const sendEmailOtp = createServerFn({ method: "POST" })
     const rateKey = `${data.formId}:${email}`;
     const now = Date.now();
     const recent = (sendLog.get(rateKey) ?? []).filter((t) => now - t < 60 * 60 * 1000);
+
     if (recent.length >= SEND_HOURLY_CAP || now - (recent.at(-1) ?? 0) < SEND_MIN_INTERVAL_MS) {
       throw createError({
         code: "otp/rate-limited" satisfies ErrorCode,
@@ -102,9 +110,11 @@ export const sendEmailOtp = createServerFn({ method: "POST" })
     const fields = version?.content
       ? getEditableFields(transformPlateStateToFormElements(version.content as Value))
       : [];
+
     const hasVerifyEmailField = fields.some(
       (f) => f.fieldType === "Email" && f.verifyEmail === true,
     );
+
     if (!hasVerifyEmailField) {
       throw createError({
         code: "otp/not-applicable" satisfies ErrorCode,
@@ -147,6 +157,7 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const payload = unpack(data.challenge);
+
     const invalid = () =>
       createError({
         code: "otp/invalid-code" satisfies ErrorCode,
@@ -159,6 +170,7 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
     if (!payload || payload.t !== "challenge") throw invalid();
 
     const { e, f, s, h, x } = payload as { e: string; f: string; s: string; h: string; x: number };
+
     if (typeof x !== "number" || Date.now() > x) {
       throw createError({
         code: "otp/expired" satisfies ErrorCode,
@@ -174,6 +186,7 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
     const tries = (verifyAttempts.get(attemptKey) ?? 0) + 1;
     verifyAttempts.set(attemptKey, tries);
     pruneMap(verifyAttempts);
+
     if (tries > VERIFY_MAX_ATTEMPTS) {
       throw createError({
         code: "otp/rate-limited" satisfies ErrorCode,
@@ -189,6 +202,7 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
     }
 
     verifyAttempts.delete(attemptKey);
+
     return {
       verifiedToken: pack({ t: "verified", e, f, x: Date.now() + VERIFIED_TTL_MS }),
     };

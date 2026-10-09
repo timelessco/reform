@@ -1,6 +1,7 @@
 import { createLink } from "@tanstack/react-router";
 import type { LinkComponent } from "@tanstack/react-router";
 import * as React from "react";
+import * as v from "valibot";
 
 import { cn, isNullable } from "@/lib/utils";
 
@@ -8,12 +9,12 @@ const LinkTransitionContext = React.createContext(false);
 
 interface AnchorLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   hasImageChildren?: boolean;
+  "data-transitioning"?: string;
 }
 
 const AnchorLinkComponent = (props: AnchorLinkProps & { ref?: React.Ref<HTMLAnchorElement> }) => {
   const { hasImageChildren, className, children, ref, ...rest } = props;
-  const restRecord = rest as Record<string, unknown>;
-  const isTransitioning = restRecord["data-transitioning"] === "transitioning";
+  const isTransitioning = rest["data-transitioning"] === "transitioning";
 
   return (
     <LinkTransitionContext.Provider value={isTransitioning}>
@@ -46,16 +47,19 @@ export type LinkProps = React.ComponentProps<typeof CreatedLinkComponent> & {
 export const Link: LinkComponent<typeof AnchorLinkComponent> = (props) => {
   const { to, ...rest } = props;
   const destination = to;
-  const isExternal = typeof destination === "string" && isExternalUrl(destination);
 
-  const linkProps = isExternal ? { ...rest, href: destination } : { ...rest, to: destination };
+  if (v.is(v.string(), destination) && isExternalUrl(destination)) {
+    return (
+      <CreatedLinkComponent
+        activeProps={{ "aria-current": "page" }}
+        {...rest}
+        to={destination}
+        href={destination}
+      />
+    );
+  }
 
-  return (
-    <CreatedLinkComponent
-      activeProps={{ "aria-current": "page" }}
-      {...(linkProps as React.ComponentProps<typeof CreatedLinkComponent>)}
-    />
-  );
+  return <CreatedLinkComponent activeProps={{ "aria-current": "page" }} {...props} />;
 };
 
 interface ImageFocusRingProps {
@@ -77,14 +81,4 @@ const ImageFocusRing = (props: ImageFocusRingProps) => {
   );
 };
 
-export const LinkHint = () => {
-  const pending = React.use(LinkTransitionContext);
-
-  return (
-    <span
-      aria-hidden
-      className={`link-hint ${pending ? "is-pending" : ""}`}
-      data-slot="link-hint"
-    />
-  );
-};
+export const LinkHint = () => <span aria-hidden data-slot="link-hint" />;

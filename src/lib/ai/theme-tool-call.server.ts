@@ -17,6 +17,7 @@ const proThemeArgsSchema = v.object({
 
 const PRO_TOOL_DESCRIPTION =
   "Apply a complete visual theme to the form (colors, font, radius). Call exactly once with all 30 token values, font, and radius.";
+
 const FREE_TOOL_DESCRIPTION =
   "Apply a basic theme available on the free plan. Call exactly once with themeColor, baseColor, font, radius, and defaultMode — each value must be from the allowed list in the system prompt.";
 
@@ -50,6 +51,7 @@ const captureThemeArgs = async <S extends v.GenericSchema>(opts: {
         inputSchema: valibotSchema(schema),
         execute: async (args: v.InferOutput<S>) => {
           captured = args;
+
           return { ok: true };
         },
       }),

@@ -128,6 +128,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
       .select({ total: count() })
       .from(workspaces)
       .where(eq(workspaces.organizationId, orgId));
+
     if (total <= 1) {
       throw createError({
         code: "workspaces/cannot-delete-last" satisfies ErrorCode,
@@ -145,6 +146,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
         .select({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId })
         .from(forms)
         .where(eq(forms.workspaceId, data.id));
+
       const formIds = workspaceForms.map((f) => f.id);
       const everPublished = workspaceForms.filter((f) => f.lastPublishedVersionId).map((f) => f.id);
 
@@ -194,6 +196,7 @@ export const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const userId = context.session.user.id;
+
     const workspaceList = await db
       .select({
         id: workspaces.id,

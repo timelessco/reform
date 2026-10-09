@@ -9,10 +9,13 @@ export const isCronAuthorized = (): boolean => {
   const headers = getRequestHeaders();
   const auth = headers.get("authorization");
   const secret = process.env.CRON_SECRET;
+
   // Primary: CRON_SECRET bearer token (set on Vercel cron via request headers).
   if (secret && auth === `Bearer ${secret}`) return true;
+
   // Fallback ONLY on Vercel when no secret is configured: trust the platform header.
   // (Vercel sets x-vercel-cron for genuine cron invocations.) Never trusted off-Vercel.
   if (!secret && process.env.VERCEL && headers.get("x-vercel-cron")) return true;
+
   return false;
 };

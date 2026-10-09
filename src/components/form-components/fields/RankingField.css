@@ -1,0 +1,8 @@
+/* Sortable row transition (dnd-kit) is passed as the --rank-transition custom property on the
+   row. While items animate it must override the row's colors-only `transition-colors` utility —
+   an unlayered rule beats Tailwind's utilities layer, exactly like the inline style it replaces.
+   The [data-rank-transition] attribute (and the custom property) are only set when dnd-kit
+   provides a transition, so at rest the utility class keeps applying. */
+[data-rank-transition] {
+  transition: var(--rank-transition);
+}

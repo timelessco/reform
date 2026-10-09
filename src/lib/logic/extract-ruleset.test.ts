@@ -45,6 +45,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules } = extractRuleset(value);
     expect(rules[0].stepId).toBe("pb1");
   });
@@ -64,6 +65,7 @@ describe("extractRuleset", () => {
       { type: "formLabel", id: "vat", children: [{ text: "VAT" }] },
       { type: "formInput", children: [{ text: "" }] },
     ] as unknown as Value;
+
     const { orphanedRefs } = extractRuleset(value);
     expect(orphanedRefs).toContain("ghost");
   });
@@ -83,6 +85,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules, orphanedRefs } = extractRuleset(value);
     // hide-target "emails" is fine; the condition source "emails" (repeatable) is dropped.
     expect(orphanedRefs).toContain("emails");
@@ -105,6 +108,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules, orphanedRefs } = extractRuleset(value);
     expect(rules[0].actions).toEqual([{ kind: "show", target: "q" }]);
     expect(orphanedRefs).toContain("lbLegacy");
@@ -124,6 +128,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules, orphanedRefs } = extractRuleset(value);
     expect(rules[0].actions).toHaveLength(0); // string-into-array write dropped
     expect(orphanedRefs).toContain("emails");
@@ -144,6 +149,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules, orphanedRefs } = extractRuleset(value);
     expect(rules[0].actions).toEqual([
       { kind: "setValue", target: "tools", value: ["figma", "sketch"] },
@@ -163,6 +169,7 @@ describe("extractRuleset", () => {
         children: [{ text: "" }],
       },
     ] as unknown as Value;
+
     const { rules, orphanedRefs } = extractRuleset(value);
     expect(rules[0].when).toEqual({ combinator: "all", children: [] });
     expect(orphanedRefs).toContain("lbBad");
@@ -173,6 +180,7 @@ describe("extractRuleset", () => {
       { type: "formLabel", id: "q", children: [{ text: "Q" }] },
       { type: "formInput", children: [{ text: "" }] },
     ] as unknown as Value;
+
     expect(extractRuleset(value)).toEqual({ rules: [], orphanedRefs: [] });
   });
 });

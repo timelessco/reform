@@ -19,6 +19,7 @@ export interface TimePickerProps {
 }
 
 type Period = "AM" | "PM";
+
 type TimeParts = { hour12: number; minute: number; period: Period };
 
 const DEFAULT_PARTS: TimeParts = { hour12: 12, minute: 0, period: "AM" };
@@ -33,26 +34,33 @@ const BOX_BORDER =
 const parse = (value: string | undefined): TimeParts | null => {
   if (!value) return null;
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+
   if (!match) return null;
   const h24 = Number(match[1]);
   const minute = Number(match[2]);
+
   if (h24 > 23 || minute > 59) return null;
   const period: Period = h24 >= 12 ? "PM" : "AM";
   const hour12 = h24 % 12 === 0 ? 12 : h24 % 12;
+
   return { hour12, minute, period };
 };
 
 // 12h parts → "HH:MM" (24h), zero-padded.
 const serialize = ({ hour12, minute, period }: TimeParts): string => {
   let h24 = hour12 % 12; // 12 → 0
+
   if (period === "PM") h24 += 12;
+
   return `${String(h24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 };
 
 // Step with wrap-around within [min, max].
 const wrap = (n: number, min: number, max: number): number => {
   if (n > max) return min;
+
   if (n < min) return max;
+
   return n;
 };
 
@@ -98,6 +106,7 @@ const TimeSegment = ({ value, min, max, ariaLabel, inputId, unset, onCommit }: S
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "").slice(-2);
           setDraft(digits);
+
           if (digits !== "") onCommit(Math.min(max, Math.max(min, Number(digits))));
         }}
         onFocus={(e) => e.currentTarget.select()}
@@ -156,7 +165,9 @@ export const TimePicker = ({
 
   // Fire field blur only when focus leaves the whole group, not when tabbing between segments.
   const groupRef = React.useRef<HTMLDivElement>(null);
+
   const handleGroupBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    // SAFETY: relatedTarget is a Node when focus stays in the document; null when it leaves
     if (!groupRef.current?.contains(e.relatedTarget as Node | null)) onBlur?.();
   };
 

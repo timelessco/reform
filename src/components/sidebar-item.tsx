@@ -13,6 +13,7 @@ const handleSidebarItemKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
   e.stopPropagation();
   const items = Array.from(document.querySelectorAll<HTMLElement>("[data-sidebar-item]"));
   const idx = items.indexOf(e.currentTarget);
+
   if (idx < 0) return;
   items[idx + (e.key === "ArrowDown" ? 1 : -1)]?.focus();
 };
@@ -52,7 +53,8 @@ export function SidebarItem({
       onClick={onClick}
       onKeyDown={handleSidebarItemKeyDown}
       className={cn(
-        "group relative flex h-[30px] w-full cursor-pointer items-center justify-between gap-x-2 overflow-clip rounded-lg px-2 py-[7px] text-base font-[450] tracking-[0.14px] transition-colors",
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[450] and tracking-[0.14px] have no value-identical scale step; nearest would shift visuals
+        "group relative flex h-[30px] w-full cursor-pointer items-center justify-between gap-x-2 overflow-clip rounded-lg px-2 py-1.75 text-base font-[450] tracking-[0.14px] transition-colors",
         // Inset ring: an outset outline gets clipped by the Favorites Accordion panel's
         // overflow-hidden; inset is the element's own decoration, so it's never clipped.
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",

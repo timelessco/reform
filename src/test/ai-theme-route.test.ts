@@ -40,10 +40,12 @@ describe("pickThemePromptForPlan", () => {
 describe("flattenProThemeArgs", () => {
   it("returns a flat dict containing every token plus font and radius", () => {
     const tokens: Record<string, string> = {};
+
     for (const key of AI_THEME_TOKEN_KEYS) {
       tokens[`light:${key}`] = "#ffffff";
       tokens[`dark:${key}`] = "#000000";
     }
+
     const flat = flattenProThemeArgs({ tokens, font: "Inter", radius: "medium" });
 
     // 30 token keys + font + radius = 32 keys
@@ -56,10 +58,12 @@ describe("flattenProThemeArgs", () => {
 
   it("does not introduce free-only keys (themeColor / baseColor / defaultMode)", () => {
     const tokens: Record<string, string> = {};
+
     for (const key of AI_THEME_TOKEN_KEYS) {
       tokens[`light:${key}`] = "#fff";
       tokens[`dark:${key}`] = "#000";
     }
+
     const flat = flattenProThemeArgs({ tokens, font: "Inter", radius: "small" });
     expect(flat.themeColor).toBeUndefined();
     expect(flat.baseColor).toBeUndefined();

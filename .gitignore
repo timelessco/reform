@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Secrets. .env.example is the committed template.
+.env
+.env.*
+!.env.example
+
+# Build output
+.output/
+.nitro/
+.vercel/
+
+# Caches
+.vite/
+vite.config.*.timestamp-*
+*.tsbuildinfo
+
+# Test output
+coverage/
+temp/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Machine-local agent settings
+.claude/settings.local.json
+
+# Personal skills symlinked from ~/.agents/skills (not repo content)
+.agents/skills/unslop
+.claude/skills/unslop
+.agents/skills/install-anti-slop
+.claude/skills/install-anti-slop
+
+# Editors
+.vscode/
+.idea/
+
+# macOS
+.DS_Store

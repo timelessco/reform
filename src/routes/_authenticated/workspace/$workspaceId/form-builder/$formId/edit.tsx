@@ -18,7 +18,7 @@ import { flushSync } from "react-dom";
 import * as v from "valibot";
 import { coercedBooleanWithCatch, coercedNumberWithCatch } from "@/lib/valibot-search";
 import EditorApp from "../-components/editor-app";
-// Eager import — lazy-loading this on first preview click pulls vaul-base into a Vite
+// Eager import; lazy-loading this on first preview click pulls vaul-base into a Vite
 // dep re-optimize that full-reloads the page (same class of bug as codeSplitGroupings below).
 import { PreviewDrawer } from "../-components/preview-drawer";
 
@@ -28,7 +28,7 @@ const PreviewMode = lazy(() =>
 
 const DesignPage = () => {
   const pathname = useLocation({ select: (s) => s.pathname });
-  // Extract formId from pathname to ensure it's always current
+  // Read formId from pathname; route params can lag in-place form switches
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
   const { workspaceId } = params;
@@ -51,32 +51,30 @@ const DesignPage = () => {
   const versionContent = versionData?.content as Value | undefined;
   const versionCustomization = versionData?.customization as Record<string, unknown> | undefined;
 
-  // Smoothly cross-fade version enter/switch/exit instead of an instant jump — same view-transition
-  // approach as the share preview tabs. The content swap is render-time + async (content loads after
-  // the click), so we hold a COMMITTED snapshot and only advance it inside startViewTransition+
-  // flushSync, forcing EditorApp's remount to happen within the transition (browser captures
-  // before/after and cross-fades). We commit only TERMINAL states (editing, or a fully-loaded
-  // version) — while a version is still loading the previous committed content stays on screen for
-  // continuity, so there's a single cross-fade to the final content (no intermediate spinner flash).
-  // The banner reflects the LIVE loading state so the user gets immediate feedback.
+  // Cross-fade version enter/switch/exit (same view-transition approach as the share preview tabs). Content swap is render-time + async (content loads after the click), so hold a COMMITTED snapshot
+  // advanced only inside startViewTransition+flushSync, keeping EditorApp's remount in the captured transition. Commit only TERMINAL states; while loading, prev content stays (no spinner flash).
   const versionReady = isViewingVersion && !isLoadingVersionContent && versionContent !== undefined;
+
   const desired = {
     viewing: isViewingVersion,
     content: versionReady ? versionContent : undefined,
     customization: versionReady ? versionCustomization : undefined,
     publishedAt: versionReady ? versionData?.publishedAt : undefined,
   };
+
   const canCommit = !isViewingVersion || versionReady;
   const [committed, setCommitted] = useState(desired);
   const committedRef = useRef(committed);
   useEffect(() => {
     if (!canCommit) return;
     const c = committedRef.current;
+
     const unchanged =
       c.viewing === desired.viewing &&
       c.content === desired.content &&
       c.customization === desired.customization &&
       c.publishedAt === desired.publishedAt;
+
     if (unchanged) return;
     // Scoped: only the named "editor-content" group cross-fades; sidebars/header/version panel
     // hold static. flushSync forces EditorApp's render-time remount to happen inside the transition.
@@ -98,7 +96,7 @@ const DesignPage = () => {
       <main className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-background">
         {showVersionBanner && (
           <div className="flex shrink-0 items-center justify-between border-b border-accent/20 bg-accent/50 px-4 py-2">
-            <span className="text-accent-800 text-sm">
+            <span className="text-sm text-accent-foreground">
               {isLoadingVersionContent ? (
                 <span className="flex items-center gap-2">
                   <Loader2Icon className="size-4 animate-spin" />
@@ -127,21 +125,17 @@ const DesignPage = () => {
             isSharePreview ? "h-full overflow-hidden" : "overflow-y-auto",
           )}
         >
-          {/* Mirror the editor side and keep PreviewMode mounted across toggles
-              once the user has previewed at least once. Without this, every
-              editor↔preview toggle unmounted the preview and wiped the
-              in-progress respondent state (typed values, cleared values, added
-              repeatable-field rows) — only past Continue-clicks survived
-              because `useFormPersistence` only writes on step advance. */}
+          {/* Keep PreviewMode mounted across editor↔preview toggles. Unmounting wiped in-progress
+              respondent state (typed values, cleared values, repeatable-field rows); only past
+              Continue-clicks survived because `useFormPersistence` writes on step advance. */}
           <Activity mode={isSharePreview ? "visible" : "hidden"}>
             <PreviewMode formId={formId} workspaceId={workspaceId} />
           </Activity>
-          {/* <Activity> keeps EditorApp fiber/Slate doc/DOM alive across preview toggles — fresh Plate mount (50+ elements, per-element effects) is ~600ms; only re-runs effects on hidden↔visible flip. */}
+          {/* <Activity> keeps EditorApp fiber/Slate doc/DOM alive across preview toggles; fresh Plate mount (50+ elements, per-element effects) is ~600ms. Only re-runs effects on hidden↔visible flip. */}
           <Activity mode={isSharePreview ? "hidden" : "visible"}>
-            {/* Stable named box so version enter/switch/exit cross-fades (driven by the committed
-                snapshot above) instead of jumping. Mirrors the share preview's "preview-content".
-                No loading spinner here — the previous committed content stays put during load. */}
-            <div className="min-h-full" style={{ viewTransitionName: "editor-content" }}>
+            {/* Stable named box so version enter/switch/exit cross-fades (driven by the committed snapshot
+                above) instead of jumping. Mirrors the share preview's "preview-content". No spinner; prev committed content stays put during load. */}
+            <div className="min-h-full [view-transition-name:editor-content]">
               <Suspense
                 fallback={
                   <div className="flex h-full items-center justify-center">
@@ -173,10 +167,8 @@ const DesignPage = () => {
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
 )({
-  // Opt out of auto code-splitting: keep component inline (no ?tsr-split=component
-  // chunk). Editor's platejs graph triggers a Vite dep re-optimize mid-nav that
-  // kills the in-flight lazy chunk ("Failed to fetch dynamically imported module")
-  // + other lazy-load bugs. Load eagerly instead.
+  // Opt out of auto code-splitting, keep component inline (no ?tsr-split=component chunk). Editor's platejs graph triggers a Vite dep re-optimize mid-nav that kills
+  // the in-flight lazy chunk ("Failed to fetch dynamically imported module") plus other lazy-load bugs.
   codeSplitGroupings: [],
   validateSearch: v.object({
     force: v.optional(v.boolean()),
@@ -208,6 +200,7 @@ export const Route = createFileRoute(
     if (search.force === true) return;
 
     let status: FormStatus | undefined;
+
     try {
       const cachedForm = getFormListings().get(params.formId);
       status = cachedForm?.status as FormStatus | undefined;

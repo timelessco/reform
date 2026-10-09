@@ -37,6 +37,7 @@ const formatStepLabel = (step: StepDropoffMetrics): string =>
 
 const formatQuestionLabel = (q: QuestionDropoffRow, fallbackIndex: number): string => {
   if (q.questionLabel) return q.questionLabel;
+
   return `Field ${fallbackIndex + 1}`;
 };
 
@@ -61,20 +62,27 @@ const buildSegments = (dropoff: QuestionDropoffMetrics): FunnelSegment[] => {
   }
 
   const firstCount = raw[0]?.count ?? 0;
+
   return raw.map((seg, i) => {
     const prevCount = i === 0 ? null : raw[i - 1].count;
     const retention = firstCount > 0 ? seg.count / firstCount : 0;
+
     const stepDrop =
       prevCount === null || prevCount === 0 ? null : Math.max(0, 1 - seg.count / prevCount);
+
     return { ...seg, retention, stepDrop };
   });
 };
 
 const CHART_HEIGHT = 220;
+
 const TOP_PADDING = 16;
+
 // Floor each bar to this fraction of the tallest so near-zero segments still read as a sliver.
 const MIN_BAR_RATIO = 0.12;
+
 const CORNER_RADIUS = 28;
+
 // Below this per-segment width, chart scrolls horizontally instead of squeezing labels.
 const MIN_SEGMENT_WIDTH = 120;
 
@@ -96,13 +104,16 @@ const createRoundedStepCurve = (context: CurveContext) => {
 
   const emit = (): void => {
     const n = points.length;
+
     if (n === 0) return;
     const moveFirst = !line; // line falsy (0 or NaN) → start a new subpath
+
     if (n === 1) {
       // Single segment owns whole plot; band centred at x so plot spans [0, 2x]. Draw full-width
       // flat top + baseline (right→left) so it's visible, not a zero-width line.
       const [x, y] = points[0];
       const right = 2 * x;
+
       if (line) {
         context.lineTo(right, y);
         context.lineTo(0, y);
@@ -110,6 +121,7 @@ const createRoundedStepCurve = (context: CurveContext) => {
         context.moveTo(0, y);
         context.lineTo(right, y);
       }
+
       return;
     }
 
@@ -159,7 +171,9 @@ const createRoundedStepCurve = (context: CurveContext) => {
     },
     lineEnd() {
       emit();
+
       if (line === 1) context.closePath();
+
       if (line >= 0) line = 1 - line;
     },
     point(x: number, y: number) {
@@ -184,7 +198,9 @@ const renderFunnelTooltip = (
   payload: unknown,
 ): React.ReactNode => {
   const segment = payload as FunnelDatum | undefined;
+
   if (!segment) return null;
+
   return (
     <div className="grid flex-1 gap-1.5">
       <FunnelStatRow label="Count" value={numberFormatter.format(segment.count)} />
@@ -210,11 +226,13 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
 
   const { data, maxCount } = useMemo(() => {
     const max = Math.max(1, ...segments.map((s) => s.count));
+
     const rows: FunnelDatum[] = segments.map((s) => ({
       ...s,
       // Floor the plotted height; the tooltip still shows the real count.
       value: Math.max(s.count, max * MIN_BAR_RATIO),
     }));
+
     return { data: rows, maxCount: max };
   }, [segments]);
 
@@ -229,10 +247,15 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
 
   return (
     <div className="w-full overflow-x-auto">
-      <div style={{ minWidth: naturalWidth }}>
+      <div
+        className="min-w-[var(--sankey-min-w)]"
+        style={{ "--sankey-min-w": `${naturalWidth}px` } as React.CSSProperties}
+      >
         <div
-          className="grid"
-          style={{ gridTemplateColumns: `repeat(${segments.length}, minmax(0, 1fr))` }}
+          className="grid grid-cols-[var(--sankey-cols)]"
+          style={
+            { "--sankey-cols": `repeat(${segments.length}, minmax(0, 1fr))` } as React.CSSProperties
+          }
         >
           {segments.map((seg, i) => (
             <div
@@ -243,7 +266,7 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
                 activeIndex !== null && activeIndex !== i && "opacity-50",
               )}
             >
-              <div className="truncate text-[13px] text-muted-foreground" title={seg.label}>
+              <div className="truncate text-sm text-muted-foreground" title={seg.label}>
                 {seg.label}
               </div>
               <div className="flex items-baseline gap-2">
@@ -251,7 +274,7 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
                   <NumberPopIn value={numberFormatter.format(seg.count)} />
                 </span>
                 {seg.stepDrop !== null && seg.stepDrop > 0 && (
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     −{Math.round(seg.stepDrop * 100)}%
                   </span>
                 )}
@@ -260,8 +283,14 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
           ))}
         </div>
         <motion.div
-          className="relative isolate"
-          style={{ height: CHART_HEIGHT, ...(revealed ? { clipPath: "none" } : {}) }}
+          className="relative isolate h-[var(--sankey-h)]"
+          style={
+            {
+              "--sankey-h": `${CHART_HEIGHT}px`,
+              // oxlint-disable-next-line shadcn/no-inline-styles -- clipPath must stay inline to beat framer-motion's leftover clip-path after reveal
+              clipPath: revealed ? "none" : undefined,
+            } as React.CSSProperties
+          }
           initial={revealed ? false : { clipPath: "inset(0 100% 0 0)" }}
           animate={revealed ? undefined : { clipPath: "inset(0 0 0 0)" }}
           transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
@@ -270,8 +299,12 @@ const FunnelChart = ({ segments }: FunnelChartProps) => {
           {/* Full-height column dividers behind chart; curve stroke/fill paint over them at transitions. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 grid"
-            style={{ gridTemplateColumns: `repeat(${segments.length}, minmax(0, 1fr))` }}
+            className="pointer-events-none absolute inset-0 -z-10 grid grid-cols-[var(--sankey-cols)]"
+            style={
+              {
+                "--sankey-cols": `repeat(${segments.length}, minmax(0, 1fr))`,
+              } as React.CSSProperties
+            }
           >
             {segments.map((seg, i) => (
               <div

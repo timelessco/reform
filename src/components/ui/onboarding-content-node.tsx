@@ -85,6 +85,7 @@ export const OnboardingContentElement = (props: PlateElementProps) => {
             <div className="space-y-1 py-6">
               <p className="text-lg text-muted-foreground/80">
                 {APP_NAME} is a form builder that{" "}
+                {/* oxlint-disable-next-line shadcn/no-raw-colors -- no fuchsia/accent token; needs design decision */}
                 <span className="px-1 font-semibold text-fuchsia-500">works like a doc</span>.
               </p>
               <p className="text-lg text-muted-foreground/80">
@@ -93,6 +94,7 @@ export const OnboardingContentElement = (props: PlateElementProps) => {
                   /
                 </code>
                 to insert form blocks and{" "}
+                {/* oxlint-disable-next-line shadcn/no-raw-colors -- no fuchsia/accent token; needs design decision */}
                 <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-fuchsia-500">
                   @
                 </code>

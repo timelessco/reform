@@ -12,5 +12,6 @@ export type BuildOgImageUrlInput = {
  * title/description does — unchanged republish keeps the URL + edge cache. */
 export const buildOgImageUrl = ({ shortId, title, description }: BuildOgImageUrlInput): string => {
   const hash = computeOgHash({ title, description });
+
   return `${APP_WEBSITE_URL}/api/og/${shortId}/${hash}.png`;
 };

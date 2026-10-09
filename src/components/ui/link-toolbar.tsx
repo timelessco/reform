@@ -52,6 +52,7 @@ export const LinkFloatingToolbar = ({ state }: { state?: LinkFloatingToolbarStat
       ...state?.floatingOptions,
     },
   });
+
   const {
     hidden,
     props: insertProps,
@@ -66,12 +67,14 @@ export const LinkFloatingToolbar = ({ state }: { state?: LinkFloatingToolbarStat
       ...state?.floatingOptions,
     },
   });
+
   const {
     editButtonProps,
     props: editProps,
     ref: editRef,
     unlinkButtonProps,
   } = useFloatingLinkEdit(editState);
+
   const inputProps = useFormInputProps({
     preventDefaultOnEnterKeydown: true,
   });
@@ -149,10 +152,14 @@ const LinkOpenButton = () => {
       const entry = editor.api.node({
         match: { type: editor.getType(KEYS.link) },
       });
+
       if (!entry) {
         return {};
       }
+
+      // SAFETY: the match filter limits the found node to the link type with its path
       const [element] = entry as [TLinkElement, unknown];
+
       return getLinkAttributes(editor, element);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,9 +168,11 @@ const LinkOpenButton = () => {
 
   const href = attributes.href;
   const safeTarget = attributes.target ?? "_blank";
+
   const handleOpenLink = React.useCallback(() => {
     if (!href || typeof window === "undefined") return;
     const newWindow = window.open(href, safeTarget, "noopener,noreferrer");
+
     if (newWindow) {
       newWindow.opener = null;
     }

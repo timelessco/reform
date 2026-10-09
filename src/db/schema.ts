@@ -121,7 +121,9 @@ export const twoFactor = pgTable("twoFactor", {
 
 // Single source for enum-like status sets — derives both CHECK constraints and TS unions. Keep tuples in sync with consumers (forms.ts, custom-domains.ts).
 export const FORM_STATUSES = ["draft", "published", "archived"] as const;
+
 export const CUSTOM_DOMAIN_STATUSES = ["pending", "verified", "failed", "suspended"] as const;
+
 export const DEVICE_TYPES = ["desktop", "mobile", "tablet"] as const;
 
 const sqlInList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(", "));
@@ -868,7 +870,11 @@ export const aiGenerationCounts = pgTable(
 // so a `typeof <table>.$inferSelect` annotation doesn't pull the table value (and
 // thus drizzle-orm) into the client bundle. Server-only marker above keeps values out.
 export type FormRow = typeof forms.$inferSelect;
+
 export type FormVersionRow = typeof formVersions.$inferSelect;
+
 export type SubmissionRow = typeof submissions.$inferSelect;
+
 export type CustomDomainRow = typeof customDomains.$inferSelect;
+
 export type FormSubmissionNotificationRow = typeof formSubmissionNotifications.$inferSelect;

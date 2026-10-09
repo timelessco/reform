@@ -14,12 +14,14 @@ import { STALE_CUSTOMIZATION_KEYS } from "@/lib/theme/customization-migrate";
 config({ path: [".env.local", ".env"] });
 
 const DATABASE_URL = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+
 if (!DATABASE_URL) {
   console.error("Neither DIRECT_URL nor DATABASE_URL is set");
   process.exit(1);
 }
 
 const client = postgres(DATABASE_URL, { max: 1 });
+
 const db = drizzle({ client });
 
 // Tables carrying a customization JSONB column.
@@ -32,9 +34,11 @@ for (const table of TABLES) {
       SET customization = customization - ${key}
       WHERE customization ? ${key}
     `);
+
     console.log(`${table}: stripped "${key}" from ${result.count} row(s).`);
   }
 }
 
 await client.end();
+
 process.exit(0);

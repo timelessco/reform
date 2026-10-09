@@ -28,7 +28,9 @@ const GALLERY_CATEGORIES = [...new Set(GALLERY_TEMPLATES.map((t) => t.category))
 
 const matchesSearch = (t: FormTemplateMeta, q: string) => {
   const needle = q.trim().toLowerCase();
+
   if (!needle) return true;
+
   return (
     t.label.toLowerCase().includes(needle) ||
     t.description.toLowerCase().includes(needle) ||
@@ -52,11 +54,12 @@ const CategoryFilter = ({
           aria-label="Filter templates by category"
           className="h-7 gap-1.5 rounded-lg bg-secondary px-2 hover:bg-secondary/80"
         >
-          <FigHashIcon className="size-4 text-gray-800" />
-          <span className="font-case text-base font-[450] tracking-[0.14px] text-gray-800">
+          <FigHashIcon className="size-4 text-foreground" />
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 450 weight + 0.14px tracking have no scale steps */}
+          <span className="font-case text-base font-[450] tracking-[0.14px] text-foreground">
             {current === "all" ? "Categories" : FORM_TEMPLATE_CATEGORY_LABEL[current]}
           </span>
-          <FigSmallDownIcon className="size-4 text-gray-800" />
+          <FigSmallDownIcon className="size-4 text-foreground" />
         </Button>
       }
     />
@@ -83,7 +86,8 @@ const CategoryFilter = ({
 const CreatorAvatar = ({ name }: { name: string }) => (
   <span
     aria-hidden
-    className="flex size-4 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[9px] font-[450] text-gray-600"
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- 9px avatar initial sits below text-2xs (11px); 450 weight has no scale step
+    className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-[450] text-muted-foreground"
   >
     {name.trim().charAt(0).toUpperCase() || "?"}
   </span>
@@ -96,7 +100,8 @@ const TemplateCard = ({ template }: { template: FormTemplateMeta }) => (
     to="/templates/$templateId"
     params={{ templateId: template.id }}
     preload="intent"
-    className="group bg-gray-0 relative flex flex-col rounded-[12px] border border-gray-100 px-1.5 pt-1.5 pb-2 transition-[background-color,box-shadow] duration-200 outline-none hover:elevation-card focus-visible:ring-2 focus-visible:elevation-card focus-visible:ring-ring/50"
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- card hover transitions background+shadow only; transition-all would also animate border
+    className="group relative flex flex-col rounded-2xl border border-border bg-card px-1.5 pt-1.5 pb-2 transition-[background-color,box-shadow] duration-200 outline-none hover:elevation-card focus-visible:ring-2 focus-visible:elevation-card focus-visible:ring-ring/50"
   >
     <FormCardThumbnail
       title={template.label}
@@ -106,19 +111,22 @@ const TemplateCard = ({ template }: { template: FormTemplateMeta }) => (
     />
     <div className="mt-3 flex w-full flex-col gap-2 px-1">
       {/* font-sans binds the wght axis to font-[N]; without it the inherited fvs wght 450 wins. */}
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 450 weight + 0.28px tracking have no scale steps */}
       <p className="truncate font-sans text-base leading-[1.15] font-[450] tracking-[0.28px] text-foreground">
         {template.label}
       </p>
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 py-[5px]">
-          <FigHashIcon className="size-4 shrink-0 text-gray-700" />
-          <span className="truncate font-sans text-base leading-[1.15] font-[420] tracking-[0.28px] text-gray-700">
+        <div className="flex items-center gap-2 py-1.25">
+          <FigHashIcon className="size-4 shrink-0 text-foreground" />
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 420 weight + 0.28px tracking have no scale steps */}
+          <span className="truncate font-sans text-base leading-[1.15] font-[420] tracking-[0.28px] text-foreground">
             {FORM_TEMPLATE_CATEGORY_LABEL[template.category]}
           </span>
         </div>
-        <div className="flex items-center gap-2 py-[5px]">
+        <div className="flex items-center gap-2 py-1.25">
           <CreatorAvatar name={template.creator} />
-          <span className="truncate font-sans text-base leading-[1.15] font-[420] tracking-[0.28px] text-gray-700">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 1.15 leading + 420 weight + 0.28px tracking have no scale steps */}
+          <span className="truncate font-sans text-base leading-[1.15] font-[420] tracking-[0.28px] text-foreground">
             {template.creator}
           </span>
         </div>
@@ -138,6 +146,7 @@ const TemplatesSearch = () => {
   // Reconcile local input with the URL param when it changes externally (back/forward, clear) —
   // render-time adjustment, not an effect, so in-flight keystrokes are never dropped.
   const [prevQ, setPrevQ] = useState(q);
+
   if (prevQ !== q) {
     setPrevQ(q);
     setInput(q);
@@ -148,6 +157,7 @@ const TemplatesSearch = () => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const next = value.trim() || undefined;
+
       if ((q || undefined) === next) return; // skip redundant navigation when the query is unchanged
       void navigate({
         to: "/templates",
@@ -166,6 +176,7 @@ const TemplatesSearch = () => {
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Search"
         aria-label="Search templates"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 450 weight + 0.14px tracking have no scale steps
         className="w-full bg-transparent font-case text-base font-[450] tracking-[0.14px] text-foreground outline-none placeholder:text-muted-foreground"
       />
     </div>
@@ -197,7 +208,8 @@ const TemplatesGalleryPage = () => {
           <div className="flex items-center justify-between gap-3">
             {/* Section title — font-sans rebinds the wght axis so font-semibold renders 600, not the
                 pinned 450 (Figma: SemiBold, 15px, gray/950, 0.225px). */}
-            <h2 className="font-sans text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-gray-950">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma-pinned 15px size + 1.15 leading + 0.225px tracking have no scale steps */}
+            <h2 className="font-sans text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-foreground">
               All Templates
             </h2>
             <div className="flex items-center gap-2">
@@ -207,7 +219,7 @@ const TemplatesGalleryPage = () => {
           </div>
 
           {visibleTemplates.length === 0 ? (
-            <p className="py-16 text-center text-base text-gray-600">
+            <p className="py-16 text-center text-base text-muted-foreground">
               No templates match your search.
             </p>
           ) : (

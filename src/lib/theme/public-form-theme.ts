@@ -14,6 +14,7 @@ export const themeStorageKey = (id: string) => `bf-form-theme:${id}`;
 
 const resolveSystemTheme = (): "light" | "dark" => {
   if (typeof window === "undefined") return "light";
+
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
@@ -40,6 +41,7 @@ export const buildThemeBootScript = (
   opts?: { paintBackground?: boolean },
 ) => {
   const bg = opts?.paintBackground ? `d.style.backgroundColor="var(--color-background)";` : "";
+
   return `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("${themeStorageKey(id)}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;${bg}}catch(e){}})();`;
 };
 
@@ -54,6 +56,7 @@ export const usePublicFormTheme = ({ id, rawCustomization, search }: UsePublicFo
 
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     const saved = safeStorage.get(themeStorageKey(id)) as PublicTheme | null;
+
     return saved ?? defaultMode;
   });
 
@@ -63,6 +66,7 @@ export const usePublicFormTheme = ({ id, rawCustomization, search }: UsePublicFo
 
   useEffect(() => {
     const root = document.documentElement;
+
     const apply = (resolved: "light" | "dark") => {
       root.classList.remove("light", "dark");
       root.classList.add(resolved);
@@ -76,12 +80,14 @@ export const usePublicFormTheme = ({ id, rawCustomization, search }: UsePublicFo
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = () => apply(mq.matches ? "dark" : "light");
       mq.addEventListener("change", handler);
+
       return () => mq.removeEventListener("change", handler);
     }
   }, [viewerTheme]);
 
   useEffect(() => {
     document.body.style.backgroundColor = "var(--color-background)";
+
     return () => {
       document.body.style.backgroundColor = "";
     };
@@ -91,6 +97,7 @@ export const usePublicFormTheme = ({ id, rawCustomization, search }: UsePublicFo
     (next: PublicTheme) => {
       // Swap DOM class synchronously so View Transitions snapshot before/after cleanly. Else React + useEffect swap run after the "after" snapshot → crossfade of identical frames (no visible transition).
       const resolved: "light" | "dark" = next === "system" ? resolveSystemTheme() : next;
+
       const applyDom = () => {
         const root = document.documentElement;
         root.classList.remove("light", "dark");

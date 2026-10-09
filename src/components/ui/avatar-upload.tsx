@@ -53,6 +53,7 @@ export default function AvatarUpload({
 
   const currentFile = files[0];
   const previewUrl = currentFile?.preview || defaultAvatar;
+
   const handleRemove = () => {
     if (currentFile) {
       removeFile(currentFile.id);

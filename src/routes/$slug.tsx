@@ -22,6 +22,7 @@ type PublicTheme = "light" | "dark" | "system";
 
 const resolveSystemTheme = (): "light" | "dark" => {
   if (typeof window === "undefined") return "light";
+
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
@@ -35,16 +36,19 @@ const CustomDomainSlugRoute = () => {
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
     const saved = window.localStorage.getItem(themeStorageKey(formId)) as PublicTheme | null;
+
     return saved ?? defaultMode;
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
     if (viewerTheme === "system") return resolveSystemTheme();
+
     return viewerTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
+
     const apply = (resolved: "light" | "dark") => {
       root.classList.remove("light", "dark");
       root.classList.add(resolved);
@@ -58,12 +62,14 @@ const CustomDomainSlugRoute = () => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = () => apply(mq.matches ? "dark" : "light");
       mq.addEventListener("change", handler);
+
       return () => mq.removeEventListener("change", handler);
     }
   }, [viewerTheme]);
 
   useEffect(() => {
     document.body.style.backgroundColor = "var(--color-background)";
+
     return () => {
       document.body.style.backgroundColor = "";
     };
@@ -72,6 +78,7 @@ const CustomDomainSlugRoute = () => {
   const handleThemeChange = useCallback(
     (next: PublicTheme) => {
       setViewerTheme(next);
+
       try {
         window.localStorage.setItem(themeStorageKey(formId), next);
       } catch {
@@ -96,6 +103,7 @@ const CustomDomainSlugRoute = () => {
 
   return (
     <>
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- Intentional <style> injection: build CSS bundle / generated per-form theme CSS */}
       {themeCss && <style>{themeCss}</style>}
       <PublicFormPage
         form={loaderData?.form ?? null}
@@ -152,6 +160,7 @@ export const Route = createFileRoute("/$slug")({
     const formOgImage = loaderData?.form?.ogImageUrl;
     const domainOgImage = loaderData?.domainMeta?.ogImageUrl ?? undefined;
     const googleFontUrl = getGoogleFontLinkUrl(loaderData?.form?.customization ?? null);
+
     return {
       meta: seo({
         formTitle,

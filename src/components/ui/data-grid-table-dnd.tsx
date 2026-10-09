@@ -116,6 +116,7 @@ const DataGridTableDndRowWithExpansion = <TData extends RowData>({
 }) => {
   const { table } = useDataGrid();
   const isExpanded = useRowExpanded(table, row.id);
+
   return (
     <Fragment>
       <DataGridTableBodyRow row={row}>

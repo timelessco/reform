@@ -27,10 +27,13 @@ export const resolveOgInputs = (
   const content = v?.content ?? draftSnapshot.content;
   const description = extractOgDescription(content);
   const icon = (v?.icon || draftSnapshot.icon || null) as string | null;
+
   const customization = (v?.customization ?? draftSnapshot.customization) as
     | Record<string, string>
     | null
     | undefined;
+
   const themeColorName = customization?.themeColor ?? null;
+
   return { title, description, icon, themeColorName };
 };

@@ -1,4 +1,4 @@
-import { domAnimation, LazyMotion, m, useReducedMotion } from "motion/react";
+import { domAnimation, LazyMotion, m, useReducedMotion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -68,6 +68,7 @@ export const ElasticSlider = ({
   revealOnHover = false,
 }: ElasticSliderProps) => {
   const shouldReduceMotion = useReducedMotion();
+
   const {
     wrapperRef,
     trackRef,
@@ -101,6 +102,10 @@ export const ElasticSlider = ({
     shouldReduceMotion,
     markStyle,
   });
+
+  // `x` is a raw px number (motion's transform shortcut); convert to a px string so the rubber
+  // pull can ride a CSS custom property instead of an inline transform.
+  const rubberXPx = useTransform(rubberX, (x) => `${x}px`);
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -140,7 +145,7 @@ export const ElasticSlider = ({
           aria-valuenow={value}
           aria-valuetext={displayValue}
           className={cn(
-            "group/elastic-slider absolute inset-0 cursor-pointer touch-none overflow-hidden rounded-(--elastic-slider-radius) transition-colors outline-none select-none",
+            "group/elastic-slider absolute inset-0 w-(--elastic-slider-rubber-width) translate-x-(--elastic-slider-rubber-x) cursor-pointer touch-none overflow-hidden rounded-(--elastic-slider-radius) transition-colors outline-none select-none",
             // revealOnHover: transparent at rest, gray track only on hover/drag/keyboard-focus (Figma).
             revealOnHover
               ? "bg-transparent hover:bg-(--elastic-slider-bg) data-[active=true]:bg-(--elastic-slider-bg) data-[focus-visible=true]:bg-(--elastic-slider-bg)"
@@ -148,7 +153,12 @@ export const ElasticSlider = ({
             // No focus ring (not in Figma): the revealed gray track already signals keyboard focus.
             trackClassName,
           )}
-          style={{ width: rubberWidth, x: rubberX }}
+          style={
+            {
+              "--elastic-slider-rubber-width": rubberWidth,
+              "--elastic-slider-rubber-x": rubberXPx,
+            } as React.CSSProperties
+          }
           {...handlers}
         >
           <div
@@ -163,8 +173,8 @@ export const ElasticSlider = ({
             <m.div
               data-slot="elastic-slider-fill"
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 inset-s-0 rounded-(--elastic-slider-tile-radius) bg-(--elastic-slider-tile-bg)"
-              style={{ width: fillWidth }}
+              className="pointer-events-none absolute inset-y-0 inset-s-0 w-(--elastic-slider-fill-width) rounded-(--elastic-slider-tile-radius) bg-(--elastic-slider-tile-bg)"
+              style={{ "--elastic-slider-fill-width": fillWidth } as React.CSSProperties}
             />
 
             {/* Marks render ABOVE the fill so they stay visible inside the filled tile (Figma). */}
@@ -209,10 +219,10 @@ const SliderHashMarks = ({ hashMarks }: { hashMarks: { pct: number; hidden: bool
       <div
         key={`hash-${pct}`}
         className={cn(
-          "absolute top-1/2 h-1.5 w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-line) rtl:translate-x-1/2",
+          "absolute top-1/2 left-(--elastic-slider-mark-left) h-1.5 w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-line) rtl:translate-x-1/2",
           hidden && "opacity-0",
         )}
-        style={{ left: `${pct}%` }}
+        style={{ "--elastic-slider-mark-left": `${pct}%` } as React.CSSProperties}
       />
     ))}
   </div>
@@ -231,10 +241,10 @@ const SliderDotMarks = ({ dotMarks }: { dotMarks: { pct: number; hidden: boolean
       <div
         key={`dot-${pct}`}
         className={cn(
-          "absolute top-1/2 size-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-hash) transition-opacity duration-150 rtl:translate-x-1/2",
+          "absolute top-1/2 left-(--elastic-slider-mark-left) size-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--elastic-slider-hash) transition-opacity duration-150 rtl:translate-x-1/2",
           hidden && "opacity-0",
         )}
-        style={{ left: `${pct}%` }}
+        style={{ "--elastic-slider-mark-left": `${pct}%` } as React.CSSProperties}
       />
     ))}
   </div>
@@ -263,10 +273,10 @@ const SliderHandle = ({
     data-slot="elastic-slider-handle"
     aria-hidden="true"
     className={cn(
-      "pointer-events-none absolute top-1/2 h-3 w-[2px] rounded-full",
+      "pointer-events-none absolute top-1/2 left-(--elastic-slider-handle-left) h-3 w-[2px] -translate-y-1/2 rounded-full",
       dimmed ? "bg-(--elastic-slider-tile-bg)" : "bg-(--elastic-slider-handle)",
     )}
-    style={{ left: handleLeft, y: "-50%" }}
+    style={{ "--elastic-slider-handle-left": handleLeft } as React.CSSProperties}
     animate={{
       opacity: handleOpacity,
       scaleY: isActive && valueDodge ? 0.75 : 1,

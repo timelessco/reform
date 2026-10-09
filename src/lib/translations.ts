@@ -128,20 +128,31 @@ const fr: Translations = {
   submitFailed: "Échec de l'envoi du formulaire. Veuillez réessayer.",
 };
 
-const translations: Record<string, Translations> = { en, es, fr };
-
-const languageCodeMap: Record<string, string> = {
-  English: "en",
-  Spanish: "es",
-  French: "fr",
+// Accepts either the stored language name or its code; unknown input falls back to English.
+export const languageToCode = (language: string): string => {
+  switch (language) {
+    case "English":
+      return "en";
+    case "Spanish":
+      return "es";
+    case "French":
+      return "fr";
+    default:
+      return "en";
+  }
 };
 
-export const languageToCode = (language: string): string => languageCodeMap[language] ?? "en";
-
 export const getTranslations = (langOrCode: string): Translations => {
-  // Accept either language name or code
-  const code = languageCodeMap[langOrCode] ?? langOrCode;
-  return translations[code] ?? en;
+  switch (langOrCode) {
+    case "Spanish":
+    case "es":
+      return es;
+    case "French":
+    case "fr":
+      return fr;
+    default:
+      return en;
+  }
 };
 
 export type { TranslationKey, Translations };

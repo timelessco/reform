@@ -22,6 +22,7 @@ export const useOrgWorkspaces = (organizationId?: string) =>
   useLiveQuery(
     (q) => {
       if (!organizationId || !isInitialized()) return undefined;
+
       return q
         .from({ ws: getWorkspaces() })
         .where(({ ws }) => eq(ws.organizationId, organizationId))
@@ -43,6 +44,7 @@ export const useWorkspace = (workspaceId?: string) => {
     (q) => {
       if (!workspaceId || !isInitialized()) return undefined;
       const query = q.from({ ws: getWorkspaces() }).where(({ ws }) => eq(ws.id, workspaceId));
+
       return query.select(({ ws }) => ({
         id: ws.id,
         organizationId: ws.organizationId,
@@ -54,6 +56,7 @@ export const useWorkspace = (workspaceId?: string) => {
     },
     [workspaceId],
   );
+
   return { ...result, data: result.data?.[0] };
 };
 
@@ -61,6 +64,7 @@ export const useWorkspace = (workspaceId?: string) => {
 export const useOrgForms = (_organizationId?: string) =>
   useLiveQuery((q) => {
     if (!isInitialized()) return undefined;
+
     return q
       .from({ form: getFormListings() })
       .select(({ form }) => ({
@@ -84,6 +88,7 @@ export const useForm = (formId?: string) => {
   const result = useLiveQuery(
     (q) => {
       if (!formId || !isInitialized()) return undefined;
+
       return q.from({ form: getFormListings() }).where(({ form }) => eq(form.id, formId));
     },
     [formId],
@@ -102,12 +107,17 @@ export const useForm = (formId?: string) => {
   // enrichment write to land in the collection.
   const data = useMemo(() => {
     const row = result.data?.[0];
+
     if (!needsEnrichment || !formId || !row) return result.data;
+
     const cached = getQueryClient().getQueryData<FormByIdResult>(
       getFormbyIdQueryOption(formId).queryKey,
     );
+
     const detail = cached?.form;
+
     if (!detail?.content) return result.data;
+
     return [mergeFormDetailIntoListing(detail as unknown as Form, row)];
   }, [needsEnrichment, formId, result.data]);
 
@@ -118,6 +128,7 @@ export const useLocalForm = (formId?: string) =>
   useLiveQuery(
     (q) => {
       if (!formId) return undefined;
+
       return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
     },
     [formId],
@@ -127,6 +138,7 @@ export const useFavorites = (userId?: string) =>
   useLiveQuery(
     (q) => {
       if (!userId || !isInitialized()) return undefined;
+
       return q
         .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
@@ -145,6 +157,7 @@ export const useIsFavorite = (userId?: string, formId?: string) => {
   const { data } = useLiveQuery(
     (q) => {
       if (!userId || !formId || !isInitialized()) return undefined;
+
       return q
         .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
@@ -153,14 +166,17 @@ export const useIsFavorite = (userId?: string, formId?: string) => {
     },
     [userId, formId],
   );
+
   return data !== undefined && data.length > 0;
 };
 
 /** Fetches favorites + listings separately, combines them. */
 export const useFavoriteForms = (userId?: string) => {
   const { data: favs } = useFavorites(userId);
+
   const { data: allForms } = useLiveQuery((q) => {
     if (!isInitialized()) return undefined;
+
     return q.from({ form: getFormListings() }).select(({ form }) => ({
       id: form.id,
       title: form.title,
@@ -175,9 +191,12 @@ export const useFavoriteForms = (userId?: string) => {
   return useMemo(() => {
     if (!favs || !allForms) return [];
     const favByFormId = new Map(favs.map((f) => [f.formId, f]));
+
     return allForms.flatMap((f) => {
       const fav = favByFormId.get(f.id);
+
       if (!fav) return [];
+
       return [
         {
           ...f,
@@ -197,6 +216,7 @@ export const useArchivedForms = (enabled = true) =>
 export const useSubmissionCounts = () => {
   const { data: allForms } = useLiveQuery((q) => {
     if (!isInitialized()) return undefined;
+
     return q.from({ form: getFormListings() }).select(({ form }) => ({
       id: form.id,
       submissionCount: form.submissionCount,
@@ -208,6 +228,7 @@ export const useSubmissionCounts = () => {
 
   return useMemo(() => {
     const next = new Map<string, number>();
+
     if (allForms) {
       for (const form of allForms) {
         if (form.submissionCount > 0) {
@@ -215,18 +236,24 @@ export const useSubmissionCounts = () => {
         }
       }
     }
+
     const previous = previousMapRef.current;
+
     if (previous.size === next.size) {
       let identical = true;
+
       for (const [id, count] of next) {
         if (previous.get(id) !== count) {
           identical = false;
           break;
         }
       }
+
       if (identical) return previous;
     }
+
     previousMapRef.current = next;
+
     return next;
   }, [allForms]);
 };

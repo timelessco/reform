@@ -42,6 +42,7 @@ const maybePurgeAfterSubmissionDelete = async (formId: string) => {
     .from(forms)
     .leftJoin(formSettings, eq(formSettings.formId, forms.id))
     .where(eq(forms.id, formId));
+
   if (row?.lastPublishedVersionId && row.settings?.limitSubmissions) {
     await purgeFormCache(formId);
   }
@@ -54,6 +55,7 @@ export const deleteSubmission = createServerFn({ method: "POST" })
     await requireScopedForm(context.session, data.formId);
     await db.delete(submissions).where(eq(submissions.id, data.id));
     await maybePurgeAfterSubmissionDelete(data.formId);
+
     return { success: true };
   });
 
@@ -67,15 +69,19 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireScopedForm(context.session, data.formId);
+
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0 };
     }
+
     await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
     await maybePurgeAfterSubmissionDelete(data.formId);
+
     return { success: true, deleted: data.submissionIds.length };
   });
 
 export type SubmissionCursor = { createdAt: string; id: string };
+
 export const SUBMISSIONS_PAGE_SIZE = 50;
 
 export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
@@ -119,6 +125,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
       .where(whereCondition)
       .orderBy(desc(submissions.createdAt), desc(submissions.id))
       .limit(limit + 1);
+
     const hasNextPage = rows.length > limit;
     const pageRows = hasNextPage ? rows.slice(0, limit) : rows;
     const lastRow = pageRows.at(-1);
@@ -190,8 +197,10 @@ export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
 
     // Resolve labels across every historical version. Newest version wins on conflict.
     const fieldLabels: Record<string, string> = {};
+
     for (const v of allVersions) {
       const elements = transformPlateStateToFormElements(v.content as Value);
+
       for (const field of getEditableFields(elements)) {
         if ("label" in field && field.label && !(field.name in fieldLabels)) {
           fieldLabels[field.name] = field.label;

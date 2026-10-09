@@ -39,7 +39,7 @@ export const SelectTrigger = ({
     data-slot="select-trigger"
     data-size={size}
     className={cn(
-      "text-13 flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 ps-2.5 pe-2 whitespace-nowrap outline-hidden transition-colors select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-placeholder:text-foreground/70 data-[size=default]:h-8 data-[size=md]:h-7.5 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 ps-2.5 pe-2 whitespace-nowrap outline-hidden transition-colors select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-placeholder:text-foreground/70 data-[size=default]:h-8 data-[size=md]:h-7.5 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
       className,
     )}
     {...props}
@@ -88,7 +88,7 @@ export const SelectContent = ({
         data-slot="select-content"
         data-align-trigger={alignItemWithTrigger}
         className={cn(
-          "data-[side=top]:slide-in-from-bottom-2data-[align-trigger=true]:animate-none relative isolate z-50 max-h-60 min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl bg-popover p-1 elevation-lg outline-hidden transition-[transform,scale,opacity] data-starting-style:scale-98 data-starting-style:opacity-0 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          "relative isolate z-50 max-h-60 min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl bg-popover p-1 elevation-lg outline-hidden transition-[transform,scale,opacity] data-starting-style:scale-98 data-starting-style:opacity-0 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           className,
         )}
         {...props}

@@ -1,5 +1,6 @@
 import { useStore } from "@tanstack/react-form";
 import { Fragment } from "react";
+import * as v from "valibot";
 
 import { getOptionOrdinal } from "@/components/ui/form-option-item-constants";
 import type { OptionLabelStyle } from "@/components/ui/form-option-item-constants";
@@ -32,6 +33,7 @@ export const FORM_INPUT_CLS = "h-[30px] form-input pr-[8px] pl-[10px]";
 export const useFieldBinding = (element: PlateFormField, name?: string) => {
   const fieldName = name ?? element.name;
   const isArrayItem = name !== undefined;
+
   return {
     fieldName,
     ariaLabel: getAriaLabelFallback(element),
@@ -48,8 +50,10 @@ export const getFieldLabelProps = (element: PlateFormField) => ({
 
 export const getAriaLabelFallback = (element: PlateFormField): string | undefined => {
   const label = "label" in element ? element.label : undefined;
+
   if (label) return undefined;
   const placeholder = "placeholder" in element ? element.placeholder : undefined;
+
   return placeholder ?? "Field";
 };
 
@@ -78,13 +82,17 @@ const AUTOCOMPLETE_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 // Map label/placeholder → autocomplete token for browser/password-manager fill (else `name` is a random id and autofill no-ops).
 // No match → "on" (browser heuristics), never "off" — public forms collect personal details, not secrets.
 export const guessAutocomplete = (element: PlateFormField): string => {
-  const text = (("label" in element && element.label) ||
+  const text =
+    ("label" in element && element.label) ||
     ("placeholder" in element && element.placeholder) ||
-    "") as string;
+    "";
+
   if (!text) return "on";
+
   for (const [pattern, token] of AUTOCOMPLETE_PATTERNS) {
     if (pattern.test(text)) return token;
   }
+
   return "on";
 };
 
@@ -92,7 +100,9 @@ export const guessAutocomplete = (element: PlateFormField): string => {
 export const getAriaLabelledBy = (element: PlateFormField): string | undefined => {
   const labelType = "labelType" in element ? element.labelType : undefined;
   const label = "label" in element ? element.label : undefined;
+
   if (!label) return undefined;
+
   if (
     labelType === "h1" ||
     labelType === "h2" ||
@@ -101,6 +111,7 @@ export const getAriaLabelledBy = (element: PlateFormField): string | undefined =
   ) {
     return fieldLabelId(element.name);
   }
+
   return undefined;
 };
 
@@ -128,10 +139,12 @@ export const fieldLabelId = (fieldName: string): string => `${fieldName}-label`;
 /** Fisher-Yates copy — memoize at the call site so order stays stable while answering. */
 export const shuffleOptions = <T,>(items: T[]): T[] => {
   const out = [...items];
+
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
+
   return out;
 };
 
@@ -151,10 +164,10 @@ export const OptionOrdinalBadge = ({
       // from the Input color (--bf-badge/-foreground, auto-contrast; falls back to secondary) so the
       // badge follows form customization and stays legible. Selected flips to a neutral white highlight
       // on the selected row pill (Figma 25578:9719/9720) — kept pinned so the "lit" state always reads.
-      "flex size-4 shrink-0 items-center justify-center rounded-[4px] text-[12px]! leading-none font-medium",
+      "flex size-4 shrink-0 items-center justify-center rounded-xs text-xs! leading-none font-medium",
       selected
-        ? "bg-white text-gray-900"
-        : "bg-[var(--bf-badge,var(--color-secondary))] text-[var(--bf-badge-foreground,var(--color-secondary-foreground))]",
+        ? "bg-white text-foreground"
+        : "bg-(--bf-badge,var(--color-secondary)) text-(--bf-badge-foreground,var(--color-secondary-foreground))",
       hasErrors && !selected && "ring-1 ring-destructive",
     )}
   >
@@ -192,7 +205,7 @@ export const OptionCheckMark = ({
 }) => (
   <span
     className={cn(
-      "flex size-4 shrink-0 items-center justify-center rounded-[4px] border bg-card",
+      "flex size-4 shrink-0 items-center justify-center rounded-xs border bg-card",
       selected ? "border-primary bg-primary text-primary-foreground" : "border-input",
       hasErrors && !selected && "border-destructive",
     )}
@@ -226,6 +239,7 @@ export const ImageOptionGrid = ({
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
     {options.map((option, idx) => {
       const selected = isSelected(option.value);
+
       return (
         <button
           key={option.value}
@@ -244,11 +258,11 @@ export const ImageOptionGrid = ({
           className={cn(
             // Tile pill: 2px border doubles as the selected ring (no layout shift on select).
             "flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 p-1.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-            selected ? "border-primary bg-gray-100" : "border-transparent hover:bg-gray-50",
+            selected ? "border-primary bg-muted" : "border-transparent hover:bg-accent",
             hasErrors && "text-destructive",
           )}
         >
-          <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
+          <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
             {option.image ? (
               <img src={option.image} alt="" className="absolute inset-0 size-full object-cover" />
             ) : (
@@ -293,8 +307,15 @@ const LabelBody = ({
   // Gate the hook in a child so its order stays stable — removing a label's last mention flips
   // labelNodes to undefined, and a conditional useStore here would change the hook count → crash.
   if (!labelNodes || !form) return <>{text}</>;
+
   return <LabelBodyWithMentions labelNodes={labelNodes} form={form} />;
 };
+
+const mentionAnswerSchema = v.nullish(
+  v.union([v.string(), v.number(), v.boolean(), v.array(v.unknown())]),
+);
+
+const mentionValuesSchema = v.record(v.string(), v.unknown());
 
 const LabelBodyWithMentions = ({
   labelNodes,
@@ -304,11 +325,19 @@ const LabelBodyWithMentions = ({
   form: AppForm;
 }) => {
   // Subscribe to all values so a token re-renders the moment its source field changes.
-  const values = useStore(form.store, (s) => s.values) as Record<string, unknown>;
+  const rawValues = useStore(form.store, (s) => s.values);
+  const values = v.parse(mentionValuesSchema, rawValues);
+
   const runs = resolveMentions(labelNodes, {
-    getValue: (name) => values[name],
+    getValue: (name) => {
+      const value = values[name];
+      const parsed = v.safeParse(mentionAnswerSchema, value);
+
+      return parsed.success ? parsed.output : String(value);
+    },
     getLabel: () => undefined,
   });
+
   return (
     <>
       {runs.map((run, i) => (
@@ -356,33 +385,36 @@ export const FieldLabelText = ({
   if (labelType === "h1") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h1 id={labelId} className="font-heading flex-1 text-4xl font-semibold">
+        <h1 id={labelId} className="flex-1 text-4xl font-semibold">
           {body}
         </h1>
         {badge}
       </div>
     );
   }
+
   if (labelType === "h2") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h2 id={labelId} className="font-heading flex-1 text-2xl font-semibold">
+        <h2 id={labelId} className="flex-1 text-2xl font-semibold">
           {body}
         </h2>
         {badge}
       </div>
     );
   }
+
   if (labelType === "h3") {
     return (
       <div className="flex w-full items-center py-2.5">
-        <h3 id={labelId} className="font-heading flex-1 text-xl font-semibold">
+        <h3 id={labelId} className="flex-1 text-xl font-semibold">
           {body}
         </h3>
         {badge}
       </div>
     );
   }
+
   if (labelType === "blockquote") {
     return (
       <div className="flex w-full items-center py-2.5">
@@ -399,7 +431,7 @@ export const FieldLabelText = ({
     return (
       <span
         id={labelId}
-        className="flex w-full items-center gap-1 py-2.5 text-sm text-[var(--bf-foreground,var(--color-gray-800))] select-none"
+        className="flex w-full items-center gap-1 py-2.5 text-sm text-(--bf-foreground,var(--color-gray-800)) select-none"
         data-bf-field-label
       >
         <span>{body}</span>
@@ -412,7 +444,7 @@ export const FieldLabelText = ({
     <Label
       htmlFor={htmlFor}
       id={labelId}
-      className="w-full gap-1 text-[var(--bf-foreground,var(--color-gray-800))]"
+      className="w-full gap-1 text-(--bf-foreground,var(--color-gray-800))"
       data-bf-field-label
     >
       <span>{body}</span>

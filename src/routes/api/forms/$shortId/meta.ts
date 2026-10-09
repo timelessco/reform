@@ -51,6 +51,7 @@ export const Route = createFileRoute("/api/forms/$shortId/meta")({
 
         // Tag 200 with form UUID so purgeFormCache(formId) reaches it on publish/edit/delete. Public uses shortId; tag stays UUID for purge symmetry.
         const cache = formCacheHeaders(form.id, { gated: false });
+
         return new Response(JSON.stringify(form), {
           status: 200,
           headers: {

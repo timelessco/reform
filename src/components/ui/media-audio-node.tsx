@@ -14,6 +14,7 @@ export const AudioElement = withHOC(
 
     const placeholderTrackUrl = React.useMemo(() => {
       const trackText = "WEBVTT\n\n00:00.000 --> 00:05.000\nAudio caption";
+
       return `data:text/vtt,${encodeURIComponent(trackText)}`;
     }, []);
 
@@ -32,7 +33,7 @@ export const AudioElement = withHOC(
             </audio>
           </div>
 
-          <Caption style={{ width: "100%" }} align={align}>
+          <Caption className="w-full" align={align}>
             <CaptionTextarea
               className="h-20"
               readOnly={readOnly}

@@ -125,15 +125,19 @@ export const createAuthQueryClient = <TClient extends Record<string, any>>(
 
       if (key === "queryOptions") {
         const target = getTarget();
+
         return (input?: unknown, options?: object) => ({
           ...options,
           queryKey: input !== undefined ? [...path, input] : path,
           queryFn: async () => {
             const result = await target(input);
+
             if (result.error) throw result.error;
+
             if (result.data === undefined) {
               throw new Error(`Better Auth query returned undefined for ${path.join(".")}`);
             }
+
             return result.data;
           },
         });
@@ -141,15 +145,19 @@ export const createAuthQueryClient = <TClient extends Record<string, any>>(
 
       if (key === "mutationOptions") {
         const target = getTarget();
+
         return (options?: object) => ({
           ...options,
           mutationKey: path,
           mutationFn: async (variables: unknown) => {
             const result = await target(variables);
+
             if (result.error) throw result.error;
+
             if (result.data === undefined) {
               throw new Error(`Better Auth mutation returned undefined for ${path.join(".")}`);
             }
+
             return result.data;
           },
         });

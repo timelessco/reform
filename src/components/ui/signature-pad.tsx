@@ -82,6 +82,7 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
     const handleClear = React.useCallback(() => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
+
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drewRef.current = false;
@@ -91,6 +92,7 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
 
     const handleSave = React.useCallback(() => {
       const canvas = canvasRef.current;
+
       if (!canvas || isEmpty) return;
       onSave?.(canvas.toDataURL("image/png"));
     }, [isEmpty, onSave]);
@@ -107,14 +109,18 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
     // re-apply stroke styles after every resize.
     React.useEffect(() => {
       const canvas = canvasRef.current;
+
       if (!canvas) return;
+
       const updateCanvasSize = () => {
         const rect = canvas.getBoundingClientRect();
+
         if (rect.width === 0 || rect.height === 0) return;
         const ratio = window.devicePixelRatio || 1;
         canvas.width = rect.width * ratio;
         canvas.height = rect.height * ratio;
         const ctx = canvas.getContext("2d");
+
         if (!ctx) return;
         ctx.scale(ratio, ratio);
         ctx.lineCap = "round";
@@ -125,24 +131,30 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
         ctx.imageSmoothingQuality = "high";
         ctxRef.current = ctx;
       };
+
       updateCanvasSize();
       const ro = new ResizeObserver(updateCanvasSize);
       ro.observe(canvas);
+
       return () => ro.disconnect();
     }, [penColor, lineWidth]);
 
     const getPointerPosition = (e: React.MouseEvent | React.TouchEvent): Point | null => {
       const canvas = canvasRef.current;
+
       if (!canvas) return null;
       const rect = canvas.getBoundingClientRect();
+
       if ("touches" in e)
         return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
 
     const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
       e.preventDefault();
       const p = getPointerPosition(e);
+
       if (!p) return;
       setIsDrawing(true);
       pointsRef.current = [p];
@@ -151,15 +163,20 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {
       e.preventDefault();
+
       if (!isDrawing) return;
       const ctx = ctxRef.current ?? canvasRef.current?.getContext("2d") ?? null;
       const next = getPointerPosition(e);
+
       if (!ctx || !next) return;
       const updated = [...pointsRef.current, next];
+
       if (updated.length < 2) {
         pointsRef.current = updated;
+
         return;
       }
+
       if (updated.length === 2) {
         ctx.beginPath();
         ctx.moveTo(updated[0].x, updated[0].y);
@@ -168,8 +185,10 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
         drewRef.current = true;
         setIsEmpty(false);
         pointsRef.current = updated;
+
         return;
       }
+
       // Quadratic through the midpoints of the last three points — continuous, no gaps.
       const [prev, cur, nxt] = updated.slice(-3);
       const cp1 = { x: (prev.x + cur.x) / 2, y: (prev.y + cur.y) / 2 };
@@ -187,6 +206,7 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
       if (!isDrawing) return;
       setIsDrawing(false);
       pointsRef.current = [];
+
       if (!drewRef.current) return; // no-movement click: no ink, no-op
       onChange?.(canvasRef.current?.toDataURL("image/png") ?? null);
     };
@@ -218,4 +238,5 @@ export const SignaturePad = React.forwardRef<SignaturePadRef, SignaturePadProps>
     );
   },
 );
+
 SignaturePad.displayName = "SignaturePad";

@@ -16,15 +16,24 @@ type InterceptLinksProps = {
 // data-glimm-skip, new-tab/download anchors, cross-origin, and same-page hashes.
 const shouldIntercept = (e: MouseEvent, a: HTMLAnchorElement) => {
   if (e.defaultPrevented) return false;
+
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+
   if (e.button !== 0) return false;
+
   if (a.dataset.glimmSkip !== undefined) return false;
+
   if (a.target && a.target !== "_self") return false;
+
   if (a.hasAttribute("download")) return false;
+
   if (!a.href) return false;
   const url = new URL(a.href, window.location.href);
+
   if (url.origin !== window.location.origin) return false;
+
   if (url.pathname === window.location.pathname && url.hash) return false;
+
   return true;
 };
 
@@ -40,13 +49,16 @@ export const InterceptLinks = ({ sweep: sweepOpts }: InterceptLinksProps): null 
   useMountEffect(() => {
     const onClick = (e: MouseEvent) => {
       const anchor = (e.target as Element | null)?.closest?.("a");
+
       if (!anchor || !shouldIntercept(e, anchor)) return;
       const url = new URL(anchor.href, window.location.href);
       e.preventDefault();
       // sweep awaits navigate at its midpoint, then plays the outro.
       sweep(() => navigate({ href: url.pathname + url.search + url.hash }), sweepOpts);
     };
+
     document.addEventListener("click", onClick);
+
     return () => document.removeEventListener("click", onClick);
   });
 

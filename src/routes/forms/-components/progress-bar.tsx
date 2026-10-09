@@ -4,7 +4,6 @@ interface ProgressBarProps {
 }
 
 export const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
-  // Calculate progress as percentage (1-indexed for display)
   const percentage = ((currentStep + 1) / totalSteps) * 100;
 
   return (
@@ -17,11 +16,11 @@ export const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
       aria-label="Form progress"
     >
       <div
-        className="h-full transition-[width] duration-300 ease-out"
-        // Always a colored bar: use the form's accent (--bf-primary, set inside .bf-themed) and fall
-        // back to the brand blue when the form has no theme — instead of bg-primary, which collapses
-        // to the app's monochrome primary (black in light / white in dark) on unthemed forms.
-        style={{ width: `${percentage}%`, backgroundColor: "var(--bf-primary, #2563eb)" }}
+        // Always a colored bar. Uses the form accent (--bf-primary, set inside .bf-themed), or
+        // brand blue when unthemed. Not bg-primary, which goes monochrome (black/white) unthemed.
+        style={{ "--progress": `${percentage}%` } as React.CSSProperties}
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- width-only transition; transition-all would also animate background
+        className="h-full w-[var(--progress)] bg-(--bf-primary,#2563eb) transition-[width] duration-300 ease-out"
       />
     </div>
   );

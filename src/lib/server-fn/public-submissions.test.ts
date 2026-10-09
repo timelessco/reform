@@ -43,6 +43,7 @@ describe("upsertSubmissionByDraft (atomic finalize upsert)", () => {
 
   it("first finalize inserts a single row and reports it was not previously completed", async () => {
     const draftId = crypto.randomUUID();
+
     const res = await upsertSubmissionByDraft({
       formId,
       draftId,
@@ -63,6 +64,7 @@ describe("upsertSubmissionByDraft (atomic finalize upsert)", () => {
 
   it("re-finalize with the same draftId updates the same row (no duplicate, no throw)", async () => {
     const draftId = crypto.randomUUID();
+
     const first = await upsertSubmissionByDraft({
       formId,
       draftId,
@@ -125,6 +127,7 @@ describe("upsertSubmissionByDraft (atomic finalize upsert)", () => {
 
   it("upgrades an incomplete draft to completed in place", async () => {
     const draftId = crypto.randomUUID();
+
     const draft = await upsertSubmissionByDraft({
       formId,
       draftId,
@@ -134,6 +137,7 @@ describe("upsertSubmissionByDraft (atomic finalize upsert)", () => {
       lastStepReached: 1,
       now: new Date(),
     });
+
     expect(draft.wasCompleted).toBe(false);
 
     const final = await upsertSubmissionByDraft({

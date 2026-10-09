@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { seo } from "@/lib/seo";
 
 type MetaTag = { title?: string; name?: string; property?: string; content?: string };
+
 const findMeta = (tags: ReturnType<typeof seo>, predicate: (t: MetaTag) => boolean) =>
   tags.find(predicate);
 

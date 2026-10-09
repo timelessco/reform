@@ -8,18 +8,18 @@ import {
 } from "@/components/form-components/render-step-preview-input";
 import { Button } from "@/components/ui/button";
 import {
+  buildTracking,
+  DefaultThankYou,
+  NoContentPlaceholder,
+} from "@/components/form-components/preview-shared";
+import {
   AutoActionFooter,
-  brandingRowStyle,
+  brandingRowClass,
   FormBrandingBadge,
   StepNavButton,
   useFieldByFieldKeyboard,
   useQuestionViewTracking,
 } from "@/components/form-components/step-runner";
-import {
-  buildTracking,
-  DefaultThankYou,
-  NoContentPlaceholder,
-} from "@/components/form-components/preview-shared";
 import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { EmailVerificationContext } from "@/components/form-components/email-verification-context";
 import type { EmailVerificationStore } from "@/components/form-components/email-verification-context";
@@ -31,7 +31,6 @@ import { useTranslation } from "@/contexts/translation-context";
 import { useFocusFirstField } from "@/hooks/use-focus-first-field";
 import { useRedirectCompletion } from "@/hooks/use-redirect-completion";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { cn } from "@/lib/utils";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { extractQuestionsForStepRSC } from "@/lib/forms/extract-questions";
@@ -58,7 +57,7 @@ const TypedComposite = CompositeComponent as unknown as React.ComponentType<{
 
 interface FormPreviewRSCProps {
   steps: StepRSC[];
-  thankYou?: string | null;
+  thankYou?: StepRSC["src"];
   stepCount: number;
   /** Server-rendered header composite (cover+icon+title); client ships no cover/icon code. null = no header, undefined = hideTitle. Used by card AND field-by-field (the popup gets a flush cover + compact title via POPUP_FORM_STYLE_VARS). */
   header?: unknown;
@@ -85,8 +84,6 @@ interface FormPreviewRSCProps {
   };
 }
 
-const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
-
 // Wraps the shared StepNavButton in the RSC-specific justify wrappers (branding wrappers stay here).
 const StepButton = ({
   buttonText,
@@ -112,12 +109,11 @@ const StepButton = ({
         {t("back")}
       </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
-      <div className="flex justify-start" style={{ maxWidth: "var(--bf-input-width)" }}>
-        {button}
-      </div>
+      <div className="flex max-w-(--bf-input-width) justify-start">{button}</div>
     );
   }
 
@@ -127,27 +123,27 @@ const StepButton = ({
         {buttonText}
       </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
-      <div className="mb-4 flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
-        {button}
-      </div>
+      <div className="mb-4 flex max-w-(--bf-input-width) justify-end">{button}</div>
     );
   }
 
   const isMultiStep = totalSteps > 1;
+
   const submitButton = (
     <StepNavButton role="submit" isSubmitting={isSubmitting}>
       {buttonText}
     </StepNavButton>
   );
+
   return grouped ? (
     submitButton
   ) : (
     <div
-      className={`flex ${isMultiStep ? "justify-end" : "justify-start"}`}
-      style={{ maxWidth: "var(--bf-input-width)" }}
+      className={`flex max-w-[var(--bf-page-width,700px)] ${isMultiStep ? "justify-end" : "justify-start"}`}
     >
       {submitButton}
     </div>
@@ -222,11 +218,15 @@ const StepFormRSC = ({
           buttonText?: string;
           buttonRole?: "next" | "previous" | "submit";
         };
+
         const role = btn.buttonRole ?? "submit";
+
         // Conditional "hide submit button" action suppresses the completion control.
         if (hideSubmit && role === "submit") return null;
+
         const defaultText =
           role === "next" ? t("next") : role === "previous" ? t("previous") : t("submit");
+
         return (
           <StepButton
             buttonText={
@@ -239,17 +239,21 @@ const StepFormRSC = ({
           />
         );
       }
+
       // Conditional logic: skip hidden fields. Auto-filled ("Set value") fields stay editable
       // so a mistaken auto-fill can be corrected — only dimmed to hint that logic set the value.
       if (visibleFieldNames && !visibleFieldNames.has(field.name)) return null;
       const autoFilled = lockedFieldNames.has(field.name);
+
       // Reflect logic-driven requiredness (a passing "Require field" action) on the label.
       const rendered = requiredFieldNames
         ? { ...field, required: requiredFieldNames.has(field.name) }
         : field;
+
       // Mention labels render label+input client-side (reactive resolution); the server omitted
       // ServerFieldLabel for these (see public-form-view-rsc.impl). RenderStepPreviewInput owns the wrapper.
       const hasMentionLabel = "labelNodes" in rendered && rendered.labelNodes;
+
       return (
         <div data-bf-question-id={field.id} className={`w-full${autoFilled ? " opacity-75" : ""}`}>
           {hasMentionLabel ? (
@@ -279,8 +283,10 @@ const StepFormRSC = ({
       const prev = buttons.find((b) => b.buttonRole === "previous");
       const action = buttons.find((b) => b.buttonRole === "next" || b.buttonRole === "submit");
       const actionRole = action?.buttonRole ?? "submit";
+
       const actionDefaultText =
         actionRole === "next" ? t("next") : actionRole === "previous" ? t("previous") : t("submit");
+
       const actionText =
         actionRole === "submit" && isSubmitting
           ? t("submitting")
@@ -289,11 +295,10 @@ const StepFormRSC = ({
       return (
         // Prev + Next/Submit grouped; branding placed opposite per Buttons → Alignment (Figma 27112-20305).
         <div
-          className={`flex w-full items-center gap-3 ${branding ? "" : "justify-between"}`}
-          style={{
-            maxWidth: "var(--bf-input-width)",
-            ...(branding ? brandingRowStyle : undefined),
-          }}
+          className={cn(
+            "flex w-full max-w-(--bf-input-width) items-center gap-3",
+            branding ? brandingRowClass : "justify-between",
+          )}
         >
           <div className="flex items-center gap-2">
             {prev && (
@@ -364,13 +369,14 @@ const FormPreviewRSCContent = ({
   settings,
 }: {
   steps: StepRSC[];
-  thankYou?: string | null;
+  thankYou?: StepRSC["src"];
   header?: unknown;
   settings?: PublicFormSettings;
 }) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
   const redirectCountdown = useRedirectCompletion(isSubmitted, settings);
+
   const currentStepQuestions = useMemo(
     () => extractQuestionsForStepRSC(steps, currentStep),
     [steps, currentStep],
@@ -381,8 +387,7 @@ const FormPreviewRSCContent = ({
       <div className="w-full">
         {header ? <TypedComposite src={header} /> : null}
         <div
-          className="mx-auto w-full px-4"
-          style={{ maxWidth: PAGE_MAX_WIDTH }}
+          className="mx-auto w-full max-w-[var(--bf-page-width,700px)] px-4"
           data-bf-form-container
         >
           <div className="animate-in duration-300 fade-in slide-in-from-bottom-2">
@@ -429,15 +434,14 @@ const FormPreviewRSCContent = ({
 
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className="mx-auto mb-6 px-4"
-          style={{ maxWidth: PAGE_MAX_WIDTH }}
+          className="mx-auto mb-6 max-w-[var(--bf-page-width,700px)] px-4"
           data-bf-form-container
         >
           <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
         </div>
       )}
 
-      <div className="mx-auto px-4" style={{ maxWidth: PAGE_MAX_WIDTH }} data-bf-form-container>
+      <div className="mx-auto max-w-[var(--bf-page-width,700px)] px-4" data-bf-form-container>
         <div
           key={currentStep}
           className={cn(
@@ -468,7 +472,7 @@ const FieldByFieldRSCContent = ({
   meta,
 }: {
   steps: StepRSC[];
-  thankYou?: string | null;
+  thankYou?: StepRSC["src"];
   header?: unknown;
   settings?: PublicFormSettings;
   meta: NonNullable<FormPreviewRSCProps["fieldByFieldMeta"]>;
@@ -476,6 +480,7 @@ const FieldByFieldRSCContent = ({
   const { currentStep, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
   const redirectCountdown = useRedirectCompletion(isSubmitted, settings);
+
   const currentStepQuestions = useMemo(
     () => extractQuestionsForStepRSC(steps, currentStep),
     [steps, currentStep],
@@ -525,8 +530,7 @@ const FieldByFieldRSCContent = ({
       <div className="w-full">
         {header ? <TypedComposite src={header} /> : null}
         <div
-          className="mx-auto w-full px-4 sm:px-6"
-          style={{ maxWidth: PAGE_MAX_WIDTH }}
+          className="mx-auto w-full max-w-[var(--bf-page-width,700px)] px-4 sm:px-6"
           data-bf-form-container
         >
           {isSubmitted ? (
@@ -569,8 +573,7 @@ const FieldByFieldRSCContent = ({
       <div
         // Top-aligned stack under the header (matches the preview); 20px below the footer so it
         // doesn't sit flush at the popup edge (Figma 27015:16550 pb-20).
-        className="relative z-10 mx-auto w-full px-4 pb-[20px] sm:px-6"
-        style={{ maxWidth: PAGE_MAX_WIDTH }}
+        className="relative z-10 mx-auto w-full max-w-[var(--bf-page-width,700px)] px-4 pb-5 sm:px-6"
         data-bf-form-container
       >
         {/* No progress bar in one-at-a-time. */}

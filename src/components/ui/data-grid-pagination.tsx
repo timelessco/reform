@@ -28,6 +28,7 @@ const PageButtons = ({
   setPageIndex,
 }: PageButtonsProps) => {
   const buttons: ReactNode[] = [];
+
   for (let i = currentGroupStart; i < currentGroupEnd; i++) {
     buttons.push(
       <Button
@@ -48,6 +49,7 @@ const PageButtons = ({
       </Button>,
     );
   }
+
   return <>{buttons}</>;
 };
 
@@ -65,6 +67,7 @@ const EllipsisButton = ({
   visible,
 }: EllipsisButtonProps) => {
   if (!visible) return null;
+
   return (
     <Button size="sm" className={btnBaseClasses} variant="ghost" onClick={onClick}>
       {ellipsisText}

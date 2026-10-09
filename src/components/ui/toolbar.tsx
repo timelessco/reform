@@ -3,6 +3,7 @@ import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
+import * as v from "valibot";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,7 @@ const withTooltip = <T extends React.ElementType>(Component: T) =>
 
     useMountEffect(() => setMounted(true));
 
+    // SAFETY: TooltipProps adds exactly the four destructured tooltip keys onto the wrapped props, so the rest is the wrapped props
     const component = <Component {...(props as React.ComponentProps<T>)} />;
 
     if (tooltip && mounted) {
@@ -149,7 +151,7 @@ export const ToolbarButton = withTooltip(function ToolbarButton({
   variant,
   ...props
 }: ToolbarButtonProps) {
-  return typeof pressed === "boolean" ? (
+  return v.is(v.boolean(), pressed) ? (
     <ToolbarToggleGroup disabled={props.disabled}>
       <ToolbarToggleItem
         className={cn(
@@ -206,7 +208,7 @@ export const ToolbarSplitButton = ({
   />
 );
 
-type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<typeof ToolbarToggleItem> &
+type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<typeof Button> &
   VariantProps<typeof toolbarButtonVariants>;
 
 export const ToolbarSplitButtonPrimary = ({
@@ -227,7 +229,7 @@ export const ToolbarSplitButtonPrimary = ({
       "group-data-[pressed=true]:bg-accent group-data-[pressed=true]:text-accent-foreground",
       className,
     )}
-    {...(props as React.ComponentPropsWithoutRef<typeof Button>)}
+    {...props}
   >
     {children}
   </Button>

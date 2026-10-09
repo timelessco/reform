@@ -13,11 +13,13 @@ export const migrateEditorContent = (
 
   if (result.length === 0 || result[0]?.type !== "formHeader") {
     result = [
-      createFormHeaderNode({
-        title: metadata?.title || "",
-        icon: metadata?.icon || null,
-        cover: metadata?.cover || null,
-      }) as unknown as TElement,
+      {
+        ...createFormHeaderNode({
+          title: metadata?.title || "",
+          icon: metadata?.icon || null,
+          cover: metadata?.cover || null,
+        }),
+      },
       ...result,
     ];
   }
@@ -25,14 +27,16 @@ export const migrateEditorContent = (
   const hasSubmitButton = result.some(
     (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
   );
+
   if (!hasSubmitButton) {
     const thankYouIndex = result.findIndex(
       (node: TElement) => node.type === "pageBreak" && node.isThankYouPage === true,
     );
+
     const insertIndex = thankYouIndex !== -1 ? thankYouIndex : result.length;
     result = [
       ...result.slice(0, insertIndex),
-      createFormButtonNode("submit") as unknown as TElement,
+      { ...createFormButtonNode("submit") },
       ...result.slice(insertIndex),
     ];
   }

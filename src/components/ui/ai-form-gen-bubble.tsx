@@ -37,9 +37,11 @@ export const AIFormGenBubble = ({
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
+
     if (file.size > MAX_FILE_SIZE) return;
     const reader = new FileReader();
     reader.addEventListener("load", () => {
+      // SAFETY: readAsDataURL always produces a string data URL result
       setAttachedImage({ url: reader.result as string, name: file.name });
     });
     reader.readAsDataURL(file);
@@ -47,6 +49,7 @@ export const AIFormGenBubble = ({
 
   const submitValue = useCallback(() => {
     const trimmed = value.trim();
+
     if ((trimmed || attachedImage) && !isGenerating) {
       onSubmit(trimmed || "Extract theme from this image", attachedImage);
       setAttachedImage(null);
@@ -60,6 +63,7 @@ export const AIFormGenBubble = ({
         e.preventDefault();
         onClose();
       }
+
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         submitValue();
@@ -78,6 +82,7 @@ export const AIFormGenBubble = ({
       e.preventDefault();
       e.stopPropagation();
       const file = e.dataTransfer.files[0];
+
       if (file) processFile(file);
     },
     [processFile],
@@ -181,6 +186,7 @@ export const AIFormGenBubble = ({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
+
           if (file) processFile(file);
           e.target.value = "";
         }}

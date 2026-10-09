@@ -16,6 +16,7 @@ import type { DrainContext } from "evlog";
 import type { PipelineDrainFn } from "evlog/pipeline";
 
 const isProduction = process.env.NODE_ENV === "production";
+
 // Empty string env var must not enable the Axiom sink (would 401 per request).
 const hasAxiom = Boolean(process.env.AXIOM_API_KEY);
 
@@ -32,6 +33,7 @@ export default definePlugin((nitroApp) => {
   // a DrainContext[] (the Axiom adapter accepts arrays). Reads AXIOM_API_KEY +
   // AXIOM_DATASET from env. flush() on Nitro "close" drains buffered events.
   let axiomPipelineFn: PipelineDrainFn<DrainContext> | undefined;
+
   if (hasAxiom) {
     axiomPipelineFn = createDrainPipeline<DrainContext>({
       batch: { size: 50, intervalMs: 5000 },
@@ -65,6 +67,7 @@ export default definePlugin((nitroApp) => {
     auditEnricher({
       tenantId: (ctx) => {
         const orgId = ctx.event.activeOrganizationId;
+
         return typeof orgId === "string" ? orgId : undefined;
       },
     }),

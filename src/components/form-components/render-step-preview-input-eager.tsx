@@ -53,8 +53,10 @@ export const RenderStepPreviewInputEager = ({
 }) => {
   if (element.fieldType === "Button") return null;
   const Component = FIELD_RENDERERS[element.fieldType as FieldType];
+
   if (!Component) return null;
   const isFieldArray = isFieldArrayElement(element);
+
   return (
     <PreviewInputShell element={element} form={form}>
       {isFieldArray ? (

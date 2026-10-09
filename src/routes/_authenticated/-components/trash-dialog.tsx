@@ -46,10 +46,13 @@ export const TrashDialog = ({
     const orgWorkspaceIds = new Set(orgWorkspacesData.map((ws) => ws.id));
 
     const lowerQuery = searchQuery.toLowerCase();
+
     return archivedFormsData
       .filter((form) => {
         if (!orgWorkspaceIds.has(form.workspaceId)) return false;
+
         if (!searchQuery) return true;
+
         return (form?.title ?? "").toLowerCase().includes(lowerQuery);
       })
       .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -57,9 +60,11 @@ export const TrashDialog = ({
 
   const workspaceNames = useMemo(() => {
     if (!orgWorkspacesData) return {};
+
     return orgWorkspacesData.reduce(
       (acc, ws) => {
         acc[ws.id] = ws.name;
+
         return acc;
       },
       {} as Record<string, string>,
@@ -82,11 +87,13 @@ export const TrashDialog = ({
   const handleToggleSelect = useCallback((formId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
+
       if (next.has(formId)) {
         next.delete(formId);
       } else {
         next.add(formId);
       }
+
       return next;
     });
   }, []);
@@ -103,6 +110,7 @@ export const TrashDialog = ({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.delete(formId);
+
       return next;
     });
   }, []);
@@ -111,6 +119,7 @@ export const TrashDialog = ({
     async (formId: string) => {
       if (restoringIds.has(formId) || deletingIds.has(formId)) return;
       setRestoringIds((prev) => new Set(prev).add(formId));
+
       try {
         await restoreFormLocal(formId);
         removeFromSelection(formId);
@@ -122,6 +131,7 @@ export const TrashDialog = ({
         setRestoringIds((prev) => {
           const next = new Set(prev);
           next.delete(formId);
+
           return next;
         });
       }
@@ -133,6 +143,7 @@ export const TrashDialog = ({
     async (formId: string) => {
       if (restoringIds.has(formId) || deletingIds.has(formId)) return;
       setDeletingIds((prev) => new Set(prev).add(formId));
+
       try {
         await permanentDeleteFormLocal(formId);
         removeFromSelection(formId);
@@ -144,6 +155,7 @@ export const TrashDialog = ({
         setDeletingIds((prev) => {
           const next = new Set(prev);
           next.delete(formId);
+
           return next;
         });
       }
@@ -153,13 +165,17 @@ export const TrashDialog = ({
 
   const handleBulkDelete = useCallback(async () => {
     const ids = [...selectedIds];
+
     if (ids.length === 0) return;
     setIsDeleting(true);
     setDeletingIds((prev) => {
       const next = new Set(prev);
+
       for (const id of ids) next.add(id);
+
       return next;
     });
+
     try {
       await bulkPermanentDeleteFormsLocal(ids);
       toast.success(`Deleted ${ids.length} form${ids.length === 1 ? "" : "s"}`);
@@ -171,7 +187,9 @@ export const TrashDialog = ({
       setIsDeleting(false);
       setDeletingIds((prev) => {
         const next = new Set(prev);
+
         for (const id of ids) next.delete(id);
+
         return next;
       });
     }
@@ -306,6 +324,7 @@ const TrashRow = ({
   onPermanentDelete,
 }: TrashRowProps) => {
   const isRowBusy = isRestoring || isDeleting;
+
   return (
     <div
       className={`group flex cursor-pointer items-center justify-between rounded-md px-3 py-2 transition-colors ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"} ${isRowBusy ? "pointer-events-none opacity-60" : ""}`}
@@ -333,8 +352,8 @@ const TrashRow = ({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] text-foreground">{form.title || "Untitled"}</p>
-          <p className="truncate text-[11px] text-muted-foreground/60">
+          <p className="truncate text-sm text-foreground">{form.title || "Untitled"}</p>
+          <p className="truncate text-2xs text-muted-foreground/60">
             {workspaceName || "Unknown workspace"}
           </p>
         </div>
@@ -407,11 +426,11 @@ const TrashFooter = ({
           <button
             type="button"
             onClick={onSelectAll}
-            className="cursor-pointer text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            className="cursor-pointer text-2xs text-muted-foreground transition-colors hover:text-foreground"
           >
             {selectedCount === totalCount ? "Deselect all" : "Select all"}
           </button>
-          <span className="text-[11px] text-muted-foreground/60">{selectedCount} selected</span>
+          <span className="text-2xs text-muted-foreground/60">{selectedCount} selected</span>
         </div>
         <Button
           variant="ghost"
@@ -432,7 +451,7 @@ const TrashFooter = ({
       </>
     ) : (
       <>
-        <p className="text-[11px] text-muted-foreground/60">
+        <p className="text-2xs text-muted-foreground/60">
           Pages in Trash for over 30 days will be automatically deleted
         </p>
         <Button

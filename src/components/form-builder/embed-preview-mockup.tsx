@@ -17,10 +17,12 @@ interface EmbedPreviewMockupProps {
 }
 
 const MORPH_SPRING = { type: "spring" as const, stiffness: 400, damping: 30 };
+
 const INSTANT = { duration: 0 };
+
 const FADE_TRANSITION = { duration: 0.2 };
 
-// 8px corner gap — Figma 25363-20771: the popup card/bubble sit 8px from the frame edges.
+// 8px corner gap. Figma 25363-20771 has the popup card/bubble 8px from the frame edges.
 const PAD = 8;
 
 type IconDisplay =
@@ -31,19 +33,26 @@ type IconDisplay =
 
 const resolveIconDisplay = (emojiIcon: string | undefined): IconDisplay => {
   const icon = (emojiIcon || "").trim();
+
   if (!icon) return null;
+
   if (isValidUrl(icon)) return { type: "image", value: icon };
+
   // Short strings = emoji; longer = sprite names. Sprite has more than `iconMap`, so don't gate on `iconMap.has`.
   if (icon.length <= 4) return { type: "emoji", value: icon };
+
   return { type: "sprite", value: icon };
 };
 
 const PopupIconContent = ({ display }: { display: IconDisplay }) => {
   const [imageError, setImageError] = useState(false);
   const handleImageError = useCallback(() => setImageError(true), []);
+
   if (!display) return null;
+
   if (display.type === "image") {
     if (imageError) return null;
+
     return (
       <img
         src={display.value}
@@ -53,13 +62,15 @@ const PopupIconContent = ({ display }: { display: IconDisplay }) => {
       />
     );
   }
+
   if (display.type === "emoji") {
     return (
-      <span className="absolute inset-0 flex items-center justify-center bg-input text-[14px] text-muted">
+      <span className="absolute inset-0 flex items-center justify-center bg-input text-base text-muted">
         {display.value}
       </span>
     );
   }
+
   if (display.type === "sprite") {
     return (
       <span className="absolute inset-0 flex items-center justify-center">
@@ -69,6 +80,7 @@ const PopupIconContent = ({ display }: { display: IconDisplay }) => {
       </span>
     );
   }
+
   return null;
 };
 
@@ -82,9 +94,8 @@ const getTargetStyle = (
 ) => {
   switch (embedType) {
     case "standard": {
-      // Embedded iframe: a narrow, tall form panel inset on the left edge of the host page; the
-      // page's own copy flows full-width above and below it (see Figma 26068-6831). alignLeft keeps
-      // it pinned left; otherwise nudge it slightly in from the edge.
+      // Embedded iframe, a narrow tall form panel inset on the host page's left edge; host copy
+      // flows full-width above and below (Figma 26068-6831). alignLeft pins left, else nudged in.
       return {
         left: PAD + (alignLeft ? 0 : 6),
         top: PAD + ch * 0.2,
@@ -93,6 +104,7 @@ const getTargetStyle = (
         borderRadius: 8,
       };
     }
+
     case "fullpage":
       return {
         left: PAD,
@@ -106,11 +118,14 @@ const getTargetStyle = (
         const w = 74;
         const h = 96;
         const pos = getCornerPos(popupPosition, cw, ch, w, h);
-        // Figma popup card (node 25300-…): 8px radius — keep the card corners tight, not pill-soft.
+
+        // Figma popup card (node 25300-…): 8px radius, tight corners rather than pill-soft.
         return { ...pos, width: w, height: h, borderRadius: 8 };
       }
+
       const size = 28;
       const pos = getCornerPos(popupPosition, cw, ch, size, size);
+
       return { ...pos, width: size, height: size, borderRadius: size / 2 };
     }
   }
@@ -131,6 +146,7 @@ const getCornerPos = (position: string, cw: number, ch: number, w: number, h: nu
 // Bubble position; always in corner, even when popup expands at center.
 const getBubblePos = (position: string, cw: number, ch: number) => {
   const size = 28;
+
   switch (position) {
     case "bottom-left":
       return { left: PAD, top: PAD + ch - size };
@@ -142,36 +158,33 @@ const getBubblePos = (position: string, cw: number, ch: number) => {
   }
 };
 
-// Static embed (standard) preview — faithful to Figma node 26075-12773 (browser-frame skeleton).
-// The standard case is a flat skeleton (no morph), so exact px spacing beats the ratio-positioned
-// mockup: 10px frame padding, 8px dots (4px gap), 10px below dots, 7px between bar-groups + the block.
-// Tokens map 1:1 to Figma — bg-secondary=gray/100, bg-input=gray/300 (dots+block), bg-gray-200=gray/200 (bars).
+// Static standard preview per Figma 26075-12773 (browser-frame skeleton). Flat, no morph, so
+// exact px spacing beats the ratio mockup; tokens map 1:1 to Figma (bg-secondary=gray/100, etc).
 export const EmbedStandardPreview = () => (
-  <div className="overflow-hidden rounded-[12px] bg-secondary p-2.5">
+  <div className="overflow-hidden rounded-2xl bg-secondary p-2.5">
     <div className="flex gap-1">
       <div className="size-2 rounded-full bg-input" />
       <div className="size-2 rounded-full bg-input" />
       <div className="size-2 rounded-full bg-input" />
     </div>
-    <div className="mt-2.5 flex flex-col gap-[7px]">
+    <div className="mt-2.5 flex flex-col gap-1.75">
       <div className="flex flex-col gap-1.5">
-        <div className="h-1.5 w-[60px] max-w-full rounded-lg bg-gray-200" />
-        <div className="h-1.5 w-[224px] max-w-full rounded-lg bg-gray-200" />
+        <div className="h-1.5 w-[60px] max-w-full rounded-lg bg-muted" />
+        <div className="h-1.5 w-[224px] max-w-full rounded-lg bg-muted" />
       </div>
       <div className="h-20 w-[70px] rounded-lg bg-input" />
       <div className="flex flex-col gap-1.5">
-        <div className="h-1.5 w-[185px] max-w-full rounded-lg bg-gray-200" />
-        <div className="h-1.5 w-[138px] max-w-full rounded-lg bg-gray-200" />
+        <div className="h-1.5 w-[185px] max-w-full rounded-lg bg-muted" />
+        <div className="h-1.5 w-[138px] max-w-full rounded-lg bg-muted" />
       </div>
     </div>
   </div>
 );
 
-// Static full-page preview — faithful to Figma node 26068-6990. The page form is one block filling
-// the frame: 10px frame padding, 8px dots, 10px below dots, then a 244×128 gray-300 block (12px L/R/B
-// margins via mx/mb-0.5, radius 8). bg-input=gray/300 (dots+block), bg-secondary=gray/100 (frame).
+// Static full-page preview per Figma 26068-6990. One gray-300 block (244×128, radius 8) fills the
+// frame below 8px dots; bg-input=gray/300 (dots+block), bg-secondary=gray/100 (frame).
 export const EmbedFullPagePreview = () => (
-  <div className="overflow-hidden rounded-[12px] bg-secondary p-2.5">
+  <div className="overflow-hidden rounded-2xl bg-secondary p-2.5">
     <div className="flex gap-1">
       <div className="size-2 rounded-full bg-input" />
       <div className="size-2 rounded-full bg-input" />
@@ -192,10 +205,12 @@ export const EmbedPreviewMockup = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const resolvedAppTheme = useResolvedTheme();
+
   const { themeVars, hasCustomization } = useFormCustomization(
     rawCustomization ? { customization: rawCustomization } : null,
     resolvedAppTheme,
   );
+
   // Popup preview opens expanded first, then auto-collapses to its bubble (see effect below).
   const [isPopupExpanded, setIsPopupExpanded] = useState(true);
   const hasAnimated = useRef(false);
@@ -205,8 +220,10 @@ export const EmbedPreviewMockup = ({
   // stays pinned to its corner (corner = PAD + cw - w, which drifts if cw goes stale).
   useIsomorphicLayoutEffect(() => {
     const el = contentRef.current;
+
     if (!el) return;
     let initialMeasure = true;
+
     const measure = () => {
       // Snap repositions instantly (no morph spring) while the container resizes.
       if (!initialMeasure) isResizing.current = true;
@@ -216,9 +233,11 @@ export const EmbedPreviewMockup = ({
         h: el.clientHeight - PAD * 2,
       });
     };
+
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
+
     return () => ro.disconnect();
   }, [embedType]);
 
@@ -227,6 +246,7 @@ export const EmbedPreviewMockup = ({
     if (embedType !== "popup") return;
     setIsPopupExpanded(true);
     const timer = setTimeout(() => setIsPopupExpanded(false), 2000);
+
     return () => clearTimeout(timer);
   }, [embedType]);
 
@@ -236,6 +256,7 @@ export const EmbedPreviewMockup = ({
       : null;
 
   let transition;
+
   if (!hasAnimated.current || isResizing.current) {
     transition = INSTANT;
   } else {
@@ -263,12 +284,11 @@ export const EmbedPreviewMockup = ({
   const isPopup = embedType === "popup";
   const popupIconDisplay = resolveIconDisplay(emojiIcon);
 
-  // At-rest bubble = icon-picker-preview form-logo style: a bg-card surface chip with a foreground
-  // glyph (themed via bf-themed when customized). Avoids bg-primary, whose glyph is text-primary-
-  // foreground — but `.bf-themed` force-sets `color: --bf-foreground`, so on a #212121 primary the
-  // light-mode glyph collapses to the same color and vanishes. bg-card/foreground always contrast.
+  // At-rest bubble uses bg-card + foreground (themed via bf-themed when customized), not bg-primary.
+  // On a #212121 primary, bf-themed force-sets --bf-foreground, so the light-mode glyph would vanish.
   const atRestBubble = isPopup && !isPopupExpanded;
   let bubbleSurfaceClass = "bg-input";
+
   if (atRestBubble) {
     bubbleSurfaceClass = hasCustomization
       ? "bf-themed bg-card text-foreground"
@@ -276,7 +296,7 @@ export const EmbedPreviewMockup = ({
   }
 
   return (
-    <div className="flex h-[168px] flex-col overflow-hidden rounded-[12px] bg-secondary">
+    <div className="flex h-[168px] flex-col overflow-hidden rounded-2xl bg-secondary">
       <div className="flex items-center gap-1 px-2.25 pt-2.5 pb-2">
         <div className="flex gap-1">
           <div className="size-2 rounded-full bg-input" />
@@ -290,7 +310,7 @@ export const EmbedPreviewMockup = ({
           {embedType === "standard" && (
             <motion.div
               key="standard-bg"
-              // top-0.5 (not inset-4 top): host copy sits ~28px below the container top, matching Figma's tight gap under the dots.
+              // top-0.5 (not inset-4 top); host copy sits ~28px below the container top, matching Figma's tight gap under the dots.
               className="absolute inset-x-4 top-0.5 bottom-4 flex flex-col justify-between"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -299,24 +319,25 @@ export const EmbedPreviewMockup = ({
             >
               {/* Host-page copy above the embed. Figma skeleton bars = solid gray-200 (#ededed). */}
               <div className="space-y-1.5">
-                <div className="h-1.5 w-1/4 rounded-full bg-gray-200" />
-                <div className="h-1.5 w-[92%] rounded-full bg-gray-200" />
+                <div className="h-1.5 w-1/4 rounded-full bg-muted" />
+                <div className="h-1.5 w-[92%] rounded-full bg-muted" />
               </div>
               {/* Host-page copy below the embed. */}
               <div className="space-y-1.5">
-                <div className="h-1.5 w-3/4 rounded-full bg-gray-200" />
-                <div className="h-1.5 w-[56%] rounded-full bg-gray-200" />
+                <div className="h-1.5 w-3/4 rounded-full bg-muted" />
+                <div className="h-1.5 w-[56%] rounded-full bg-muted" />
               </div>
             </motion.div>
           )}
-          {/* Figma popup mockup (node 25363-20471) is just the dots + the popup card — no host skeleton lines. */}
+          {/* Figma popup mockup (node 25363-20471) is just dots + popup card, no host skeleton lines. */}
         </AnimatePresence>
 
         <AnimatePresence>
           {isPopup && darkOverlay && isPopupExpanded && (
             <motion.div
               key="dark-overlay"
-              // Match the real popup dark overlay (Figma 27196-14471): black 24% + backdrop blur.
+              // Matches the real popup dark overlay (Figma 27196-14471), black 24% + backdrop blur.
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- no backdrop-blur token for 6px; needs design decision
               className="absolute inset-0 z-10 bg-black/24 backdrop-blur-[6px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -329,9 +350,11 @@ export const EmbedPreviewMockup = ({
         {target && (
           <motion.div
             className={cn(
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- no shadow token for 0/2/10 soft shadow; needs design decision
               "absolute z-20 overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)]",
               bubbleSurfaceClass,
             )}
+            // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
             style={atRestBubble && hasCustomization ? themeVars : undefined}
             animate={target}
             transition={transition}
@@ -339,9 +362,8 @@ export const EmbedPreviewMockup = ({
             onMouseEnter={isPopup ? handleMouseEnterMorph : undefined}
             onMouseLeave={isPopup ? handleMouseLeaveMorph : undefined}
           >
-            {/* Fullpage = the form fills the whole host page: a single solid panel filling the
-                browser viewport (see Figma 26068-6990). No inner chrome — the morph box itself is
-                the panel. */}
+            {/* Fullpage = the form fills the whole host page, a single solid panel filling the
+                browser viewport (Figma 26068-6990). No inner chrome; the morph box is the panel. */}
 
             <AnimatePresence>
               {isPopup && !isPopupExpanded && popupIconDisplay && (
@@ -365,16 +387,20 @@ export const EmbedPreviewMockup = ({
             type="button"
             aria-label="Open popup preview"
             className={cn(
-              "absolute z-20 size-[28px] cursor-pointer rounded-full p-0 shadow-[0_2px_10px_rgba(0,0,0,0.04)]",
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- no shadow token for 0/2/10 soft shadow; needs design decision
+              "absolute top-[var(--bubble-top)] left-[var(--bubble-left)] z-20 size-[28px] cursor-pointer rounded-full p-0 shadow-[0_2px_10px_rgba(0,0,0,0.04)]",
               hasCustomization
                 ? "bf-themed bg-primary text-primary-foreground"
-                : "bg-[#e0e0e0] dark:bg-card",
+                : "bg-border-soft dark:bg-card",
             )}
-            style={{
-              left: bubblePos.left,
-              top: bubblePos.top,
-              ...(hasCustomization ? themeVars : undefined),
-            }}
+            style={
+              {
+                "--bubble-left": `${bubblePos.left}px`,
+                "--bubble-top": `${bubblePos.top}px`,
+                // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
+                ...(hasCustomization ? themeVars : undefined),
+              } as React.CSSProperties
+            }
             onMouseEnter={handleBubbleMouseEnter}
             onClick={handleBubbleClick}
           />

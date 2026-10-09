@@ -6,5 +6,6 @@ export const isBotUserAgent = (ua: string | null | undefined): boolean => {
   if (!ua) {
     return true;
   }
+
   return BOT_RE.test(ua);
 };

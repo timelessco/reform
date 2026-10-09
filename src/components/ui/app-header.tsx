@@ -73,10 +73,11 @@ interface AppHeaderProps {
 
 // Header icon buttons (⋯, preview, edit): 28×28, 5px padding, 8px radius, gray-800 icon (Figma system-flat).
 // Color lives here so hover:text-foreground reaches the icon via currentColor — icons must NOT pin their own color.
-const HEADER_ICON_BUTTON_CLS = "size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground";
+const HEADER_ICON_BUTTON_CLS = "size-7 rounded-lg p-1.25 text-foreground hover:text-foreground";
 
 export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const { formId, workspaceId } = useParams({ strict: false });
+
   const {
     state,
     toggleSidebar: toggleMainSidebar,
@@ -86,6 +87,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     toggleSidebar: () => {},
     isMobile: false,
   };
+
   const pathname = useLocation({ select: (s) => s.pathname });
   const isDashboard = pathname === "/dashboard";
   const isTemplatesIndex = pathname === "/templates";
@@ -119,6 +121,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const toggleVersionHistory = () => {
     toggleEditorSidebar("history");
   };
+
   // Form-level settings is a full page (not the right sidebar). Navigate there.
   const toggleSettingsSidebar = () => {
     if (workspaceId && formId) {
@@ -140,8 +143,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const toggleShareSidebar = () => {
     if (isShareSidebarOpen) {
       closeSidebar();
+
       return;
     }
+
     if (!isEditRoute && workspaceId && formId) {
       openShare();
       enterPreview();
@@ -150,8 +155,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         params: { workspaceId, formId },
         search: { force: true },
       });
+
       return;
     }
+
     enterPreview();
     openShare();
   };
@@ -164,6 +171,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const canShare = savedDocs?.[0]?.status === "published" || hasPublishedVersion;
 
   type WorkflowState = "idle" | "publishing" | "discarding";
+
   const [workflowState, setWorkflowState] = useState<WorkflowState>("idle");
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
@@ -222,8 +230,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const handlePreviewForm = () => {
     if (isEditRoute) {
       togglePreview();
+
       return;
     }
+
     if (workspaceId && formId) {
       enterPreview();
       void navigate({
@@ -289,7 +299,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             </Tooltip>
           )}
           {isDashboard && (
-            <span className="inline-flex items-center rounded-lg p-1 text-base font-[450] tracking-[0.14px] text-gray-800">
+            <span className="inline-flex items-center rounded-lg p-1 text-base font-[450] tracking-[0.14px] text-foreground">
               Home
             </span>
           )}
@@ -297,30 +307,30 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center text-base">
               <Link
                 to="/dashboard"
-                className="rounded-lg p-1 font-[450] tracking-[0.14px] text-gray-500 hover:text-foreground"
+                className="rounded-lg p-1 font-[450] tracking-[0.14px] text-muted-foreground hover:text-foreground"
               >
                 Home
               </Link>
-              <span aria-hidden className="shrink-0 px-0.5 text-gray-400">
+              <span aria-hidden className="shrink-0 px-0.5 text-muted-foreground">
                 /
               </span>
               {isTemplateDetail ? (
                 <>
                   <Link
                     to="/templates"
-                    className="rounded-lg p-1 font-[450] tracking-[0.14px] text-gray-500 hover:text-foreground"
+                    className="rounded-lg p-1 font-[450] tracking-[0.14px] text-muted-foreground hover:text-foreground"
                   >
                     All Templates
                   </Link>
-                  <span aria-hidden className="shrink-0 px-0.5 text-gray-400">
+                  <span aria-hidden className="shrink-0 px-0.5 text-muted-foreground">
                     /
                   </span>
-                  <span className="truncate rounded-lg p-1 font-[450] tracking-[0.14px] text-gray-800">
+                  <span className="truncate rounded-lg p-1 font-[450] tracking-[0.14px] text-foreground">
                     {templateMeta?.label ?? "Template"}
                   </span>
                 </>
               ) : (
-                <span className="rounded-lg p-1 font-[450] tracking-[0.14px] text-gray-800">
+                <span className="rounded-lg p-1 font-[450] tracking-[0.14px] text-foreground">
                   All Templates
                 </span>
               )}
@@ -346,7 +356,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
           {isDashboard && <DashboardHeaderActions />}
 
           {isTemplateDetail && templateMeta && (
-            <TemplateHeaderActions templateId={templateMeta.id as FormTemplateId} />
+            <TemplateHeaderActions templateId={templateMeta.id} />
           )}
 
           {isLandingPage && (
@@ -402,6 +412,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 };
 
 type ActiveDialog = "delete" | "discard" | null;
+
 type ActiveMenu = "main" | "local" | null;
 
 interface UseAppHeaderFormActionsOptions {
@@ -450,6 +461,7 @@ const useAppHeaderFormActions = ({
 
   const handleDeleteForm = async () => {
     if (!formId) return;
+
     try {
       await updateFormStatus(formId, "archived");
       toast.success("Form moved to trash");
@@ -465,6 +477,7 @@ const useAppHeaderFormActions = ({
   const performPublish = async ({ stripProStyles }: PublishOptions) => {
     if (!formId || !workspaceId) return;
     setWorkflowState("publishing");
+
     // Sweep fires on click for instant feedback; glimm awaits the midpoint
     // callback, so the band holds at peak coverage until publish resolves,
     // then fades out — no navigation, stay on the editor.
@@ -472,6 +485,7 @@ const useAppHeaderFormActions = ({
       async () => {
         try {
           const tx = publishForm(formId, { stripProStyles });
+
           // Capture the content thumbnail during the publish round-trip; canvas stays mounted (no
           // nav). Dynamic import keeps the browser-only capture lib + its server-fn out of SSR.
           const previewPromise = import("@/lib/og/capture-form-preview")
@@ -479,6 +493,7 @@ const useAppHeaderFormActions = ({
             .catch((error) =>
               log.error({ tag: "app-header", msg: "preview capture failed", error }),
             );
+
           await tx.isPersisted.promise;
           showPublishedToast();
           // Best-effort: thumbnail (card preview + OG) finishes in the background. Never faults publish.
@@ -490,6 +505,7 @@ const useAppHeaderFormActions = ({
       },
       { palette: "prism" },
     );
+
     try {
       await handle.done;
     } finally {
@@ -503,6 +519,7 @@ const useAppHeaderFormActions = ({
   const handleDiscardChanges = async () => {
     if (formId) {
       setWorkflowState("discarding");
+
       try {
         await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
@@ -520,7 +537,7 @@ const useAppHeaderFormActions = ({
       void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
-        search: (prev: Record<string, unknown>) => ({ ...prev, force: true }),
+        search: (prev) => ({ ...prev, force: true }),
       });
     }
   };
@@ -629,10 +646,12 @@ const HeaderBreadcrumb = ({
   isAnalyticsRoute,
 }: HeaderBreadcrumbProps) => {
   const titleText = savedDoc.title || "Untitled";
+
   const linkClassName = cn(
     buttonVariants({ variant: "ghost", size: "sm" }),
-    "max-w-[140px] min-w-0 shrink justify-start px-1.5 text-[14px] font-medium text-gray-800 hover:bg-accent/60 sm:max-w-[200px]",
+    "max-w-[140px] min-w-0 shrink justify-start px-1.5 text-[14px] font-medium text-foreground hover:bg-accent/60 sm:max-w-[200px]",
   );
+
   const isPublished = savedDoc.status === "published" && workspaceId && formId;
 
   return (
@@ -643,14 +662,14 @@ const HeaderBreadcrumb = ({
             to="/dashboard"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "hidden max-w-[150px] shrink truncate px-1.5 text-[14px] font-medium text-gray-500 hover:bg-accent/60 hover:text-foreground md:inline-flex",
+              "hidden max-w-[150px] shrink truncate px-1.5 text-[14px] font-medium text-muted-foreground hover:bg-accent/60 hover:text-foreground md:inline-flex",
             )}
           >
             <span className="truncate">{workspace.name}</span>
           </Link>
           <span
             aria-hidden="true"
-            className="hidden shrink-0 px-0.5 text-[16px] text-gray-500 md:inline"
+            className="hidden shrink-0 px-0.5 text-[16px] text-muted-foreground md:inline"
           >
             /
           </span>
@@ -679,7 +698,7 @@ const HeaderBreadcrumb = ({
         <span
           className={cn(
             buttonVariants({ variant: "ghost", size: "sm" }),
-            "max-w-[140px] min-w-0 shrink cursor-default justify-start px-1.5 text-[14px] font-medium text-gray-800 hover:bg-transparent sm:max-w-[200px]",
+            "max-w-[140px] min-w-0 shrink cursor-default justify-start px-1.5 text-[14px] font-medium text-foreground hover:bg-transparent sm:max-w-[200px]",
           )}
         >
           <span className="truncate">{titleText}</span>
@@ -689,7 +708,7 @@ const HeaderBreadcrumb = ({
         <>
           <span
             aria-hidden="true"
-            className="hidden shrink-0 px-0.5 text-[16px] text-gray-500 sm:inline"
+            className="hidden shrink-0 px-0.5 text-[16px] text-muted-foreground sm:inline"
           >
             /
           </span>
@@ -697,7 +716,7 @@ const HeaderBreadcrumb = ({
             aria-current="page"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "hidden shrink-0 cursor-default px-1.5 text-[14px] font-medium text-gray-800 hover:bg-transparent sm:inline-flex",
+              "hidden shrink-0 cursor-default px-1.5 text-[14px] font-medium text-foreground hover:bg-transparent sm:inline-flex",
             )}
           >
             {isSettingsRoute ? "Settings" : isSubmissionsRoute ? "Submissions" : "Analytics"}
@@ -727,6 +746,7 @@ const SettingsHeaderActions = ({ formId }: { formId: string | undefined }) => {
   const onSave = async () => {
     if (!formId || !hasSettingsChanges || saving) return;
     setSaving(true);
+
     try {
       const tx = publishFormSettings(formId);
       await tx.isPersisted.promise;
@@ -743,7 +763,7 @@ const SettingsHeaderActions = ({ formId }: { formId: string | undefined }) => {
       size="sm"
       disabled={!hasSettingsChanges || saving}
       onClick={onSave}
-      className="rounded-[8px] border-none bg-neutral-950 py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-stone-200"
+      className="rounded-[8px] border-none bg-primary py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-primary/80"
     >
       {saving ? <Loader2Icon className="size-4 animate-spin" /> : "Save"}
     </Button>
@@ -820,7 +840,7 @@ const LandingPageActions = ({
     {/* Publish */}
     <Button
       size="sm"
-      className="rounded-[8px] border-none bg-neutral-950 py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200"
+      className="rounded-[8px] border-none bg-primary py-1.5 pr-2 pl-2.5 text-[14px] font-medium text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 dark:bg-white dark:text-black dark:hover:bg-primary/80"
       onClick={onSignIn}
     >
       Publish
@@ -835,13 +855,14 @@ const LandingPageActions = ({
 // Figma 27189:13108 — template detail header CTA: black pill, 14/450, same chrome as Publish.
 const TemplateHeaderActions = ({ templateId }: { templateId: FormTemplateId }) => {
   const { createFromTemplate, isCreating, hasWorkspace } = useCreateFromTemplate();
+
   return (
     <Button
       type="button"
       size="sm"
       disabled={isCreating || !hasWorkspace}
       onClick={() => createFromTemplate(templateId)}
-      className="h-7 rounded-[min(var(--radius-md),10px)] border-none bg-neutral-950 px-2.5 py-1.5 text-base leading-[1.15] font-[450] tracking-[0.14px] text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-stone-200"
+      className="h-7 rounded-[min(var(--radius-md),10px)] border-none bg-primary px-2.5 py-1.5 text-base leading-[1.15] font-[450] tracking-[0.14px] text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-primary/80"
     >
       {isCreating ? "Creating…" : "Use Template"}
     </Button>
@@ -850,10 +871,12 @@ const TemplateHeaderActions = ({ templateId }: { templateId: FormTemplateId }) =
 
 const DashboardHeaderActions = () => {
   const navigate = useNavigate();
+
   const { data: activeOrg } = useQuery({
     ...orgDataForLayoutQueryOptions(),
     select: (d) => d.activeOrg,
   });
+
   const { data: liveWorkspaces } = useOrgWorkspaces(activeOrg?.id);
 
   const orderedWorkspaces = useMemo(
@@ -871,6 +894,7 @@ const DashboardHeaderActions = () => {
 
   const handleCreateForm = (workspaceId?: string) => {
     const targetId = workspaceId ?? topWorkspace?.id;
+
     if (!targetId) return;
     const { form: newForm } = createFormLocal(targetId);
     void navigate({
@@ -883,8 +907,10 @@ const DashboardHeaderActions = () => {
   const handleNewForm = () => {
     if (hasMultipleWorkspaces) {
       setWorkspaceDialogOpen(true);
+
       return;
     }
+
     handleCreateForm();
   };
 
@@ -921,7 +947,7 @@ const DashboardHeaderActions = () => {
                 className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate text-base font-[450] tracking-[0.14px] text-gray-800">
+                <span className="min-w-0 flex-1 truncate text-base font-[450] tracking-[0.14px] text-foreground">
                   {ws.name}
                 </span>
                 <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
@@ -986,7 +1012,9 @@ const FormBuilderHeaderActions = ({
     isShareSidebarOpen,
     isLoadingSavedDocs,
   } = flags;
+
   const showPublish = workspaceId && formId;
+
   const isUnpublished =
     !isLoadingSavedDocs && (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published");
 
@@ -1070,7 +1098,7 @@ const FormBuilderHeaderActions = ({
                     className={cn(
                       "rounded-[8px] border-none py-1.5 pr-2 pl-2.5 text-[14px] font-medium shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] transition-all",
                       isUnpublished
-                        ? "bg-neutral-950 text-white hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                        ? "bg-primary text-white hover:bg-primary/80 dark:bg-white dark:text-black dark:hover:bg-primary/80"
                         : "bg-muted text-muted-foreground hover:bg-muted/80",
                     )}
                     onClick={onPublish}
@@ -1100,11 +1128,11 @@ const FormBuilderHeaderActions = ({
             <Link
               to="/workspace/$workspaceId/form-builder/$formId/edit"
               params={{ workspaceId, formId }}
-              search={(prev: Record<string, unknown>) => ({ ...prev, force: true })}
+              search={(prev) => ({ ...prev, force: true })}
               preload="intent"
               aria-label="Edit form"
               // Figma 26835:9809 — gray/950 #141414 pill, px-8/py-6, gap-6, 16px edit icon + 14px/450 white.
-              className="inline-flex items-center gap-1.5 rounded-[8px] bg-gray-950 px-2 py-1.5 font-case text-[14px] font-[450] tracking-[0.14px] text-white transition-colors hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-white dark:text-black dark:hover:bg-stone-200"
+              className="inline-flex items-center gap-1.5 rounded-[8px] bg-primary px-2 py-1.5 font-case text-[14px] font-[450] tracking-[0.14px] text-white transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-white dark:text-black dark:hover:bg-primary/80"
             >
               <EditLineSmIcon className="size-4" />
               Edit form

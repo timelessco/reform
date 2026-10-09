@@ -2,11 +2,14 @@ import type { TCaptionElement, TResizableProps, TVideoElement } from "platejs";
 import { NodeApi } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
+import type { CSSProperties } from "react";
 import * as React from "react";
+import * as v from "valibot";
 
 const createCaptionTrackUrl = (text: string) => {
   const vtt = `WEBVTT\n\n00:00.000 --> 00:05.000\n${text}`;
   const blob = new Blob([vtt], { type: "text/vtt" });
+
   return URL.createObjectURL(blob);
 };
 
@@ -14,8 +17,10 @@ export const VideoElementStatic = (
   props: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps>,
 ) => {
   const { align = "center", caption, url, width } = props.element;
+
   const captionText = React.useMemo(() => {
     if (!caption?.length) return "";
+
     return NodeApi.string(caption[0]).trim();
   }, [caption]);
 
@@ -40,8 +45,20 @@ export const VideoElementStatic = (
 
   return (
     <SlateElement className="py-2.5" {...props}>
-      <div style={{ textAlign: align }}>
-        <figure className="group relative m-0 inline-block cursor-default" style={{ width }}>
+      <div
+        className="[text-align:var(--media-align)]"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--media-align": align } as CSSProperties
+        }
+      >
+        <figure
+          className="group relative m-0 inline-block w-[var(--media-width)] cursor-default"
+          style={
+            // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+            { "--media-width": v.is(v.number(), width) ? `${width}px` : width } as CSSProperties
+          }
+        >
           <video className="w-full max-w-full rounded-sm object-cover px-0" src={url} controls>
             <track kind="captions" srcLang="en" label="Transcript" src={trackUrl} default />
           </video>

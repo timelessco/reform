@@ -402,7 +402,7 @@ const groups: Group[] = [
   })),
 }));
 
-const previewMap: Record<string, () => ReactNode> = {
+const previewMap = {
   [KEYS.p]: TextPreview,
   [KEYS.h1]: Heading1Preview,
   [KEYS.h2]: Heading2Preview,
@@ -424,7 +424,11 @@ const previewMap: Record<string, () => ReactNode> = {
   formRating: FormRatingPreview,
   formMatrix: FormMatrixPreview,
   formSignature: FormSignaturePreview,
-};
+} satisfies Record<string, () => ReactNode>;
+
+type PreviewKey = keyof typeof previewMap;
+
+const isPreviewKey = (value: string): value is PreviewKey => value in previewMap;
 
 const findItemByValue = (activeValue: string | null) => {
   if (!activeValue) return null;
@@ -448,7 +452,8 @@ export const SlashInputElement = (props: PlateElementProps<TComboboxInputElement
 
     if (!item) return null;
 
-    const PreviewComponent = activeValue ? previewMap[activeValue] : null;
+    const PreviewComponent =
+      activeValue && isPreviewKey(activeValue) ? previewMap[activeValue] : null;
 
     return (
       <div className="p-3">

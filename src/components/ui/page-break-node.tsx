@@ -34,16 +34,23 @@ export const PageBreakElement = (props: PlateElementProps) => {
   const selected = useSelected();
   const focused = useFocused();
 
+  // SAFETY: pageBreak nodes are created with a boolean isThankYouPage, absent as undefined
   const isThankYouPage = (element.isThankYouPage as boolean) ?? false;
+
+  // SAFETY: hasFormFields is written as a boolean by the form normalizer, absent as undefined
+  const hasFormFields = (element.hasFormFields as boolean) ?? false;
 
   // Subscribe to editor changes so the page number tracks reorders/deletes. Plate memoizes by
   // identity — without this version dep, a pageBreak after a deleted sibling shows a stale number.
   useEditorVersion();
+
   const pageNumber = (() => {
     const path = editor.api.findPath(element);
+
     if (!path) return 2;
 
     let count = 2; // Page 1 is before first pageBreak, so this starts at 2
+
     for (const [, nodePath] of editor.api.nodes({
       at: [],
       match: { type: "pageBreak" },
@@ -52,10 +59,13 @@ export const PageBreakElement = (props: PlateElementProps) => {
         count++;
       }
     }
+
     return count;
   })();
+
   const handleThankYouToggle = (checked: boolean) => {
     const path = editor.api.findPath(element);
+
     if (!path) return;
 
     editor.tf.withoutNormalizing(() => {
@@ -68,6 +78,7 @@ export const PageBreakElement = (props: PlateElementProps) => {
             editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
           }
         }
+
         editor.tf.setNodes({ isThankYouPage: true }, { at: path });
         // form-blocks-kit normalizer strips pageBreaks/fields/buttons after this thank-you pageBreak.
       } else {
@@ -91,7 +102,7 @@ export const PageBreakElement = (props: PlateElementProps) => {
         <div className="mx-4 flex items-center gap-4 text-sm text-muted-foreground">
           <span>Page {pageNumber}</span>
 
-          {!((element.hasFormFields as boolean) ?? false) && (
+          {!hasFormFields && (
             <div className="flex items-center gap-2">
               <Label
                 htmlFor={`thank-you-toggle-${String(element.id || pageNumber)}`}

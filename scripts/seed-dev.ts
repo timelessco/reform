@@ -25,6 +25,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { seed } from "drizzle-seed";
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "password123";
+
 import {
   account,
   aiGenerationCounts,
@@ -53,6 +54,7 @@ import {
 } from "../src/db/schema";
 
 const DATABASE_URL = process.env.DATABASE_URL;
+
 if (!DATABASE_URL) {
   console.error("DATABASE_URL is not set");
   process.exit(1);
@@ -76,13 +78,17 @@ const N = {
 
 const pickN = <T>(pool: T[], n: number): T[] => {
   const out: T[] = new Array(n);
+
   for (let i = 0; i < n; i++) out[i] = pool[i % pool.length] as T;
+
   return out;
 };
 
 const composite = (a: string[], b: string[]): string[] => {
   const out: string[] = [];
+
   for (const x of a) for (const y of b) out.push(`${x}:${y}`);
+
   return out;
 };
 
@@ -327,9 +333,11 @@ const main = async () => {
   const favIds = composite(fanUsers, fanForms);
   const notifIds = composite(fanUsers, fanForms);
   const wsOrderIds = composite(fanUsers, fanWorkspaces);
+
   const dailyIds = formIds.flatMap((fid) =>
     ["2026-04-29", "2026-04-30", "2026-05-01"].map((d) => `${fid}:${d}`),
   );
+
   const dropoffIds = formIds.flatMap((fid) => ["q1", "q2"].map((q) => `${fid}:2026-05-01:${q}`));
 
   await seed(db, {
@@ -493,6 +501,7 @@ const main = async () => {
       (SELECT count(*) FROM upload_rate_limits)             AS rate_limits,
       (SELECT count(*) FROM todos)                          AS todos
   `);
+
   console.log("\nDone. Final counts:");
   console.log(counts[0]);
 

@@ -32,6 +32,7 @@ export const TocElement = (props: PlateElementProps) => {
               key={item.id}
               variant="ghost"
               className={headingItemVariants({
+                // SAFETY: this editor only creates h1 through h3, so TOC depths stay 1 to 3
                 depth: item.depth as 1 | 2 | 3,
               })}
               onClick={(e) => btnProps.onClick(e, item, "smooth")}
@@ -41,7 +42,7 @@ export const TocElement = (props: PlateElementProps) => {
             </Button>
           ))
         ) : (
-          <div className="text-sm text-neutral-500">
+          <div className="text-sm text-muted-foreground">
             Create a heading to display the table of contents.
           </div>
         )}

@@ -230,28 +230,31 @@ export const findTemplateMeta = (id: string): FormTemplateMeta | undefined =>
 
 const header = (title: string, id: FormTemplateId): TElement => {
   const meta = findTemplateMeta(id);
-  return createFormHeaderNode({
-    title,
-    icon: TEMPLATE_ICONS[id],
-    cover: meta?.cover ?? COVER.general,
-  }) as unknown as TElement;
+
+  // Spread into a fresh literal so FormHeaderElementData satisfies TElement's index signature.
+  return {
+    ...createFormHeaderNode({
+      title,
+      icon: TEMPLATE_ICONS[id],
+      cover: meta?.cover ?? COVER.general,
+    }),
+  };
 };
 
-const submit = (): TElement => createFormButtonNode("submit") as unknown as TElement;
+const submit = (): TElement => ({ ...createFormButtonNode("submit") });
 
-const p = (text: string): TElement => ({ type: "p", children: [{ text }] }) as TElement;
+const p = (text: string): TElement => ({ type: "p", children: [{ text }] });
 
 const block = (...args: Parameters<typeof buildFormBlockNodes>): TElement[] =>
   buildFormBlockNodes(...args);
 
 /** Label node shared by the manual field builders below. */
-const labelNode = (label: string, required: boolean): TElement =>
-  ({
-    type: "formLabel",
-    required,
-    placeholder: "Type a question",
-    children: [{ text: label }],
-  }) as TElement;
+const labelNode = (label: string, required: boolean): TElement => ({
+  type: "formLabel",
+  required,
+  placeholder: "Type a question",
+  children: [{ text: label }],
+});
 
 /** NPS-style 1–10 linear scale (buildFormBlockNodes doesn't cover this field type). */
 const linearScaleNodes = (label: string): TElement[] => [
@@ -262,13 +265,13 @@ const linearScaleNodes = (label: string): TElement[] => [
     scaleMax: 10,
     scaleStep: 1,
     children: [{ text: "" }],
-  } as TElement,
+  },
 ];
 
 /** 5-star rating (buildFormBlockNodes doesn't cover this field type). */
 const ratingNodes = (label: string): TElement[] => [
   labelNode(label, true),
-  { type: "formRating", starCount: 5, children: [{ text: "" }] } as TElement,
+  { type: "formRating", starCount: 5, children: [{ text: "" }] },
 ];
 
 /** Builds pre-seeded Plate content for a template. Header (icon + cover) + intro + fields + submit. */

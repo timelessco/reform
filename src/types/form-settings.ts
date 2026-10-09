@@ -3,7 +3,9 @@ import * as v from "valibot";
 export type Language = "English" | "Spanish" | "French";
 
 export type PopupTriggerType = "button" | "delay" | "scroll";
+
 export type PopupButtonPosition = "bottom-right" | "bottom-left" | "center";
+
 export type PopupAnimation = "fade" | "slide" | "scale";
 
 export type EmbedType = "standard" | "popup" | "fullPage";
@@ -100,13 +102,21 @@ export const buildPublicFormSettings = (
   overrides: Partial<PublicFormSettings> = {},
 ): PublicFormSettings => {
   const merged = { ...defaultPublicFormSettings };
+
+  const mergeField = <K extends keyof PublicFormSettings>(key: K) => {
+    const value = source?.[key];
+
+    if (value !== undefined && value !== null) merged[key] = value;
+  };
+
   if (source) {
+    // SAFETY: Object.keys always returns merged's own keys; merged is a PublicFormSettings
+    // spread, so each key is a PublicFormSettings property and source[key] is defined for it.
     for (const key of Object.keys(merged) as (keyof PublicFormSettings)[]) {
-      const value = source[key];
-      if (value === undefined || value === null) continue;
-      (merged as Record<string, unknown>)[key] = value;
+      mergeField(key);
     }
   }
+
   return { ...merged, ...overrides };
 };
 
@@ -148,10 +158,14 @@ export const defaultFormSettings: FormSettings = {
 /** Per-field validators — the trust boundary's type guard. A value that fails its schema
  * (wrong type from a hand-crafted request) falls back to the default rather than persisting. */
 const string = v.string();
+
 const nullableString = v.nullable(v.string());
+
 const boolean = v.boolean();
+
 const number = v.number();
-const formSettingsSchemas: { [K in keyof FormSettings]: v.GenericSchema<FormSettings[K]> } = {
+
+const formSettingsSchemas = {
   language: string,
   redirectOnCompletion: boolean,
   redirectUrl: nullableString,
@@ -184,18 +198,36 @@ const formSettingsSchemas: { [K in keyof FormSettings]: v.GenericSchema<FormSett
   preventDuplicateSubmissions: boolean,
   autoAdvance: boolean,
   saveAnswersForLater: boolean,
-};
+} satisfies { [K in keyof FormSettings]: v.GenericSchema<FormSettings[K]> };
+
+/** JSON payload as received from an untrusted client before per-field validation. */
+export type JsonPayload =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonPayload[]
+  | {
+      [key: string]: JsonPayload;
+    };
 
 /** Server-side trust boundary for the Settings page "Save": keeps only keys that exist in the
  * settings schema (drops anything a client could inject), validates each value's type (a
  * wrong-typed field falls back to its default), and fills missing keys from defaults.
  * Never `?? default` — preserves an explicit `false`/`null`/`0` so a toggled-off setting isn't
  * silently reset to its default. */
-export const sanitizeFormSettings = (input: Record<string, unknown>): FormSettings =>
-  Object.fromEntries(
-    (Object.keys(defaultFormSettings) as (keyof FormSettings)[]).map((k) => {
-      if (!(k in input)) return [k, defaultFormSettings[k]];
-      const parsed = v.safeParse(formSettingsSchemas[k], input[k]);
-      return [k, parsed.success ? parsed.output : defaultFormSettings[k]];
-    }),
-  ) as unknown as FormSettings;
+export const sanitizeFormSettings = (input: Record<string, JsonPayload>): FormSettings => {
+  const out = { ...defaultFormSettings };
+
+  // SAFETY: Object.keys always returns the spread default's own keys, which are exactly
+  // FormSettings' properties since defaultFormSettings is typed FormSettings.
+  for (const key of Object.keys(defaultFormSettings) as (keyof FormSettings)[]) {
+    if (!(key in input)) continue;
+
+    const parsed = v.safeParse(formSettingsSchemas[key], input[key]);
+
+    if (parsed.success) Object.assign(out, { [key]: parsed.output });
+  }
+
+  return out;
+};

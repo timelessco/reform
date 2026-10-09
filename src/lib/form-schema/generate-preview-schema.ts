@@ -14,6 +14,7 @@ const urlRegex = /^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/;
 // Coerce string/number → number, guard "" → undefined (Number("")===0 would pass otherwise).
 const coerceNum = (val: unknown): number | undefined => {
   if (val === "" || val === null || val === undefined) return undefined;
+
   return Number(val);
 };
 
@@ -43,10 +44,12 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
         v.transform(coerceNum),
         v.number("Please enter a valid number") as unknown as v.TransformAction<unknown, number>,
       );
+
       const intCheck = v.integer("Decimals are not allowed");
       const minMsg = (min: number) => `Value must be at least ${min}`;
       const maxMsg = (max: number) => `Value must be at most ${max}`;
       const noInt = field.allowDecimals !== false;
+
       if (typeof field.min === "number" && typeof field.max === "number") {
         return noInt
           ? v.pipe(
@@ -61,18 +64,22 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
               v.maxValue(field.max, maxMsg(field.max)),
             );
       }
+
       if (typeof field.min === "number") {
         return noInt
           ? v.pipe(base, v.minValue(field.min, minMsg(field.min)))
           : v.pipe(base, intCheck, v.minValue(field.min, minMsg(field.min)));
       }
+
       if (typeof field.max === "number") {
         return noInt
           ? v.pipe(base, v.maxValue(field.max, maxMsg(field.max)))
           : v.pipe(base, intCheck, v.maxValue(field.max, maxMsg(field.max)));
       }
+
       return noInt ? base : v.pipe(base, intCheck);
     }
+
     case "Phone":
       return v.pipe(
         v.string(),
@@ -83,6 +90,7 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
     case "Textarea": {
       const hasMin = "minLength" in field && field.minLength;
       const hasMax = "maxLength" in field && field.maxLength;
+
       if (hasMin && hasMax) {
         return v.pipe(
           v.string(),
@@ -91,6 +99,7 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
           v.maxLength(field.maxLength!, `Maximum ${field.maxLength} characters allowed`),
         );
       }
+
       if (hasMin) {
         return v.pipe(
           v.string(),
@@ -98,6 +107,7 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
           v.minLength(field.minLength!, `Minimum ${field.minLength} characters required`),
         );
       }
+
       if (hasMax) {
         return v.pipe(
           v.string(),
@@ -105,8 +115,10 @@ const baseValidatorForField = (field: PlateFormField): AnyValibotSchema => {
           v.maxLength(field.maxLength!, `Maximum ${field.maxLength} characters allowed`),
         );
       }
+
       return v.pipe(v.string(), v.nonEmpty("This field is required"));
     }
+
     default:
       // Date, Time, and any fallback scalar: non-empty string.
       return v.pipe(v.string(), v.nonEmpty("This field is required"));
@@ -135,12 +147,15 @@ export const generateZodSchemaFromFields = (
       // inside the item component). Optional: accept empty items via union;
       // only flag genuinely-malformed non-empty values.
       const strictItem = baseValidatorForField(field);
+
       const item = field.required
         ? strictItem
         : (v.union([v.literal(""), strictItem]) as AnyValibotSchema);
+
       const arraySchema: AnyValibotSchema = field.required
         ? v.pipe(v.array(item), v.nonEmpty("This field is required"))
         : v.array(item);
+
       schemaShape[field.name] = arraySchema;
       continue;
     }
@@ -160,16 +175,19 @@ export const generateZodSchemaFromFields = (
         fieldSchema = field.required ? base : v.union([v.literal(""), base]);
         break;
       }
+
       case "Date":
         fieldSchema = field.required
           ? v.pipe(v.string(), v.nonEmpty("Please select a date"))
           : v.optional(v.string());
+
         if (!field.required) isAlreadyOptional = true;
         break;
       case "Time":
         fieldSchema = field.required
           ? v.pipe(v.string(), v.nonEmpty("Please select a time"))
           : v.optional(v.string());
+
         if (!field.required) isAlreadyOptional = true;
         break;
       // Signature stores a PNG data URL string; required ⇒ non-empty.
@@ -177,6 +195,7 @@ export const generateZodSchemaFromFields = (
         fieldSchema = field.required
           ? v.pipe(v.string(), v.nonEmpty("Please provide a signature"))
           : v.optional(v.string());
+
         if (!field.required) isAlreadyOptional = true;
         break;
       case "FileUpload": {
@@ -186,6 +205,7 @@ export const generateZodSchemaFromFields = (
           size: v.number(),
           type: v.string(),
         });
+
         fieldSchema = field.required
           ? // Empty is stored as "" (a string), so accept "" | object first, then require an
             // uploaded file — else v.object rejects "" with the raw "Expected Object" type error.
@@ -197,9 +217,11 @@ export const generateZodSchemaFromFields = (
               ),
             )
           : v.optional(v.union([v.literal(""), uploadedFileSchema]));
+
         if (!field.required) isAlreadyOptional = true;
         break;
       }
+
       case "Checkbox":
         if (field.required) {
           fieldSchema = v.pipe(
@@ -210,6 +232,7 @@ export const generateZodSchemaFromFields = (
           fieldSchema = v.optional(v.array(v.string()), []);
           isAlreadyOptional = true;
         }
+
         break;
       case "MultiChoice":
       // Linear scale stores the picked number as a string (one value), like single-select.
@@ -220,6 +243,7 @@ export const generateZodSchemaFromFields = (
           fieldSchema = v.optional(v.string(), "");
           isAlreadyOptional = true;
         }
+
         break;
       case "Ranking":
         if (field.required) {
@@ -228,12 +252,14 @@ export const generateZodSchemaFromFields = (
           fieldSchema = v.optional(v.array(v.string()), []);
           isAlreadyOptional = true;
         }
+
         break;
       case "Matrix": {
         // Answer is keyed by row value → column value (single) or value[] (multiple).
         // Required ⇒ every row must be answered (checked here, not per-key, so a missing
         // key fails too). Optional ⇒ default to {} and accept partial answers.
         const rowKeys = field.rows.map((r) => r.value);
+
         if (field.multiple) {
           const rec = v.record(v.string(), v.array(v.string()));
           fieldSchema = field.required
@@ -241,6 +267,7 @@ export const generateZodSchemaFromFields = (
                 rec,
                 v.check((val) => {
                   const rec = val as Record<string, string[]>;
+
                   return rowKeys.every((k) => Array.isArray(rec[k]) && rec[k].length > 0);
                 }, "Please answer every row"),
               )
@@ -252,14 +279,17 @@ export const generateZodSchemaFromFields = (
                 rec,
                 v.check((val) => {
                   const rec = val as Record<string, string>;
+
                   return rowKeys.every((k) => typeof rec[k] === "string" && rec[k].length > 0);
                 }, "Please answer every row"),
               )
             : v.optional(rec, {});
         }
+
         if (!field.required) isAlreadyOptional = true;
         break;
       }
+
       // Rating stores the picked star count as a string (one value), like single-select.
       case "Rating":
         if (field.required) {
@@ -268,6 +298,7 @@ export const generateZodSchemaFromFields = (
           fieldSchema = v.optional(v.string(), "");
           isAlreadyOptional = true;
         }
+
         break;
       default: {
         // Input, Textarea, Phone, and other string-based types
@@ -285,6 +316,7 @@ export const generateZodSchemaFromFields = (
         }
 
         const maxPipes: v.MaxLengthAction<string, number, string>[] = [];
+
         if ("maxLength" in field && field.maxLength !== undefined && field.maxLength > 0) {
           maxPipes.push(
             v.maxLength(field.maxLength, `Maximum ${field.maxLength} characters allowed`),
@@ -300,6 +332,7 @@ export const generateZodSchemaFromFields = (
         } else {
           fieldSchema = v.string();
         }
+
         break;
       }
     }
@@ -331,6 +364,7 @@ export const generateDefaultValuesFromFields = (
     if (field.fieldType === "Button") {
       continue;
     }
+
     if ("isFieldArray" in field && field.isFieldArray) {
       const seed = "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
       // Honor the editor-configured row count (each click of "+ Add" in the
@@ -340,6 +374,7 @@ export const generateDefaultValuesFromFields = (
       defaults[field.name] = Array.from({ length: rows }, () => seed);
       continue;
     }
+
     if (field.fieldType === "Checkbox" || field.fieldType === "Ranking") {
       defaults[field.name] = [];
     } else if (field.fieldType === "Matrix") {

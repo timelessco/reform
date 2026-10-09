@@ -42,10 +42,12 @@ describe("plan-read-enforcement", () => {
 
   afterEach(async () => {
     await db.delete(customDomains).where(eq(customDomains.organizationId, orgId));
+
     const formIds = await db
       .select({ id: forms.id })
       .from(forms)
       .where(eq(forms.workspaceId, workspaceId));
+
     if (formIds.length > 0) {
       await db.delete(formSettings).where(
         inArray(
@@ -54,6 +56,7 @@ describe("plan-read-enforcement", () => {
         ),
       );
     }
+
     await db.delete(forms).where(eq(forms.workspaceId, workspaceId));
     await cleanupTestUser(ownerId);
     await cleanupTestOrg(orgId);
@@ -101,6 +104,7 @@ describe("plan-read-enforcement", () => {
         domain: `pro-${crypto.randomUUID()}.example.com`,
         status: "verified",
       });
+
       const resolved = await resolveCustomDomain(domain.domain);
       expect(resolved.id).toBe(domain.id);
     });
@@ -110,6 +114,7 @@ describe("plan-read-enforcement", () => {
         domain: `free-race-${crypto.randomUUID()}.example.com`,
         status: "verified",
       });
+
       await setOrgPlan(orgId, "free");
 
       await expect(resolveCustomDomain(domain.domain)).rejects.toMatchObject({
@@ -123,6 +128,7 @@ describe("plan-read-enforcement", () => {
         status: "suspended",
         previousStatus: "verified",
       });
+
       await expect(resolveCustomDomain(domain.domain)).rejects.toMatchObject({
         isNotFound: true,
       });
@@ -134,6 +140,7 @@ describe("plan-read-enforcement", () => {
         status: "suspended",
         previousStatus: "verified",
       });
+
       await db
         .update(customDomains)
         .set({ status: "verified", previousStatus: null })

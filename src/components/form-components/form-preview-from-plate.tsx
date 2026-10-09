@@ -13,7 +13,6 @@ import {
 } from "@/contexts/step-form-context";
 import type { TrackingBase } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
-import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { extractFormHeader } from "@/lib/editor/transform-plate-to-form";
 import { DEFAULT_COVER_POSITION } from "@/lib/form-schema/form-header-factory";
 import {
@@ -79,10 +78,7 @@ interface FormPreviewFromPlateProps {
   readOnly?: boolean;
 }
 
-const PAGE_MAX_WIDTH = {
-  editor: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
-  public: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
-} as const;
+const PAGE_MAX_WIDTH_CLASS = "max-w-[var(--bf-page-width,700px)]";
 
 // Form header (icon + cover). Mirrors editor's form-header.tsx rendering.
 const PreviewFormHeader = ({
@@ -114,8 +110,10 @@ const PreviewFormHeader = ({
   const shouldReduceMotion = useReducedMotion();
 
   const hasCustomization = !!(customization && Object.keys(customization).length > 0);
+
   const isLogoMinimal =
     hasCustomization && !!customization?.logoWidth && Number.parseInt(customization.logoWidth) <= 0;
+
   const logoCircleSize =
     hasCustomization && customization?.logoWidth
       ? String(Math.max(48, Number.parseInt(customization.logoWidth)))
@@ -140,7 +138,13 @@ const PreviewFormHeader = ({
     if (!cover) return null;
 
     if (isHexColor(cover)) {
-      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
+      return (
+        <div
+          className={cn(coverClass, "bg-(--bf-cover-bg)")}
+          data-bf-cover
+          style={{ "--bf-cover-bg": cover } as React.CSSProperties}
+        />
+      );
     }
 
     if (isValidUrl(cover) && !imageError) {
@@ -168,11 +172,15 @@ const PreviewFormHeader = ({
             sizes="100vw"
             srcSetWidths={[...COVER_SRCSET_WIDTHS]}
             className={cn(
-              "size-full object-cover",
+              "size-full object-cover [object-position:var(--bf-cover-position)]",
               cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
             // Honor the reposition customization (coverPosition); default matches editor + Figma.
-            style={{ objectPosition: `center ${coverPosition ?? DEFAULT_COVER_POSITION}%` }}
+            style={
+              {
+                "--bf-cover-position": `center ${coverPosition ?? DEFAULT_COVER_POSITION}%`,
+              } as React.CSSProperties
+            }
             onError={handleImageError}
           />
         </div>
@@ -242,13 +250,10 @@ const PreviewFormHeader = ({
         {/* Cover sits in a page-width container so "fit" (calc(100% + 56px)) tracks the form
             width, not the full pane; "fill" still breaks out to 100vw via its var fallback. */}
         {hasCover && (
-          <div className="mx-auto w-full" style={{ maxWidth: PAGE_MAX_WIDTH.editor }}>
-            {renderCover()}
-          </div>
+          <div className={cn("mx-auto w-full", PAGE_MAX_WIDTH_CLASS)}>{renderCover()}</div>
         )}
         <div
-          className="mx-auto w-full px-8 md:px-0"
-          style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
+          className={cn("mx-auto w-full px-8 md:px-0", PAGE_MAX_WIDTH_CLASS)}
           data-bf-form-container
         >
           {hasIcon && renderIcon()}
@@ -285,11 +290,11 @@ const PreviewFormHeader = ({
                       ? { duration: 0 }
                       : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
                   }
-                  style={{ textWrap: "pretty", overflow: "hidden" }}
                   className={cn(
-                    "font-serif font-light -tracking-[0.03em] text-foreground",
+                    // oxlint-disable-next-line shadcn/no-arbitrary-values -- -0.03em sits between tracking-tight and tracking-tighter; nearest would shift title rendering
+                    "overflow-hidden font-serif font-light -tracking-[0.03em] text-pretty text-foreground",
                     // Popup card (Figma 26883/26889): compact 24px title, not the 48px full-page size.
-                    isPopup ? "text-2xl" : "text-4xl sm:text-[48px]",
+                    isPopup ? "text-2xl" : "text-4xl sm:text-9xl",
                   )}
                 >
                   {title}
@@ -307,25 +312,19 @@ const PreviewFormHeader = ({
     <div ref={headerRef} className="mb-7 w-full">
       {/* Cover in a page-width container so "fit" tracks form width; "fill" still hits 100vw. */}
       {hasCover && (
-        <div className="mx-auto w-full" style={{ maxWidth: PAGE_MAX_WIDTH.public }}>
-          {renderCover()}
-        </div>
+        <div className={cn("mx-auto w-full", PAGE_MAX_WIDTH_CLASS)}>{renderCover()}</div>
       )}
 
-      <div
-        className="mx-auto px-4"
-        style={{ maxWidth: PAGE_MAX_WIDTH.public }}
-        data-bf-form-container
-      >
+      <div className={cn("mx-auto px-4", PAGE_MAX_WIDTH_CLASS)} data-bf-form-container>
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
               data-bf-title
-              style={{ textWrap: "pretty" }}
               className={cn(
-                "font-serif font-light -tracking-[0.03em] text-foreground",
-                isPopup ? "text-2xl" : "text-4xl sm:text-[48px]",
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- -0.03em sits between tracking-tight and tracking-tighter; nearest would shift title rendering
+                "font-serif font-light -tracking-[0.03em] text-pretty text-foreground",
+                isPopup ? "text-2xl" : "text-4xl sm:text-9xl",
                 // Popup header row (Figma 26883 py-12): 12px top so the title centers with the close.
                 isPopup ? "mt-3" : hasIcon ? "mt-3" : "mt-6 sm:mt-8",
               )}
@@ -350,6 +349,7 @@ const RenderThankYouContent = ({
   shareUrl?: string;
 }) => {
   const { t } = useTranslation();
+
   return (
     <div data-bf-field-list>
       <StaticContentBlock nodes={nodes} />
@@ -503,6 +503,7 @@ const ThankYouView = ({
   redirectCountdown,
 }: ThankYouViewProps) => {
   const { t } = useTranslation();
+
   return (
     <LazyMotion features={domAnimation} strict>
       <m.div
@@ -599,14 +600,12 @@ const FieldByFieldLayout = ({
         className={cn(
           "mx-auto",
           layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
-          isPopup && "pb-[20px]",
+          PAGE_MAX_WIDTH_CLASS,
+          isPopup && "pb-5",
         )}
-        style={{
-          maxWidth: PAGE_MAX_WIDTH[layout],
-          ...(layout === "editor"
-            ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
-            : undefined),
-        }}
+        style={
+          layout === "editor" ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties) : undefined
+        }
         data-bf-form-container
       >
         {isSubmitted ? (
@@ -694,8 +693,11 @@ const LinearLayout = ({
 
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className={cn("mx-auto mb-6", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
-          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
+          className={cn(
+            "mx-auto mb-6",
+            layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
+            PAGE_MAX_WIDTH_CLASS,
+          )}
           data-bf-form-container
         >
           <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
@@ -703,13 +705,14 @@ const LinearLayout = ({
       )}
 
       <div
-        className={cn("mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
-        style={{
-          maxWidth: PAGE_MAX_WIDTH[layout],
-          ...(layout === "editor"
-            ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
-            : undefined),
-        }}
+        className={cn(
+          "mx-auto",
+          layout === "editor" ? "w-full px-8 md:px-0" : "px-4",
+          PAGE_MAX_WIDTH_CLASS,
+        )}
+        style={
+          layout === "editor" ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties) : undefined
+        }
         data-bf-form-container
       >
         {readOnly ? (
@@ -777,15 +780,18 @@ const FormPreviewContent = (props: {
   shortId?: string;
 }) => {
   const { isSubmitted, reset } = useStepForm();
+
   const { shortId, settings, layout, isFieldByField, ...rest } = {
     ...props,
     isFieldByField: props.settings?.presentationMode === "field-by-field",
   };
+
   const redirectCountdown = useRedirectCompletion(isSubmitted, settings);
 
   // Thank-you share URL. Built from shortId since editor preview's window.location is the editor route, not the public URL.
   const shareUrl = useMemo(() => {
     if (!shortId || typeof window === "undefined") return undefined;
+
     return `${window.location.origin}/forms/${shortId}`;
   }, [shortId]);
 
@@ -805,8 +811,11 @@ const FormPreviewContent = (props: {
           isPopup={rest.isPopup}
         />
         <div
-          className={cn("mx-auto w-full", layout === "editor" ? "px-8 md:px-0" : "px-4")}
-          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
+          className={cn(
+            "mx-auto w-full",
+            layout === "editor" ? "px-8 md:px-0" : "px-4",
+            PAGE_MAX_WIDTH_CLASS,
+          )}
           data-bf-form-container
         >
           <ThankYouView

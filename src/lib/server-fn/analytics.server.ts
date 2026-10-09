@@ -11,12 +11,14 @@ export {
   recordQuestionProgressImpl,
   updateFormVisitImpl,
 } from "@/lib/server-fn/analytics-ingestion.server";
+
 export type {
   RecordFormVisitInput,
   RecordQuestionProgressBatchInput,
   RecordQuestionProgressInput,
   UpdateFormVisitInput,
 } from "@/lib/server-fn/analytics-ingestion.server";
+
 export {
   aggregateAnalyticsDailyImpl,
   getAnalyticsState,
@@ -27,6 +29,7 @@ export {
   getInsightsAvailabilityImpl,
   isAnalyticsEnabled,
 } from "@/lib/server-fn/analytics-insights.server";
+
 export type {
   AggregateResult,
   InsightsAvailability,

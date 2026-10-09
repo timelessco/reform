@@ -58,7 +58,7 @@ export const ComboboxInput = ({
 }) => (
   <InputGroup
     className={cn(
-      "placeholder:text-gray-alpha-600 w-auto min-w-20 flex-1 rounded-xl bg-accent text-base outline-none",
+      "w-auto min-w-20 flex-1 rounded-xl bg-accent text-base outline-none placeholder:text-(--color-gray-alpha-600)",
       className,
     )}
   >
@@ -66,7 +66,7 @@ export const ComboboxInput = ({
       render={
         <InputGroupInput
           disabled={disabled}
-          className="placeholder:text-gray-alpha-600 min-w-20 px-0 outline-none"
+          className="min-w-20 px-0 outline-none placeholder:text-(--color-gray-alpha-600)"
         />
       }
       {...props}
@@ -144,10 +144,10 @@ export const ComboboxItem = ({ className, children, ...props }: ComboboxPrimitiv
     <ComboboxPrimitive.ItemIndicator
       keepMounted
       render={
-        <span className="text-plain data-selected:text-plain ml-auto flex size-4 shrink-0 items-center justify-center opacity-0 data-selected:opacity-100" />
+        <span className="ml-auto flex size-4 shrink-0 items-center justify-center text-(--color-plain) opacity-0 data-selected:text-(--color-plain) data-selected:opacity-100" />
       }
     >
-      <CheckIcon className="pointer-events-none text-neutral-800" />
+      <CheckIcon className="pointer-events-none text-popover-foreground" />
     </ComboboxPrimitive.ItemIndicator>
   </ComboboxPrimitive.Item>
 );
@@ -172,7 +172,7 @@ export const ComboboxEmpty = ({ className, ...props }: ComboboxPrimitive.Empty.P
   <ComboboxPrimitive.Empty
     data-slot="combobox-empty"
     className={cn(
-      "text-13 hidden w-full justify-center px-2 py-1.25 text-gray-500 group-data-empty/combobox-content:flex",
+      "hidden w-full justify-center px-2 py-1.25 text-muted-foreground group-data-empty/combobox-content:flex",
       className,
     )}
     {...props}
@@ -194,7 +194,7 @@ export const ComboboxChips = ({
   <ComboboxPrimitive.Chips
     data-slot="combobox-chips"
     className={cn(
-      "bg-gray-alpha-100 relative flex min-h-7.5 w-full flex-wrap items-center gap-1 rounded-lg px-0.75 py-0.75 focus-within:ring-2 focus-within:ring-gray-200",
+      "relative flex min-h-7.5 w-full flex-wrap items-center gap-1 rounded-lg bg-(--color-gray-alpha-100) px-0.75 py-0.75 focus-within:ring-2 focus-within:ring-border-soft",
       className,
     )}
     {...props}
@@ -212,7 +212,7 @@ export const ComboboxChip = ({
   <ComboboxPrimitive.Chip
     data-slot="combobox-chip"
     className={cn(
-      "font-450 flex cursor-pointer items-center gap-1.5 rounded-md bg-gray-100 px-2 py-[4.5px] text-xs text-gray-800 transition-colors outline-none hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-gray-200 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pe-0",
+      "flex cursor-pointer items-center gap-1.5 rounded-md bg-muted px-2 py-[4.5px] text-xs text-popover-foreground transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-border-soft has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pe-0",
       className,
     )}
     {...props}
@@ -234,7 +234,7 @@ export const ComboboxChipsInput = ({ className, ...props }: ComboboxPrimitive.In
   <ComboboxPrimitive.Input
     data-slot="combobox-chip-input"
     className={cn(
-      "text-13 placeholder:text-gray-alpha-600 min-w-20 flex-1 bg-transparent px-2.5 outline-none",
+      "min-w-20 flex-1 bg-transparent px-2.5 outline-none placeholder:text-(--color-gray-alpha-600)",
       className,
     )}
     {...props}

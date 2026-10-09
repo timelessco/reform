@@ -1,19 +1,20 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { _getFormById, getArchivedFormListings } from "./forms";
+import { queryKeys } from "@/lib/query-keys";
 
-// Client-safe query helpers split out of forms.ts: importing these must NOT pull
-// forms.ts's top-level @/db/schema import into the client bundle. They reference
-// server fns (proxied on the client), so this module stays free of drizzle/schema.
+// Client-safe query helpers split out of forms.ts so importing these never pulls its top-level
+// @/db/schema import into the client bundle. Server fns are proxied on the client, so this
+// module stays free of drizzle/schema.
 
 export const archivedFormListingsQueryOptions = () =>
   queryOptions({
-    queryKey: ["form-listings-archived"],
+    queryKey: queryKeys.archivedFormListings(),
     queryFn: ({ signal }) => getArchivedFormListings({ signal }),
-    staleTime: 1000 * 60, // 1 min — refetched on dialog reopen anyway
+    staleTime: 1000 * 60, // 1 min, refetched on dialog reopen anyway
   });
 
-/** Real `_getFormById` return: `{ form: serializeForm(row) }` (dates as ISO strings). */
+/** Real `_getFormById` return, `{ form: serializeForm(row) }` with dates as ISO strings. */
 export type FormByIdResult = Awaited<ReturnType<typeof _getFormById>>;
 
 export const getFormbyIdQueryOption = (formId: string) =>

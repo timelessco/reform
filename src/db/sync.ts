@@ -30,6 +30,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
     if (localForms.length === 0) {
       logger("No local data to sync");
+
       return null;
     }
 
@@ -37,8 +38,10 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
+
     if (orgWorkspaces.length === 0) {
       logger("No workspace found, creating via collection...");
+
       try {
         const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
         targetWorkspaceId = newWorkspace.id;
@@ -57,6 +60,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     }
 
     const syncedForms: string[] = [];
+
     for (const localForm of localForms) {
       try {
         const newFormId = crypto.randomUUID();
@@ -130,9 +134,11 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
     const forms = await localFormCollection.toArrayWhenReady();
+
     return forms.length > 0;
   } catch (error) {
     log.error({ tag: "hasLocalDataToSync", msg: "Failed to check for local data", error });
+
     return false;
   }
 };

@@ -1,7 +1,9 @@
 import { createCollection, localOnlyCollectionOptions } from "@tanstack/react-db";
 
 export type SidebarType = "settings" | "share" | "history" | "customize" | "about" | null;
+
 export type SettingsTab = "integrations" | "settings";
+
 export type ShareTab = "share" | "summary";
 
 export type EditorUIState = {

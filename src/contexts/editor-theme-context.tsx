@@ -16,4 +16,5 @@ const EditorThemeContext = createContext<EditorThemeValue>({
 });
 
 export const EditorThemeProvider = EditorThemeContext.Provider;
+
 export const useEditorTheme = () => use(EditorThemeContext);

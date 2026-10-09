@@ -3,6 +3,7 @@ import type { FieldRendererProps } from "./shared";
 
 const TimeField = ({ element, form, name }: FieldRendererProps<"Time">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   return (
     <form.AppField name={fieldName}>
       {(f) => (

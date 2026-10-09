@@ -8,12 +8,14 @@ export const loadGoogleFont = (fontName: string): void => {
   if (!fontName || loadedFonts.has(fontName)) return;
 
   const url = getGoogleFontUrl(fontName);
+
   if (!url) return;
 
   const linkId = `gf-${fontName.replace(/\s+/g, "-").toLowerCase()}`;
 
   if (document.getElementById(linkId)) {
     loadedFonts.add(fontName);
+
     return;
   }
 

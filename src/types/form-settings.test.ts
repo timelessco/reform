@@ -34,6 +34,7 @@ describe("sanitizeFormSettings", () => {
       dataRetentionDays: "10",
       presentationMode: "carousel",
     });
+
     expect(result.maxSubmissions).toBe(defaultFormSettings.maxSubmissions);
     expect(result.branding).toBe(defaultFormSettings.branding);
     expect(result.dataRetentionDays).toBe(defaultFormSettings.dataRetentionDays);
@@ -45,6 +46,7 @@ describe("sanitizeFormSettings", () => {
       maxSubmissions: 100,
       presentationMode: "field-by-field",
     });
+
     expect(result.maxSubmissions).toBe(100);
     expect(result.presentationMode).toBe("field-by-field");
   });
@@ -57,6 +59,7 @@ describe("sanitizeFormSettings", () => {
       dataRetentionTime: "16:30",
       closeTime: "18:00",
     });
+
     expect(result.partialSubmissions).toBe(true);
     expect(result.timezone).toBe("GMT +05:30");
     expect(result.dataRetentionDate).toBe("2026-08-09");

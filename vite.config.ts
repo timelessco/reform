@@ -10,7 +10,6 @@ import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 
-
 // Custom Cache-Control headers for the public embed script so updates
 // propagate quickly to embedders without requiring a versioned URL.
 const setEmbedHeader = (
@@ -21,6 +20,7 @@ const setEmbedHeader = (
   if (req.url?.startsWith("/embed/popup.js") || req.url?.startsWith("/widgets/embed.js")) {
     res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
   }
+
   next();
 };
 
@@ -49,6 +49,7 @@ const stripImageSentinelForApiIcons = (
   if (req.url?.startsWith("/api/icons/")) {
     delete req.headers["sec-fetch-dest"];
   }
+
   next();
 };
 

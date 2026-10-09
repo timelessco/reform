@@ -14,10 +14,13 @@ export const startScopedViewTransition = (update: () => void): void => {
   const reduceMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
   if (typeof document === "undefined" || !document.startViewTransition || reduceMotion) {
     update();
+
     return;
   }
+
   const root = document.documentElement;
   root.classList.add("vt-isolate-root");
   const transition = document.startViewTransition(update);

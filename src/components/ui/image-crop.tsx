@@ -22,6 +22,7 @@ import type {
 } from "react";
 import { ReactCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import type { PercentCrop, PixelCrop, ReactCropProps } from "react-image-crop";
+import * as v from "valibot";
 
 import "react-image-crop/dist/ReactCrop.css";
 
@@ -109,9 +110,11 @@ const ImageCropContext = createContext<ImageCropContextType | null>(null);
 
 const useImageCrop = () => {
   const context = use(ImageCropContext);
+
   if (!context) {
     throw new Error("ImageCrop components must be used within ImageCrop");
   }
+
   return context;
 };
 
@@ -141,14 +144,18 @@ export const ImageCrop = ({
 
   useEffect(() => {
     const reader = new FileReader();
+
     const handleLoad = () => {
       const result = reader.result;
-      setImgSrc(typeof result === "string" ? result : "");
+      setImgSrc(v.is(v.string(), result) ? result : "");
     };
+
     reader.addEventListener("load", handleLoad);
     reader.readAsDataURL(file);
+
     return () => {
       reader.removeEventListener("load", handleLoad);
+
       if (reader.readyState === FileReader.LOADING) {
         reader.abort();
       }
@@ -244,6 +251,7 @@ export const ImageCropContent = ({ style, className }: ImageCropContentProps) =>
   const { imgSrc, crop, updateCrop, handleComplete, onImageLoad, imgRef, reactCropProps } =
     useImageCrop();
 
+  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
   const shadcnStyle = {
     "--rc-border-color": "var(--color-border)",
     "--rc-focus-color": "var(--color-primary)",
@@ -266,18 +274,19 @@ export const ImageCropContent = ({ style, className }: ImageCropContentProps) =>
 };
 
 export type ImageCropApplyProps = ComponentProps<"button"> & {
-  render?: ReactElement;
+  render?: ReactElement<ComponentProps<"button">>;
 };
 
 export const ImageCropApply = ({ render, children, onClick, ...props }: ImageCropApplyProps) => {
   const { applyCrop } = useImageCrop();
+
   const applyAndForward = async (e: MouseEvent<HTMLButtonElement>) => {
     await applyCrop();
     onClick?.(e);
   };
 
   if (render) {
-    return cloneElement(render as ReactElement<Record<string, unknown>>, {
+    return cloneElement(render, {
       onClick: applyAndForward,
       children,
       ...props,
@@ -298,18 +307,19 @@ export const ImageCropApply = ({ render, children, onClick, ...props }: ImageCro
 };
 
 export type ImageCropResetProps = ComponentProps<"button"> & {
-  render?: ReactElement;
+  render?: ReactElement<ComponentProps<"button">>;
 };
 
 export const ImageCropReset = ({ render, children, onClick, ...props }: ImageCropResetProps) => {
   const { resetCrop } = useImageCrop();
+
   const resetAndForward = (e: MouseEvent<HTMLButtonElement>) => {
     resetCrop();
     onClick?.(e);
   };
 
   if (render) {
-    return cloneElement(render as ReactElement<Record<string, unknown>>, {
+    return cloneElement(render, {
       onClick: resetAndForward,
       children,
       ...props,

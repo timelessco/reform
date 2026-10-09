@@ -61,6 +61,7 @@ export type InsightsFilterInput = {
 // Org-plan check covers the window before a Polar downgrade webhook flips cached state.
 export const isAnalyticsEnabled = async (formId: string): Promise<boolean> => {
   const { display } = await getAnalyticsState(formId);
+
   return display;
 };
 
@@ -78,8 +79,10 @@ export const getAnalyticsState = async (
     .innerJoin(organization, eq(organization.id, workspaces.organizationId))
     .leftJoin(formSettings, eq(formSettings.formId, forms.id))
     .where(eq(forms.id, formId));
+
   const toggle = row?.settings?.analytics === true;
   const display = toggle && isServerPlan(row?.plan) && planUnlocks(row.plan, "analytics");
+
   return { toggle, display };
 };
 
@@ -102,6 +105,7 @@ const countCompletedSubmissions = async (
         lte(submissions.createdAt, end),
       ),
     );
+
   return row?.value ?? 0;
 };
 
@@ -123,6 +127,7 @@ const getFormCreatedAt = async (formId: string): Promise<Date> => {
     .from(forms)
     .where(eq(forms.id, formId))
     .limit(1);
+
   return row?.createdAt ?? new Date(0);
 };
 
@@ -134,6 +139,7 @@ const resolveInsightsRange = async (
 ): Promise<ResolvedRange> => {
   const formCreatedAt =
     data.filter === "all_time" ? await getFormCreatedAt(data.formId) : undefined;
+
   return resolveTimeRange(
     { filter: data.filter, startDate: data.startDate, endDate: data.endDate, formCreatedAt },
     now,
@@ -172,6 +178,7 @@ export const getFormInsightsImpl = async (
   const split = splitTodayVsPast(range, now);
 
   const enabled = await isAnalyticsEnabled(data.formId);
+
   const dailyRows =
     enabled && split.pastDays.length > 0
       ? await db
@@ -213,16 +220,20 @@ export const getFormInsightsImpl = async (
   const priorDays = priorDaysFor(data, range);
   const priorStart = priorDays[0] ? new Date(`${priorDays[0]}T00:00:00.000Z`) : range.start;
   const priorEnd = priorDays.at(-1) ? new Date(`${priorDays.at(-1)}T23:59:59.999Z`) : range.start;
+
   const [completedSubmissions, priorSubmissions, curDurRows, priorDurRows] = await Promise.all([
     countCompletedSubmissions(data.formId, range.start, range.end),
     countCompletedSubmissions(data.formId, priorStart, priorEnd),
     durationRowsForDays(data.formId, split.pastDays),
     durationRowsForDays(data.formId, priorDays),
   ]);
+
   const priorVisits = priorDurRows.reduce((sum, r) => sum + r.totalVisits, 0);
+
   // Weight the median blend by each day's submitter count (sample count), matching the live path.
   const toDurationSamples = (rows: typeof curDurRows) =>
     rows.map((r) => ({ medianDurationMs: r.medianDurationMs, sampleCount: r.totalSubmissions }));
+
   const curAvg = weightedMedianDuration(toDurationSamples(curDurRows));
   const priorAvg = weightedMedianDuration(toDurationSamples(priorDurRows));
 
@@ -244,14 +255,18 @@ export const getFormInsightsImpl = async (
  * Prior window is fully past, so reads entirely from aggregated daily rows. */
 const priorDayKeys = (rangeDays: string[]): string[] => {
   const firstKey = rangeDays[0];
+
   if (!firstKey) {
     return [];
   }
+
   const firstDay = new Date(`${firstKey}T00:00:00.000Z`);
   const keys: string[] = [];
+
   for (let offset = rangeDays.length; offset >= 1; offset--) {
     keys.push(toDateKey(new Date(firstDay.getTime() - offset * MS_PER_DAY)));
   }
+
   return keys;
 };
 
@@ -269,6 +284,7 @@ export const getFormVitalsImpl = async (
   const endDate = data.endDate ?? toDateKey(range.end);
 
   const enabled = await isAnalyticsEnabled(data.formId);
+
   if (!enabled) {
     return buildVitalsMetrics({
       dailyRows: [],
@@ -315,6 +331,7 @@ export const getFormVitalsImpl = async (
     : [];
 
   const priorDays = priorDaysFor(data, range);
+
   const priorDailyRows =
     priorDays.length > 0
       ? await db
@@ -353,6 +370,7 @@ export const getFormDropoffImpl = async (
   const enabled = await isAnalyticsEnabled(data.formId);
   const cutDateKey = PER_QUESTION_ANALYTICS_CUT_TS.slice(0, 10);
   const cutDate = new Date(PER_QUESTION_ANALYTICS_CUT_TS);
+
   const rawDailyRows =
     enabled && split.pastDays.length > 0
       ? await db
@@ -390,12 +408,15 @@ export const getFormDropoffImpl = async (
 
   // Question-id → label map from draft content so funnel shows labels not raw Plate Block ids.
   const labelMap = new Map<string, string>();
+
   const [formRow] = await db
     .select({ content: forms.content })
     .from(forms)
     .where(eq(forms.id, data.formId));
+
   if (formRow?.content) {
     const { steps } = transformPlateForPreview(formRow.content as Value);
+
     for (const step of steps) {
       for (const seg of step) {
         if (seg.type === "field" && seg.field.fieldType !== "Button" && seg.field.label) {
@@ -417,6 +438,7 @@ export const getFormDropoffImpl = async (
   // Total-dropoffs trend vs the prior equal-length window (submissions/avg-time deltas come from
   // insights). Prior window is fully past → reads daily rollups only.
   const priorDays = priorDaysFor(data, range);
+
   const priorDropoffDailyRows =
     enabled && priorDays.length > 0
       ? await db
@@ -430,6 +452,7 @@ export const getFormDropoffImpl = async (
             ),
           )
       : [];
+
   const priorMetrics = mergeDropoffMetrics({
     formId: data.formId,
     startDate: priorDays[0] ?? "",
@@ -464,15 +487,18 @@ export const getFormDropoffImpl = async (
     : [];
 
   const timeAgg = new Map<string, { index: number; sum: number; n: number }>();
+
   for (const r of timingRows) {
     if (!r.startedAt || !r.completedAt) continue;
     const ms = r.completedAt.getTime() - r.startedAt.getTime();
+
     if (ms <= 0) continue; // guard clock skew / instant rows
     const prev = timeAgg.get(r.questionId) ?? { index: r.questionIndex, sum: 0, n: 0 };
     prev.sum += ms;
     prev.n += 1;
     timeAgg.set(r.questionId, prev);
   }
+
   const timePerQuestion = [...timeAgg.entries()]
     .map(([questionId, { index, sum, n }]) => ({
       questionIndex: index,
@@ -534,17 +560,22 @@ export const getFormAnswersImpl = async (
 
   const questions: QuestionAnswerSummary[] = fields.map((field, index) => {
     const options = "options" in field ? field.options : undefined;
+
     const optionLabel = (value: string): string =>
       options?.find((o) => o.value === value)?.label ?? value;
+
     const analysis = resolveAnalysis(field.fieldType, (options?.length ?? 0) > 0);
 
     // Tally each submission into the bucket(s) appropriate for this field's analysis kind.
     const counts = new Map<string, number>();
     let answered = 0;
+
     for (const d of datas) {
       const values = normalizeAnswer(d[field.name]);
+
       if (values.length === 0) continue;
       answered += 1;
+
       if (analysis === "length") {
         bump(counts, lengthBucket(values.join(" ").trim().length));
       } else if (analysis === "domain") {
@@ -632,7 +663,9 @@ export const getInsightsAvailabilityImpl = async (
 };
 
 const DAYS_TO_RETAIN = 90;
+
 const MS_PER_DAY = 86_400_000;
+
 const RETENTION_MS = DAYS_TO_RETAIN * MS_PER_DAY;
 
 export interface AggregateResult {
@@ -673,6 +706,7 @@ export const aggregateAnalyticsDailyImpl = async (data: {
       );
 
     const analyticsRows = buildDailyAnalyticsRows(visits, date, now);
+
     const dropoffRows = buildDailyDropoffRows({
       rows: progress,
       visits,
@@ -681,11 +715,13 @@ export const aggregateAnalyticsDailyImpl = async (data: {
     });
 
     await tx.delete(formAnalyticsDaily).where(eq(formAnalyticsDaily.date, date));
+
     if (analyticsRows.length > 0) {
       await tx.insert(formAnalyticsDaily).values(analyticsRows);
     }
 
     await tx.delete(formDropoffDaily).where(eq(formDropoffDaily.date, date));
+
     if (dropoffRows.length > 0) {
       await tx.insert(formDropoffDaily).values(dropoffRows);
     }

@@ -34,10 +34,10 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import type { TElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
+import * as v from "valibot";
 
 import { AnimatePresence, m } from "motion/react";
 
@@ -116,25 +116,43 @@ const REPEATABLE_BLOCK_FIELD_TYPES = new Set<BlockFieldType>([
 const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
   if (!node?.type) return "unknown";
   const t = node.type;
+
   if (TEXT_LIKE_TYPES.has(t)) return "textLike";
+
   if (t === "formEmail") return "formEmail";
+
   if (t === "formPhone") return "formPhone";
+
   if (t === "formNumber") return "formNumber";
+
   if (t === "formDate") return "formDate";
+
   if (t === "formTime") return "formTime";
+
   if (t === "formFileUpload") return "formFileUpload";
+
   if (t === "formLinearScale") return "formLinearScale";
+
   if (t === "formMatrix") return "formMatrix";
+
   if (t === "formRating") return "formRating";
+
   if (t === "formSignature") return "formSignature";
+
   if (t === "formOptionItem") {
     const v = node.variant || "checkbox";
+
     if (v === "multiChoice") return "optionMultiChoice";
+
     if (v === "ranking") return "optionRanking";
+
     return "optionCheckbox";
   }
+
   if (t === "formButton") return "formButton";
+
   if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(t)) return "static";
+
   return "unknown";
 };
 
@@ -159,6 +177,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   useMountEffect(() => {
     const close = () => api.blockMenu.hide();
     registerBlockMenuClose(close);
+
     return () => unregisterBlockMenuClose(close);
   });
 
@@ -196,10 +215,12 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const canTurnInto = !FORM_INPUT_NODE_TYPES.has(nodeType ?? "") && nodeType !== "formButton";
 
   const [wasOpen, setWasOpen] = React.useState(false);
+
   if (isOpen && !wasOpen) {
     setWasOpen(true);
+
     if (nodeType === "formButton") {
-      setButtonText((firstNode?.buttonText as string) || "Submit");
+      setButtonText(firstNode?.buttonText || "Submit");
     }
   } else if (!isOpen && wasOpen) {
     setWasOpen(false);
@@ -235,13 +256,17 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     // land on a label or a middle option; walk past the trailing option run so the logic block
     // lands below the last option instead of splitting the group.
     const inputPath = getInputPath() ?? firstPath;
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
     let last = inputPath[0];
+
     while (last < nodes.length - 1 && nodes[last + 1]?.type === "formOptionItem") last++;
-    editor.tf.insertNodes(createLogicBlockNode() as unknown as TElement, {
-      at: [last + 1],
-      select: false,
-    });
+    editor.tf.insertNodes(
+      { ...createLogicBlockNode() },
+      {
+        at: [last + 1],
+        select: false,
+      },
+    );
     api.blockMenu.hide();
   }, [editor, firstPath, getInputPath, api.blockMenu]);
 
@@ -250,12 +275,13 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
       editor
         .getApi(BlockSelectionPlugin)
         .blockSelection.getNodes()
-        .forEach(([node, path]: [Record<string, unknown>, number[]]) => {
+        .forEach(([node, path]) => {
           if (node[KEYS.listType]) {
             editor.tf.unsetNodes([KEYS.listType, "indent"], {
               at: path,
             });
           }
+
           editor.tf.toggleBlock(type, { at: path });
         });
       api.blockMenu.hide();
@@ -269,18 +295,26 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   const handleOpenBulkInsert = React.useCallback(() => {
     const optionPath = getInputPath();
+
     if (!optionPath) return;
     const start = optionPath[0];
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
     // Anchor must resolve to an option (selection may be the option or its label above it).
-    const startNode = nodes[start] as { type?: string; variant?: string } | undefined;
-    if (startNode?.type !== "formOptionItem") return;
+    const startNode = nodes[start];
+
+    if (startNode === undefined || startNode.type !== "formOptionItem") return;
     let lastIndex = start;
+
     for (let i = start + 1; i < nodes.length; i++) {
       if (nodes[i]?.type === "formOptionItem") lastIndex = i;
       else break;
     }
-    setBulkInsert({ at: lastIndex + 1, variant: startNode.variant || "checkbox" });
+
+    setBulkInsert({
+      at: lastIndex + 1,
+      variant:
+        v.is(v.string(), startNode.variant) && startNode.variant ? startNode.variant : "checkbox",
+    });
     changeView("bulk-insert");
   }, [getInputPath, editor, changeView]);
 
@@ -288,26 +322,29 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     (text: string) => {
       const target = bulkInsert;
       setBulkInsert(null);
+
       if (!target) return;
+
       const labels = text
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
+
       if (labels.length === 0) return;
-      const newNodes = labels.map(
-        (label) =>
-          ({
-            type: "formOptionItem",
-            variant: target.variant,
-            children: [{ text: label }],
-          }) as unknown as TElement,
-      );
+
+      const newNodes = labels.map((label) => ({
+        type: "formOptionItem",
+        variant: target.variant,
+        children: [{ text: label }],
+      }));
+
       editor.tf.insertNodes(newNodes, { at: [target.at] });
       api.blockMenu.hide();
       // Focus back to the last inserted option, cursor at its end.
       const lastPath = [target.at + labels.length - 1];
       editor.tf.focus();
       const end = editor.api.end(lastPath);
+
       if (end) editor.tf.select(end);
     },
     [bulkInsert, editor, api.blockMenu],
@@ -327,17 +364,22 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // place as the block scrolls away. Ignore scrolls from inside the menu so its overflow works.
   React.useEffect(() => {
     if (!isOpen) return;
+
     const handleScroll = (event: Event) => {
       const target = event.target;
+
       if (
         target instanceof Element &&
         target.closest("[data-radix-popper-content-wrapper], [role='menu']")
       ) {
         return;
       }
+
       api.blockMenu.hide();
     };
+
     window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll, { capture: true });
     };
@@ -347,6 +389,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     (open: boolean, eventDetails: { reason?: string }) => {
       if (!open) {
         const { reason } = eventDetails;
+
         // Close on deliberate dismissals only, not focus events from submenu interactions.
         if (reason === "outsidePress" || reason === "escapeKey" || reason === "itemPress") {
           api.blockMenu.hide();
@@ -364,22 +407,29 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         e.preventDefault();
         e.stopPropagation();
         changeView(null);
+
         return;
       }
+
       if (e.key !== "Tab") return;
       e.preventDefault();
       e.stopPropagation();
+
       const items = Array.from(
         e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]:not([data-disabled])'),
       );
+
       if (items.length === 0) return;
       const active = document.activeElement;
+
       const idx = items.findIndex(
         (el) => el === active || (active instanceof Node && el.contains(active)),
       );
+
       const next = e.shiftKey
         ? items[idx <= 0 ? items.length - 1 : idx - 1]
         : items[idx === -1 || idx === items.length - 1 ? 0 : idx + 1];
+
       next?.focus();
     },
     [view, changeView],
@@ -389,18 +439,23 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // lock both for the session so view-morph resizes can't re-flip the popup around the anchor.
   React.useEffect(() => {
     if (!isOpen) return;
+
     const raf = requestAnimationFrame(() => {
       const el = document.querySelector('[data-slot="dropdown-menu-content"]');
       const side = el?.getAttribute("data-side");
       const align = el?.getAttribute("data-align");
+
       if (side === "top" || side === "bottom") setLockedSide(side);
+
       if (align === "start" || align === "center" || align === "end") setLockedAlign(align);
     });
+
     return () => cancelAnimationFrame(raf);
   }, [isOpen]);
 
   const virtualAnchor = React.useMemo(() => {
     if (!isOpen) return undefined;
+
     return {
       getBoundingClientRect: () => ({
         x,
@@ -476,7 +531,11 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   );
 
   const FieldMenu = FIELD_MENU_VARIANTS[fieldType];
-  const activePanel = view === null ? null : (INLINE_PANELS[view] ?? null);
+
+  const isInlinePanelId = (id: string): id is keyof typeof INLINE_PANELS => id in INLINE_PANELS;
+
+  const activePanel: InlinePanel | null =
+    view !== null && isInlinePanelId(view) ? INLINE_PANELS[view] : null;
 
   return (
     <>
@@ -490,6 +549,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           <DropdownMenuContent
             anchor={virtualAnchor}
             className={cn("bf-block-menu", themeReanchor.className)}
+            // oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color
             style={themeReanchor.style}
             // Pre-lock: collision-aware placement off the click point (flips side AND align to fit).
             // Locked: keep the settled side + align with avoidance off, so view morphs grow away
@@ -549,7 +609,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
 type EditorRef = ReturnType<typeof useEditorPlugin<typeof BlockMenuPlugin>>["editor"];
 
-interface BlockMenuInputNode {
+type BlockMenuInputNode = {
   type?: string;
   variant?: string;
   optionLabel?: OptionLabelStyle;
@@ -585,7 +645,7 @@ interface BlockMenuInputNode {
   anchorRight?: string;
   starCount?: number;
   multiple?: boolean;
-}
+};
 
 interface UseBlockMenuFieldHandlersOptions {
   editor: EditorRef;
@@ -606,6 +666,7 @@ const useBlockMenuFieldHandlers = ({
 }: UseBlockMenuFieldHandlersOptions) => {
   const handleToggleRequired = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
     const currentRequired = Boolean(inputNode?.required);
     editor.tf.setNodes({ required: !currentRequired }, { at: inputPath });
@@ -614,15 +675,19 @@ const useBlockMenuFieldHandlers = ({
   // Time field: toggle 24-hour (railway) entry. Unset to fall back to 12-hour AM/PM.
   const handleToggleUse24Hour = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
+
     if (inputNode?.use24Hour) editor.tf.unsetNodes(["use24Hour"], { at: inputPath });
-    else editor.tf.setNodes({ use24Hour: true } as Partial<TElement>, { at: inputPath });
+    else editor.tf.setNodes({ use24Hour: true }, { at: inputPath });
   }, [getInputPath, inputNode?.use24Hour, editor.tf]);
 
   const handleToggleFieldArray = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
     const current = Boolean(inputNode?.isFieldArray);
+
     if (current) {
       editor.tf.unsetNodes(["isFieldArray"], { at: inputPath });
     } else {
@@ -633,8 +698,10 @@ const useBlockMenuFieldHandlers = ({
   const updateNumericNode = React.useCallback(
     (key: string, value: string) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const num = parseInt(value, 10) || 0;
+
       if (num === 0) {
         editor.tf.unsetNodes([key], { at: inputPath });
       } else {
@@ -648,26 +715,32 @@ const useBlockMenuFieldHandlers = ({
     (v: string) => updateNumericNode("minLength", v),
     [updateNumericNode],
   );
+
   const handleUpdateMaxLength = React.useCallback(
     (v: string) => updateNumericNode("maxLength", v),
     [updateNumericNode],
   );
+
   const handleUpdateMinValue = React.useCallback(
     (v: string) => updateNumericNode("minValue", v),
     [updateNumericNode],
   );
+
   const handleUpdateMaxValue = React.useCallback(
     (v: string) => updateNumericNode("maxValue", v),
     [updateNumericNode],
   );
+
   const handleUpdateMaxFiles = React.useCallback(
     (v: string) => updateNumericNode("maxFiles", v),
     [updateNumericNode],
   );
+
   const handleUpdateMinSelections = React.useCallback(
     (v: string) => updateNumericNode("minSelections", v),
     [updateNumericNode],
   );
+
   const handleUpdateMaxSelections = React.useCallback(
     (v: string) => updateNumericNode("maxSelections", v),
     [updateNumericNode],
@@ -676,6 +749,7 @@ const useBlockMenuFieldHandlers = ({
   const handleUpdateMaxFileSize = React.useCallback(
     (value: string) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const num = parseInt(value, 10) || 10;
       editor.tf.setNodes({ maxFileSize: num }, { at: inputPath });
@@ -688,14 +762,17 @@ const useBlockMenuFieldHandlers = ({
   const handleSetScaleRange = React.useCallback(
     (min: number, max: number) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       editor.tf.setNodes({ scaleMin: min, scaleMax: max }, { at: inputPath });
     },
     [getInputPath, editor.tf],
   );
+
   const handleSetScaleStep = React.useCallback(
     (step: number) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       // Never persist a non-finite step (e.g. a stray NaN from the slider) — it'd render "NaN".
       const safeStep = Number.isFinite(step) ? Math.max(1, step) : LINEAR_SCALE_DEFAULTS.step;
@@ -703,21 +780,26 @@ const useBlockMenuFieldHandlers = ({
     },
     [getInputPath, editor.tf],
   );
+
   // Linear scale anchor labels (Figma 26153-13445) — written per keystroke; empty unsets so
   // the anchor row under the scale hides.
   const handleSetAnchorLabel = React.useCallback(
     (key: "anchorLeft" | "anchorCenter" | "anchorRight", value: string) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
+
       if (value) editor.tf.setNodes({ [key]: value }, { at: inputPath });
       else editor.tf.unsetNodes([key], { at: inputPath });
     },
     [getInputPath, editor.tf],
   );
+
   // Star count — default of 5 (never unset), clamped to 1…RATING_MAX_STARS.
   const handleUpdateStarCount = React.useCallback(
     (value: string) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const num = parseInt(value, 10) || RATING_DEFAULTS.starCount;
       const clamped = Math.min(RATING_MAX_STARS, Math.max(1, num));
@@ -729,10 +811,12 @@ const useBlockMenuFieldHandlers = ({
   const toggleBooleanNode = React.useCallback(
     (key: keyof BlockMenuInputNode) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const current = Boolean(inputNode?.[key]);
+
       if (current) {
-        editor.tf.unsetNodes([key as string], { at: inputPath });
+        editor.tf.unsetNodes([key], { at: inputPath });
       } else {
         editor.tf.setNodes({ [key]: true }, { at: inputPath });
       }
@@ -745,48 +829,62 @@ const useBlockMenuFieldHandlers = ({
   // allow decimals. Turning the toggle off persists `false`; turning it back on unsets it.
   const handleToggleAllowDecimals = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
     const allowed = inputNode?.allowDecimals !== false;
+
     if (allowed) {
       editor.tf.setNodes({ allowDecimals: false }, { at: inputPath });
     } else {
       editor.tf.unsetNodes(["allowDecimals"], { at: inputPath });
     }
   }, [getInputPath, inputNode, editor.tf]);
+
   const handleToggleRandomizeOrder = React.useCallback(
     () => toggleBooleanNode("randomizeOrder"),
     [toggleBooleanNode],
   );
+
   // Display mode lives on the group's FIRST option node (where the transforms read it), so
   // resolve the group start instead of writing to whichever option row anchored the menu.
   // Mutually exclusive with "Image": a dropdown can't present image tiles.
   const handleToggleShowAsDropdown = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
     let first = inputPath[0];
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
+
     if (nodes[first]?.type !== "formOptionItem") return;
+
     while (first > 0 && nodes[first - 1]?.type === "formOptionItem") first--;
     let last = first;
+
     while (last < nodes.length - 1 && nodes[last + 1]?.type === "formOptionItem") last++;
-    const enabled = (nodes[first] as { showAsDropdown?: boolean }).showAsDropdown === true;
+    const enabled = nodes[first]?.showAsDropdown === true;
     editor.tf.withoutNormalizing(() => {
       if (enabled) {
         editor.tf.unsetNodes(["showAsDropdown"], { at: [first] });
+
         return;
       }
-      editor.tf.setNodes({ showAsDropdown: true } as Partial<TElement>, { at: [first] });
+
+      editor.tf.setNodes({ showAsDropdown: true }, { at: [first] });
+
       for (let i = first; i <= last; i++) editor.tf.unsetNodes(["showImage"], { at: [i] });
     });
   }, [getInputPath, editor]);
+
   const handleToggleMultiple = React.useCallback(
     () => toggleBooleanNode("multiple"),
     [toggleBooleanNode],
   );
+
   const handleToggleAllowOther = React.useCallback(
     () => toggleBooleanNode("allowOther"),
     [toggleBooleanNode],
   );
+
   const handleToggleVerifyEmail = React.useCallback(
     () => toggleBooleanNode("verifyEmail"),
     [toggleBooleanNode],
@@ -797,11 +895,14 @@ const useBlockMenuFieldHandlers = ({
   const handleToggleAllowedCountry = React.useCallback(
     (code: string) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const current = inputNode?.allowedCountries;
+
       const next = current?.includes(code)
         ? current.filter((c) => c !== code)
         : [...(current ?? []), code];
+
       if (next.length > 0) {
         editor.tf.setNodes({ allowedCountries: next }, { at: inputPath });
       } else {
@@ -815,13 +916,17 @@ const useBlockMenuFieldHandlers = ({
   const handleSetOptionLabel = React.useCallback(
     (style: OptionLabelStyle) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const start = inputPath[0];
-      const nodes = editor.children as TElement[];
+      const nodes = editor.children;
+
       if (nodes[start]?.type !== "formOptionItem") return;
       let first = start;
       let last = start;
+
       while (first > 0 && nodes[first - 1]?.type === "formOptionItem") first--;
+
       while (last < nodes.length - 1 && nodes[last + 1]?.type === "formOptionItem") last++;
       editor.tf.withoutNormalizing(() => {
         for (let i = first; i <= last; i++) {
@@ -836,20 +941,25 @@ const useBlockMenuFieldHandlers = ({
   // Mutually exclusive with "Show as dropdown": a dropdown can't present image tiles.
   const handleToggleOptionImage = React.useCallback(() => {
     const inputPath = getInputPath();
+
     if (!inputPath) return;
     const start = inputPath[0];
-    const nodes = editor.children as TElement[];
+    const nodes = editor.children;
+
     if (nodes[start]?.type !== "formOptionItem") return;
     let first = start;
     let last = start;
+
     while (first > 0 && nodes[first - 1]?.type === "formOptionItem") first--;
+
     while (last < nodes.length - 1 && nodes[last + 1]?.type === "formOptionItem") last++;
-    const enabled = (nodes[start] as { showImage?: boolean }).showImage === true;
+    const enabled = nodes[start]?.showImage === true;
     editor.tf.withoutNormalizing(() => {
       for (let i = first; i <= last; i++) {
         if (enabled) editor.tf.unsetNodes(["showImage"], { at: [i] });
-        else editor.tf.setNodes({ showImage: true } as Partial<TElement>, { at: [i] });
+        else editor.tf.setNodes({ showImage: true }, { at: [i] });
       }
+
       if (!enabled) editor.tf.unsetNodes(["showAsDropdown"], { at: [first] });
     });
   }, [getInputPath, editor]);
@@ -858,20 +968,26 @@ const useBlockMenuFieldHandlers = ({
   const handleSetNumberFormat = React.useCallback(
     (patch: Partial<NumberFormatConfig>) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
-      const sets: Record<string, unknown> = {};
+      const sets: Partial<BlockMenuInputNode> = {};
       const unsets: string[] = [];
+
       if (patch.format !== undefined) {
         if (patch.format === "off") unsets.push("numberFormat");
         else sets.numberFormat = patch.format;
       }
+
       if (patch.decimalSeparator !== undefined) sets.decimalSeparator = patch.decimalSeparator;
+
       if (patch.thousandsSeparator !== undefined) {
         if (patch.thousandsSeparator === "none") unsets.push("thousandsSeparator");
         else sets.thousandsSeparator = patch.thousandsSeparator;
       }
+
       editor.tf.withoutNormalizing(() => {
         if (Object.keys(sets).length > 0) editor.tf.setNodes(sets, { at: inputPath });
+
         if (unsets.length > 0) editor.tf.unsetNodes(unsets, { at: inputPath });
       });
     },
@@ -883,12 +999,16 @@ const useBlockMenuFieldHandlers = ({
   const handleSetAllowedExtensions = React.useCallback(
     (next: string[]) => {
       const inputPath = getInputPath();
+
       if (!inputPath) return;
       const deduped = [...new Set(next)];
+
       if (deduped.length === 0) {
         editor.tf.unsetNodes(["allowedFileExtensions", "allowedFileTypes"], { at: inputPath });
+
         return;
       }
+
       editor.tf.withoutNormalizing(() => {
         editor.tf.setNodes({ allowedFileExtensions: deduped }, { at: inputPath });
         editor.tf.unsetNodes(["allowedFileTypes"], { at: inputPath });
@@ -1033,7 +1153,9 @@ const BlockMenuContext = React.createContext<BlockMenuContextValue | null>(null)
 
 const useBlockMenu = (): BlockMenuContextValue => {
   const ctx = React.use(BlockMenuContext);
+
   if (!ctx) throw new Error("BlockMenu pieces must be rendered inside <BlockMenu>");
+
   return ctx;
 };
 
@@ -1056,15 +1178,16 @@ const SubmenuRow = ({
   view: string;
 }) => {
   const { actions } = useBlockMenu();
+
   return (
     <DropdownMenuItem
       closeOnClick={false}
-      className="text-sm text-gray-800"
+      className="text-sm text-popover-foreground"
       onClick={() => actions.setView(view)}
     >
       {icon}
       <span className="flex-1 text-left">{label}</span>
-      <ChevronRightIcon className="size-4 shrink-0 text-gray-800" />
+      <ChevronRightIcon className="size-4 shrink-0 text-popover-foreground" />
     </DropdownMenuItem>
   );
 };
@@ -1072,6 +1195,7 @@ const SubmenuRow = ({
 // Back header shown above every inline panel.
 const PanelHeader = ({ label }: { label: string }) => {
   const { actions } = useBlockMenu();
+
   return (
     <button
       type="button"
@@ -1126,10 +1250,12 @@ const StepperRow = ({
     draftRef.current = v;
     setDraft(v);
   };
+
   const clearReset = () => {
     if (resetTimer.current) clearTimeout(resetTimer.current);
     resetTimer.current = null;
   };
+
   React.useEffect(() => clearReset, []);
 
   // Persist a known-good value and drop the local draft/error so we follow the node again.
@@ -1146,14 +1272,20 @@ const StepperRow = ({
     const current = draftRef.current;
     setDraftValue(null);
     setError(null);
+
     if (current === null) return;
     const n = Number.parseInt(current, 10);
+
     if (Number.isNaN(n)) {
       onChange(""); // handler applies the field's default
+
       return;
     }
+
     let next = n;
+
     if (min !== undefined) next = Math.max(min, next);
+
     if (max !== undefined) next = Math.min(max, next);
     onChange(String(next));
   };
@@ -1162,23 +1294,31 @@ const StepperRow = ({
     clearReset();
     setDraftValue(raw);
     const n = Number.parseInt(raw, 10);
+
     if (raw === "" || Number.isNaN(n)) {
       setError(null); // let a blank settle to its default on blur
+
       return;
     }
+
     const tooHigh = max !== undefined && n > max;
     const tooLow = min !== undefined && n < min;
+
     if (tooHigh || tooLow) {
       setError(tooHigh ? `Maximum is ${max}` : `Minimum is ${min}`);
       resetTimer.current = setTimeout(resolveDraft, STEPPER_RESET_MS);
+
       return;
     }
+
     commit(raw); // in range → persist live
   };
 
   const step = (delta: number) => {
     let next = (value ?? defaultHint ?? 0) + delta;
+
     if (min !== undefined) next = Math.max(min, next);
+
     if (max !== undefined) next = Math.min(max, next);
     commit(String(next));
   };
@@ -1266,7 +1406,7 @@ const SwitchRow = ({
     aria-label={ariaLabel}
   >
     {icon}
-    <span className="min-w-0 flex-1 text-left text-gray-800">{label}</span>
+    <span className="min-w-0 flex-1 text-left text-popover-foreground">{label}</span>
     {/* Visual only — the row owns the click. An interactive Switch double-fires: Base UI's menu
         item activates on the native click before React's stopPropagation runs, so a direct switch
         click toggled twice (= no visible change). */}
@@ -1284,9 +1424,10 @@ const SwitchRow = ({
 
 const RequiredToggle = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<RequiredFieldIcon className="text-gray-800" />}
+      icon={<RequiredFieldIcon className="text-popover-foreground" />}
       label="Required"
       ariaLabel="Required"
       checked={Boolean(state.inputNode?.required)}
@@ -1297,9 +1438,10 @@ const RequiredToggle = () => {
 
 const VerifyEmail = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<VerifiedIcon className="text-gray-800" />}
+      icon={<VerifiedIcon className="text-popover-foreground" />}
       label="Verify email"
       ariaLabel="Verify email"
       checked={Boolean(state.inputNode?.verifyEmail)}
@@ -1313,7 +1455,7 @@ const VerifyEmail = () => {
 // selected ⇒ all countries, auto-detected from locale. Search header stays pinned while scrolling.
 const DefaultCountryCode = () => (
   <SubmenuRow
-    icon={<IconPhone className="text-gray-800" />}
+    icon={<IconPhone className="text-popover-foreground" />}
     label="Allowed countries"
     view="default-country-code"
   />
@@ -1326,7 +1468,9 @@ const DefaultCountryCodePanel = () => {
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!q) return PHONE_COUNTRIES;
+
     return PHONE_COUNTRIES.filter(
       (c) => c.name.toLowerCase().includes(q) || c.dialCode.includes(q),
     );
@@ -1357,7 +1501,7 @@ const DefaultCountryCodePanel = () => {
             <DropdownMenuItem
               key={c.code}
               closeOnClick={false}
-              className="text-gray-800"
+              className="text-popover-foreground"
               onClick={() => actions.toggleAllowedCountry(c.code)}
             >
               <span aria-hidden className="shrink-0 text-base leading-none">
@@ -1367,7 +1511,7 @@ const DefaultCountryCodePanel = () => {
                 {c.name} (+{c.dialCode})
               </span>
               {selected?.includes(c.code) && (
-                <CheckIcon className="size-4 shrink-0 text-gray-800" />
+                <CheckIcon className="size-4 shrink-0 text-popover-foreground" />
               )}
             </DropdownMenuItem>
           ))
@@ -1379,11 +1523,13 @@ const DefaultCountryCodePanel = () => {
 
 const RepeatableToggle = () => {
   const { state, actions } = useBlockMenu();
+
   // Only the scalar field types map to a repeatable PlateFormField (see transform-plate-to-form.ts).
   if (!REPEATABLE_BLOCK_FIELD_TYPES.has(state.fieldType)) return null;
+
   return (
     <SwitchRow
-      icon={<RepeatIcon className="size-4 text-gray-800" />}
+      icon={<RepeatIcon className="size-4 text-popover-foreground" />}
       label="Repeatable"
       ariaLabel="Repeatable"
       checked={Boolean(state.inputNode?.isFieldArray)}
@@ -1398,7 +1544,7 @@ const supportsMaxLength = (type: BlockMenuInputNode["type"] | undefined) => type
 
 const CharacterLimit = () => (
   <SubmenuRow
-    icon={<CharacterLimitIcon className="text-gray-800" />}
+    icon={<CharacterLimitIcon className="text-popover-foreground" />}
     label="Character limit"
     view="character-limit"
   />
@@ -1407,6 +1553,7 @@ const CharacterLimit = () => (
 const CharacterLimitPanel = () => {
   const { state, actions } = useBlockMenu();
   const { inputNode } = state;
+
   return (
     <PanelBody>
       <StepperRow
@@ -1435,7 +1582,7 @@ const CharacterLimitPanel = () => {
 
 const ValueRange = () => (
   <SubmenuRow
-    icon={<SelectionLimitIcon className="text-gray-800" />}
+    icon={<SelectionLimitIcon className="text-popover-foreground" />}
     label="Value range"
     view="value-range"
   />
@@ -1444,6 +1591,7 @@ const ValueRange = () => (
 const ValueRangePanel = () => {
   const { state, actions } = useBlockMenu();
   const { inputNode } = state;
+
   return (
     <PanelBody>
       <StepperRow
@@ -1474,11 +1622,13 @@ const NUMBER_DECIMAL_CHOICES: { value: DecimalSeparator; label: string }[] = [
   { value: ".", label: "0.1" },
   { value: ",", label: "0,1" },
 ];
+
 const NUMBER_THOUSANDS_CHOICES: { value: ThousandsSeparator; label: string }[] = [
   { value: "none", label: "1000" },
   { value: "comma", label: "1,000" },
   { value: "space", label: "1 000" },
 ];
+
 const NUMBER_FORMAT_CHOICES: { value: NumberFormatType; label: string }[] = [
   { value: "number", label: "Number" },
   { value: "percent", label: "Percent" },
@@ -1497,9 +1647,9 @@ const FormatChoiceRow = ({
   active: boolean;
   onSelect: () => void;
 }) => (
-  <DropdownMenuItem closeOnClick={false} className="text-gray-800" onClick={onSelect}>
+  <DropdownMenuItem closeOnClick={false} className="text-popover-foreground" onClick={onSelect}>
     <span className="min-w-0 flex-1 text-left">{label}</span>
-    {active && <CheckIcon className="size-4 shrink-0 text-gray-800" />}
+    {active && <CheckIcon className="size-4 shrink-0 text-popover-foreground" />}
   </DropdownMenuItem>
 );
 
@@ -1509,7 +1659,7 @@ const FormatSectionHeader = ({ label }: { label: string }) => (
 
 const NumberFormat = () => (
   <SubmenuRow
-    icon={<HashIcon className="size-4 text-gray-800" />}
+    icon={<HashIcon className="size-4 text-popover-foreground" />}
     label="Format"
     view="number-format"
   />
@@ -1522,6 +1672,7 @@ const NumberFormatPanel = () => {
   const thousands = state.inputNode?.thousandsSeparator ?? "none";
   // Decimal separator is meaningless without decimals — hide it unless "Allow decimals" is on.
   const allowDecimals = state.inputNode?.allowDecimals !== false;
+
   return (
     <div className="max-h-[340px] overflow-y-auto overscroll-contain p-1">
       <FormatChoiceRow
@@ -1566,7 +1717,7 @@ const NumberFormatPanel = () => {
 
 const SelectionLimit = () => (
   <SubmenuRow
-    icon={<SelectionLimitIcon className="text-gray-800" />}
+    icon={<SelectionLimitIcon className="text-popover-foreground" />}
     label="Selection limit"
     view="selection-limit"
   />
@@ -1575,6 +1726,7 @@ const SelectionLimit = () => (
 const SelectionLimitPanel = () => {
   const { state, actions } = useBlockMenu();
   const { inputNode } = state;
+
   return (
     <PanelBody>
       <StepperRow
@@ -1601,9 +1753,10 @@ const SelectionLimitPanel = () => {
 
 const ShuffleOptions = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<ShuffleOptionsIcon className="text-gray-800" />}
+      icon={<ShuffleOptionsIcon className="text-popover-foreground" />}
       label="Shuffle options"
       ariaLabel="Shuffle options"
       checked={Boolean(state.inputNode?.randomizeOrder)}
@@ -1616,9 +1769,10 @@ const ShuffleOptions = () => {
 // single-select for Multi-choice, multi-select for Checkbox. Pure presentation; answers unchanged.
 const ShowAsDropdown = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<IconDropdown className="text-gray-800" />}
+      icon={<IconDropdown className="text-popover-foreground" />}
       label="Show as dropdown"
       ariaLabel="Show as dropdown"
       checked={Boolean(state.inputNode?.showAsDropdown)}
@@ -1631,9 +1785,10 @@ const ShowAsDropdown = () => {
 // on ⇒ several columns per row (checkbox). Stored as `multiple` on the formMatrix node.
 const MultipleSelection = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<ListTodoIcon className="text-gray-800" />}
+      icon={<ListTodoIcon className="text-popover-foreground" />}
       label="Multiple selection"
       ariaLabel="Multiple selection"
       checked={Boolean(state.inputNode?.multiple)}
@@ -1650,26 +1805,34 @@ const OPTION_LABEL_CHOICES: { value: OptionLabelStyle; label: string }[] = [
 ];
 
 const OptionLabels = () => (
-  <SubmenuRow icon={<LabelsIcon className="text-gray-800" />} label="Labels" view="labels" />
+  <SubmenuRow
+    icon={<LabelsIcon className="text-popover-foreground" />}
+    label="Labels"
+    view="labels"
+  />
 );
 
 const OptionLabelsPanel = () => {
   const { state, actions } = useBlockMenu();
+
   // Mirror the editor's default: multiChoice shows letters until changed, others none.
   const current: OptionLabelStyle =
     state.inputNode?.optionLabel ??
     (state.inputNode?.variant === "multiChoice" ? "letters" : "none");
+
   return (
     <div className="p-1">
       {OPTION_LABEL_CHOICES.map((choice) => (
         <DropdownMenuItem
           key={choice.value}
           closeOnClick={false}
-          className="text-gray-800"
+          className="text-popover-foreground"
           onClick={() => actions.setOptionLabel(choice.value)}
         >
           <span className="min-w-0 flex-1 text-left">{choice.label}</span>
-          {current === choice.value && <CheckIcon className="size-4 shrink-0 text-gray-800" />}
+          {current === choice.value && (
+            <CheckIcon className="size-4 shrink-0 text-popover-foreground" />
+          )}
         </DropdownMenuItem>
       ))}
     </div>
@@ -1679,9 +1842,10 @@ const OptionLabelsPanel = () => {
 // Toggles per-option image slots for the whole group; each option then uploads its own image inline.
 const OptionImage = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<PhotoIcon className="text-gray-800" />}
+      icon={<PhotoIcon className="text-popover-foreground" />}
       label="Image"
       ariaLabel="Image"
       checked={state.inputNode?.showImage === true}
@@ -1693,7 +1857,7 @@ const OptionImage = () => {
 // File-upload "Selection limit" submenu (Figma node 25633-11549): max file size + max file count.
 const FileSelectionLimit = () => (
   <SubmenuRow
-    icon={<SelectionLimitIcon className="text-gray-800" />}
+    icon={<SelectionLimitIcon className="text-popover-foreground" />}
     label="Selection limit"
     view="file-selection-limit"
   />
@@ -1702,6 +1866,7 @@ const FileSelectionLimit = () => (
 const FileSelectionLimitPanel = () => {
   const { state, actions } = useBlockMenu();
   const { inputNode } = state;
+
   return (
     <PanelBody>
       <StepperRow
@@ -1731,7 +1896,7 @@ const FileSelectionLimitPanel = () => {
 // down. Each category's "All" row flips the whole group.
 const AllowedFiles = () => (
   <SubmenuRow
-    icon={<FileIcon className="size-4 text-gray-800" />}
+    icon={<FileIcon className="size-4 text-popover-foreground" />}
     label="Allowed files"
     view="allowed-files"
   />
@@ -1751,6 +1916,7 @@ const AllowedFilesPanel = () => {
       base.includes(ext) ? base.filter((e) => e !== ext) : [...base, ext],
     );
   };
+
   const toggleCategory = (extensions: string[]) => {
     const base = baseline();
     const allIn = extensions.every((e) => base.includes(e));
@@ -1764,6 +1930,7 @@ const AllowedFilesPanel = () => {
       {FILE_CATEGORIES.map((category) => {
         const exts = category.extensions.map((e) => e.ext);
         const allCategoryActive = exts.every((e) => isActive(e));
+
         return (
           <React.Fragment key={category.id}>
             {/* Header doubles as the group toggle — ticked when every extension is allowed. */}
@@ -1779,11 +1946,13 @@ const AllowedFilesPanel = () => {
               <DropdownMenuItem
                 key={`${category.id}${e.ext}`}
                 closeOnClick={false}
-                className="text-gray-800"
+                className="text-popover-foreground"
                 onClick={() => toggleExtension(e.ext)}
               >
                 <span className="min-w-0 flex-1 text-left">{e.ext}</span>
-                {isActive(e.ext) && <CheckIcon className="size-4 shrink-0 text-gray-800" />}
+                {isActive(e.ext) && (
+                  <CheckIcon className="size-4 shrink-0 text-popover-foreground" />
+                )}
               </DropdownMenuItem>
             ))}
           </React.Fragment>
@@ -1795,6 +1964,7 @@ const AllowedFilesPanel = () => {
 
 const ButtonName = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <div className="space-y-2 px-2 py-1.5">
       <Label className="text-[12px] text-muted-foreground">Button Name</Label>
@@ -1815,11 +1985,12 @@ const MenuDivider = () => <DropdownMenuSeparator />;
 // "Add conditional logic" and "Duplicate", so variants inject it via MenuActions' slot.
 const BulkInsertOptions = () => {
   const { actions } = useBlockMenu();
+
   return (
     // closeOnClick={false}: the popup stays open and morphs into the bulk-insert panel.
     <DropdownMenuItem
       closeOnClick={false}
-      className="text-gray-800"
+      className="text-popover-foreground"
       onClick={actions.openBulkInsert}
     >
       <BulkInsertIcon />
@@ -1837,6 +2008,7 @@ const BulkInsertPanel = () => {
   const { actions } = useBlockMenu();
   const [value, setValue] = React.useState("");
   const canSave = value.trim().length > 0;
+
   const save = () => {
     if (canSave) actions.submitBulkInsert(value);
   };
@@ -1854,11 +2026,14 @@ const BulkInsertPanel = () => {
         // menu view; ⌘/Ctrl+Enter saves; plain Enter must add a new line (one option per line).
         onKeyDown={(event) => {
           event.stopPropagation();
+
           if (event.key === "Escape") {
             event.preventDefault();
             actions.setView(null);
+
             return;
           }
+
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
             save();
@@ -1889,23 +2064,23 @@ const MenuActions = ({ children }: { children?: React.ReactNode }) => {
       {/* Repeatable sits at the top of the shared actions, just below the essentials divider —
           self-hides for non-scalar fields, so it shows wherever it applies. */}
       <RepeatableToggle />
-      <DropdownMenuItem className="text-gray-800" onClick={actions.addLogic}>
+      <DropdownMenuItem className="text-popover-foreground" onClick={actions.addLogic}>
         <ConditionalLogicIcon />
         <span className="flex-1 text-left">Add conditional logic</span>
         <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
       </DropdownMenuItem>
       {children}
-      <DropdownMenuItem className="text-gray-800" onClick={actions.duplicateBlock}>
+      <DropdownMenuItem className="text-popover-foreground" onClick={actions.duplicateBlock}>
         <DuplicateIcon />
         <span className="flex-1 text-left">Duplicate</span>
         <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
       </DropdownMenuItem>
-      <DropdownMenuItem className="text-gray-800" onClick={actions.hide}>
+      <DropdownMenuItem className="text-popover-foreground" onClick={actions.hide}>
         <HideIcon />
         <span className="flex-1 text-left">Hide</span>
         <DropdownMenuShortcut>⌘H</DropdownMenuShortcut>
       </DropdownMenuItem>
-      <DropdownMenuItem className="text-gray-800" onClick={actions.deleteBlock}>
+      <DropdownMenuItem className="text-popover-foreground" onClick={actions.deleteBlock}>
         <DeleteIcon />
         <span className="flex-1 text-left">Delete</span>
         <DropdownMenuShortcut>Del</DropdownMenuShortcut>
@@ -1929,6 +2104,7 @@ const TURN_INTO_CHOICES: { type: string; label: string }[] = [
 
 const TurnIntoPanel = () => {
   const { actions } = useBlockMenu();
+
   return (
     <div className="p-1">
       {TURN_INTO_CHOICES.map((choice) => (
@@ -1972,9 +2148,10 @@ const ScalarFieldMenu = () => (
 
 const Use24HourToggle = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<ClockLineIcon className="text-gray-800" />}
+      icon={<ClockLineIcon className="text-popover-foreground" />}
       label="24-hour time"
       ariaLabel="24-hour time"
       checked={Boolean(state.inputNode?.use24Hour)}
@@ -2006,9 +2183,10 @@ const PhoneFieldMenu = () => (
 // Decimals on by default; toggling off enforces integer-only validation (see allowDecimals usage).
 const AllowDecimals = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <SwitchRow
-      icon={<DecimalsArrowRightIcon className="size-4 text-gray-800" />}
+      icon={<DecimalsArrowRightIcon className="size-4 text-popover-foreground" />}
       label="Allow decimals"
       ariaLabel="Allow decimals"
       checked={state.inputNode?.allowDecimals !== false}
@@ -2031,7 +2209,11 @@ const NumberFieldMenu = () => (
 // Linear scale "Scale" panel (Figma 25634-17867): dual-handle slider sets the scale's
 // Start/End within the allowed bounds; the end labels show those bounds (-10 … 10).
 const ScaleRange = () => (
-  <SubmenuRow icon={<IconLinearScale className="text-gray-800" />} label="Scale" view="scale" />
+  <SubmenuRow
+    icon={<IconLinearScale className="text-popover-foreground" />}
+    label="Scale"
+    view="scale"
+  />
 );
 
 const ScaleRangePanel = () => {
@@ -2045,6 +2227,7 @@ const ScaleRangePanel = () => {
   React.useEffect(() => {
     setRange([nodeMin, nodeMax]);
   }, [nodeMin, nodeMax]);
+
   return (
     <PanelBody>
       <div className="flex items-center justify-between text-[14px] font-medium tracking-[0.21px] text-foreground">
@@ -2060,17 +2243,21 @@ const ScaleRangePanel = () => {
         onClick={stopMouseEventPropagation}
         onPointerDown={stopMouseEventPropagation}
         onValueChange={(value) => {
-          const [a, b] = value as number[];
+          if (!Array.isArray(value)) return;
+          const [a, b] = value;
+
           // Keep at least one step of span so the scale always has ≥2 points.
           if (b > a) setRange([a, b]);
         }}
         onValueCommitted={(value) => {
-          const [a, b] = value as number[];
+          if (!Array.isArray(value)) return;
+          const [a, b] = value;
+
           if (b > a) actions.setScaleRange(a, b);
         }}
       />
       {/* Figma (25634-17867): the end labels show the slider bounds (-10 … 10), not the selection. */}
-      <div className="flex items-center justify-between text-[12px] tracking-[0.24px] text-gray-700">
+      <div className="flex items-center justify-between text-[12px] tracking-[0.24px] text-popover-foreground">
         <span>{LINEAR_SCALE_BOUNDS.min}</span>
         <span>{LINEAR_SCALE_BOUNDS.max}</span>
       </div>
@@ -2079,14 +2266,17 @@ const ScaleRangePanel = () => {
 };
 
 // base-ui's slider callbacks return a bare number for a single thumb but an array for multiple.
+const isSliderRange = (value: number | readonly number[]): value is readonly number[] =>
+  Array.isArray(value);
+
 const readSliderValue = (value: number | readonly number[]): number =>
-  Array.isArray(value) ? value[0] : (value as number);
+  isSliderRange(value) ? value[0] : value;
 
 // Linear scale "Scale step" panel (Figma 25644-10393): single slider + value box for the
 // increment between points.
 const ScaleStep = () => (
   <SubmenuRow
-    icon={<HashIcon className="text-gray-800" strokeWidth={1} />}
+    icon={<HashIcon className="text-popover-foreground" strokeWidth={1} />}
     label="Scale step"
     view="scale-step"
   />
@@ -2097,8 +2287,9 @@ const ScaleStepPanel = () => {
   // `??` only guards null/undefined — a corrupt NaN slips through and renders "NaN". Mirror
   // extractLinearScaleFields: any non-finite/non-positive value falls back to the default.
   const rawStep = state.inputNode?.scaleStep;
-  const nodeStep =
-    typeof rawStep === "number" && rawStep > 0 ? rawStep : LINEAR_SCALE_DEFAULTS.step;
+
+  const nodeStep = v.is(v.number(), rawStep) && rawStep > 0 ? rawStep : LINEAR_SCALE_DEFAULTS.step;
+
   // Local state for smooth dragging (see ScaleRange); persist on release.
   const [step, setStep] = React.useState(nodeStep);
   // Draft holds in-progress typing (incl. empty / below-min) so we don't fight the user mid-edit.
@@ -2148,12 +2339,16 @@ const ScaleStepPanel = () => {
           onPointerDown={stopMouseEventPropagation}
           onChange={(e) => {
             const raw = e.target.value.replace(/[^0-9]/g, "");
+
             if (raw === "") {
               setDraft("");
+
               return;
             }
+
             // Hard cap to stepMax so the box can never show a number greater than 10.
             const n = Math.min(LINEAR_SCALE_BOUNDS.stepMax, Number.parseInt(raw, 10));
+
             if (n >= LINEAR_SCALE_BOUNDS.stepMin) commitStep(n);
             else setDraft(String(n));
           }}
@@ -2164,6 +2359,7 @@ const ScaleStepPanel = () => {
           onKeyDown={(e) => {
             // Stop the menu from swallowing keystrokes (typeahead nav) so the box is typeable.
             stopKeyEventPropagation(e);
+
             if (e.key === "Enter") e.currentTarget.blur();
           }}
           className="w-12 [appearance:textfield] rounded-lg bg-(--color-gray-alpha-100) px-2 py-1.5 text-center text-[14px] font-medium text-foreground outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -2187,6 +2383,7 @@ const ANCHOR_ROWS = [
 
 const ScaleAnchorPanel = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <PanelBody>
       {ANCHOR_ROWS.map(({ key, label }) => (
@@ -2295,7 +2492,7 @@ const StaticFieldMenu = () => <MenuActions />;
 // Rating "Stars count" panel (Figma 25647-15073): a stepper bounded to 1…RATING_MAX_STARS.
 const StarsCount = () => (
   <SubmenuRow
-    icon={<IconRating className="text-gray-800" />}
+    icon={<IconRating className="text-popover-foreground" />}
     label="Stars count"
     view="stars-count"
   />
@@ -2303,6 +2500,7 @@ const StarsCount = () => (
 
 const StarsCountPanel = () => {
   const { state, actions } = useBlockMenu();
+
   return (
     <PanelBody>
       <StepperRow
@@ -2330,7 +2528,13 @@ const RatingFieldMenu = () => (
 
 // Inline subview registry — SubmenuRow triggers reference these ids; BlockMenu renders the
 // active panel in place of the menu (PanelHeader + Panel), morphing the popup between them.
-const INLINE_PANELS: Record<string, { label: string; width?: string; Panel: React.FC }> = {
+interface InlinePanel {
+  label: string;
+  width?: string;
+  Panel: React.FC;
+}
+
+const INLINE_PANELS = {
   "character-limit": { label: "Character limit", Panel: CharacterLimitPanel },
   "value-range": { label: "Value range", Panel: ValueRangePanel },
   "selection-limit": { label: "Selection limit", Panel: SelectionLimitPanel },
@@ -2345,7 +2549,7 @@ const INLINE_PANELS: Record<string, { label: string; width?: string; Panel: Reac
   "stars-count": { label: "Stars count", Panel: StarsCountPanel },
   "turn-into": { label: "Turn into", Panel: TurnIntoPanel },
   "bulk-insert": { label: "Add options", Panel: BulkInsertPanel },
-};
+} satisfies Record<string, InlinePanel>;
 
 const FIELD_MENU_VARIANTS: Record<BlockFieldType, React.FC> = {
   textLike: TextFieldMenu,
@@ -2388,6 +2592,7 @@ const useBlockMenuContextMenuAndHotkeys = ({
 }: UseBlockMenuContextMenuAndHotkeysOptions) => {
   React.useEffect(() => {
     const node = triggerRef.current;
+
     if (!node) return;
 
     const handleContextMenu = (event: MouseEvent) => {
@@ -2399,6 +2604,7 @@ const useBlockMenuContextMenuAndHotkeys = ({
     };
 
     node.addEventListener("contextmenu", handleContextMenu);
+
     return () => {
       node.removeEventListener("contextmenu", handleContextMenu);
     };
@@ -2428,7 +2634,7 @@ const useBlockMenuContextMenuAndHotkeys = ({
   ]);
 };
 
-interface BlockMenuFirstNode {
+type BlockMenuFirstNode = {
   type?: string;
   variant?: string;
   optionLabel?: OptionLabelStyle;
@@ -2465,12 +2671,18 @@ interface BlockMenuFirstNode {
   anchorRight?: string;
   starCount?: number;
   multiple?: boolean;
-}
+};
+
+/** The menu only reads optional config fields off an editor node; the string `type`
+ * discriminant is what we validate before trusting the rest. */
+const isBlockMenuFirstNode = (value: unknown): value is BlockMenuFirstNode =>
+  v.is(v.object({ type: v.optional(v.string()) }), value);
 
 const useBlockMenuSelection = ({ editor, isOpen }: { editor: EditorRef; isOpen: boolean }) => {
   const selectedNodes = useEditorSelector(
     (ed) => {
       if (!isOpen) return [];
+
       try {
         return ed.getApi(BlockSelectionPlugin).blockSelection.getNodes();
       } catch {
@@ -2480,54 +2692,75 @@ const useBlockMenuSelection = ({ editor, isOpen }: { editor: EditorRef; isOpen: 
     [isOpen],
   );
 
-  const firstNode = selectedNodes[0]?.[0] as BlockMenuFirstNode | undefined;
+  const selected = selectedNodes[0]?.[0];
+  const firstNode = isBlockMenuFirstNode(selected) ? selected : undefined;
   const firstPath = selectedNodes[0]?.[1];
   const nodeType = firstNode?.type;
 
   const labelNode = React.useMemo(() => {
     if (nodeType === "formLabel" || nodeType === "formButton") return firstNode;
+
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "") && firstPath) {
       const prevPath = [...firstPath];
       prevPath[prevPath.length - 1] -= 1;
+
       try {
         const prev = editor.api.node(prevPath);
-        if (prev && ALLOWED_LABEL_TYPES.has(prev[0]?.type as string)) {
-          return prev[0] as BlockMenuFirstNode;
+        const prevType = prev?.[0]?.type;
+
+        if (v.is(v.string(), prevType) && ALLOWED_LABEL_TYPES.has(prevType)) {
+          const prevNode = prev?.[0];
+
+          return isBlockMenuFirstNode(prevNode) ? prevNode : null;
         }
       } catch {}
     }
+
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
   const inputNode = React.useMemo(() => {
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstNode;
+
     if (ALLOWED_LABEL_TYPES.has(nodeType ?? "") && firstPath) {
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
+
       try {
         const next = editor.api.node(nextPath);
-        if (next && FORM_INPUT_NODE_TYPES.has(next[0]?.type as string)) {
-          return next[0] as BlockMenuFirstNode;
+        const nextType = next?.[0]?.type;
+
+        if (v.is(v.string(), nextType) && FORM_INPUT_NODE_TYPES.has(nextType)) {
+          const nextNode = next?.[0];
+
+          return isBlockMenuFirstNode(nextNode) ? nextNode : null;
         }
       } catch {}
     }
+
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
   const fieldType = React.useMemo(() => {
-    if (inputNode) return getFieldType(inputNode as { type?: string; variant?: string });
-    return getFieldType(firstNode as { type?: string; variant?: string });
+    if (inputNode) return getFieldType(inputNode);
+
+    return getFieldType(firstNode);
   }, [inputNode, firstNode]);
 
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
+
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstPath;
+
     if (nodeType === "formOptionItem") return firstPath;
+
     if (ALLOWED_LABEL_TYPES.has(nodeType ?? "")) {
       const inputPath = [...firstPath];
       inputPath[inputPath.length - 1] += 1;
+
       return inputPath;
     }
+
     return null;
   }, [nodeType, firstPath]);
 

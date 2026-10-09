@@ -6,11 +6,12 @@ import { useStepPreviewForm } from "@/hooks/use-preview-form";
 import { getFieldsFromSegments } from "@/lib/editor/transform-plate-for-preview";
 import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import type { QuestionRef } from "@/lib/forms/extract-questions";
+import { cn } from "@/lib/utils";
 import { StaticContentBlock } from "./static-content-block";
 import { PreviewRendererContext, RenderStepPreviewInput } from "./render-step-preview-input";
 import {
   AutoActionFooter,
-  brandingRowStyle,
+  brandingRowClass,
   FormBrandingBadge,
   StepNavButton,
   useFieldByFieldKeyboard,
@@ -48,10 +49,12 @@ export const StepForm = ({
   const Renderer = use(PreviewRendererContext) ?? RenderStepPreviewInput;
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const stepQuestions = useMemo<QuestionRef[]>(() => questions ?? [], [questions]);
+
   const hasAuthoredButton = useMemo(
     () => segments.some((seg) => seg.type === "field" && seg.field.fieldType === "Button"),
     [segments],
   );
+
   const showAutoActionButton = autoActionButton && !hasAuthoredButton;
 
   const {
@@ -122,6 +125,7 @@ export const StepForm = ({
           if (item.type === "buttonGroup") {
             if (readOnly) return null;
             const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
+
             const actionButton = item.buttons.find(
               (b) => b.buttonRole === "next" || b.buttonRole === "submit",
             );
@@ -132,8 +136,7 @@ export const StepForm = ({
               // Prev + Next/Submit grouped left (8px gap), branding pushed right (Figma 27112-20305).
               <div
                 key={groupKey}
-                className="flex w-full items-center justify-between gap-3"
-                style={{ maxWidth: "var(--bf-input-width)" }}
+                className="flex w-full max-w-(--bf-input-width) items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2">
                   {prevButton && (
@@ -182,6 +185,7 @@ export const StepForm = ({
 
             if (field.fieldType === "Button") {
               if (readOnly) return null;
+
               return (
                 <RenderStepButton
                   key={field.id}
@@ -198,11 +202,13 @@ export const StepForm = ({
             // Fields auto-filled by a "Set value" action stay editable so a mistaken auto-fill
             // can be corrected; they're only dimmed to hint that logic set the value.
             const autoFilled = lockedFieldNames.has(field.name);
+
             // Reflect logic-driven requiredness on the label (a passing "Require field" action),
             // not just the authored flag.
             const rendered = requiredFieldNames
               ? { ...field, required: requiredFieldNames.has(field.name) }
               : field;
+
             return (
               <div
                 key={field.id}
@@ -287,8 +293,10 @@ const RenderStepButton = ({
 
   // Conditional "hide submit button" action suppresses the completion control.
   if (hideSubmit && buttonRole === "submit") return null;
+
   const defaultText =
     buttonRole === "next" ? t("next") : buttonRole === "previous" ? t("previous") : t("submit");
+
   const buttonText = field.buttonText || defaultText;
 
   if (buttonRole === "previous") {
@@ -298,12 +306,11 @@ const RenderStepButton = ({
         {t("back")}
       </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
-      <div className="flex justify-start" style={{ maxWidth: "var(--bf-input-width)" }}>
-        {button}
-      </div>
+      <div className="flex max-w-(--bf-input-width) justify-start">{button}</div>
     );
   }
 
@@ -313,19 +320,17 @@ const RenderStepButton = ({
         {buttonText}
       </StepNavButton>
     );
+
     return grouped ? (
       button
     ) : (
       // Branding rides the Next row opposite the button per Buttons → Alignment; without branding
       // the button honors --bf-button-justify (fallback right).
       <div
-        className={`mb-4 flex items-center gap-3`}
-        style={{
-          maxWidth: "var(--bf-input-width)",
-          ...(showBranding
-            ? brandingRowStyle
-            : { justifyContent: "var(--bf-button-justify, flex-end)" }),
-        }}
+        className={cn(
+          "mb-4 flex max-w-(--bf-input-width) items-center gap-3",
+          showBranding ? brandingRowClass : "[justify-content:var(--bf-button-justify,flex-end)]",
+        )}
       >
         {button}
         {showBranding && <FormBrandingBadge />}
@@ -334,6 +339,7 @@ const RenderStepButton = ({
   }
 
   const isMultiStep = totalSteps > 1;
+
   const submitButton = (
     // Render text directly (not TextSwap) — the inline-block+blur span clipped the last glyph
     // ("Submit" → "Submi"); the Next button and live renderer render text directly too.
@@ -341,21 +347,21 @@ const RenderStepButton = ({
       {isSubmitting ? t("submitting") : buttonText}
     </StepNavButton>
   );
+
   return grouped ? (
     submitButton
   ) : (
     // Branding rides the submit row opposite the button per Buttons → Alignment. Without branding
     // the button honors --bf-button-justify (fallback: multi-step right, single-step left).
     <div
-      className={`flex items-center gap-3`}
-      style={{
-        maxWidth: "var(--bf-input-width)",
-        ...(showBranding
-          ? brandingRowStyle
-          : {
-              justifyContent: `var(--bf-button-justify, ${isMultiStep ? "flex-end" : "flex-start"})`,
-            }),
-      }}
+      className={cn(
+        "flex max-w-(--bf-input-width) items-center gap-3",
+        showBranding
+          ? brandingRowClass
+          : isMultiStep
+            ? "[justify-content:var(--bf-button-justify,flex-end)]"
+            : "[justify-content:var(--bf-button-justify,flex-start)]",
+      )}
     >
       {submitButton}
       {showBranding && <FormBrandingBadge />}

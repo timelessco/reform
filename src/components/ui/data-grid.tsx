@@ -2,6 +2,7 @@ import { createContext, use, useMemo } from "react";
 import type { ReactNode, Ref, UIEventHandler } from "react";
 import { useSelector } from "@tanstack/react-store";
 import { createTableHook } from "@tanstack/react-table";
+import * as v from "valibot";
 import {
   columnFilteringFeature,
   columnOrderingFeature,
@@ -66,6 +67,7 @@ export const DATA_GRID_FEATURES = tableFeatures({
   filterFns,
   sortFns,
 });
+
 export type DataGridFeatures = typeof DATA_GRID_FEATURES;
 
 // Full useAppTable return — state, registered tableComponents, and AppTable/AppCell/AppHeader wrappers.
@@ -78,39 +80,48 @@ export const useRowSelected = <T extends RowData>(table: DataGridApi<T>, rowId: 
 
 export const useRowExpanded = <T extends RowData>(table: DataGridApi<T>, rowId: string): boolean =>
   useSelector(table.atoms.expanded, (expanded) =>
-    typeof expanded === "object" ? !!expanded?.[rowId] : !!expanded,
+    v.is(v.record(v.string(), v.boolean()), expanded) ? !!expanded[rowId] : !!expanded,
   );
 
 export type RowPinPosition = "top" | "bottom" | false;
+
 export const useRowPinned = <T extends RowData>(
   table: DataGridApi<T>,
   rowId: string,
 ): RowPinPosition =>
   useSelector(table.atoms.rowPinning, (rowPinning) => {
     if (rowPinning?.top?.includes(rowId)) return "top";
+
     if (rowPinning?.bottom?.includes(rowId)) return "bottom";
+
     return false;
   });
 
 export type ColumnSortDirection = "asc" | "desc" | false;
+
 export const useColumnSorted = <T extends RowData>(
   table: DataGridApi<T>,
   columnId: string,
 ): ColumnSortDirection =>
   useSelector(table.atoms.sorting, (sorting) => {
     const found = sorting?.find((s) => s.id === columnId);
+
     if (!found) return false;
+
     return found.desc ? "desc" : "asc";
   });
 
 export type ColumnPinPosition = "left" | "right" | false;
+
 export const useColumnPinned = <T extends RowData>(
   table: DataGridApi<T>,
   columnId: string,
 ): ColumnPinPosition =>
   useSelector(table.atoms.columnPinning, (columnPinning) => {
     if (columnPinning?.left?.includes(columnId)) return "left";
+
     if (columnPinning?.right?.includes(columnId)) return "right";
+
     return false;
   });
 
@@ -217,13 +228,16 @@ const DataGridLayoutContextCtx = createContext<
   DataGridLayoutContext<any> | undefined
 >(undefined);
 
-const useDataGrid = () => {
+const useDataGrid = <TData extends RowData = object>(): DataGridContextProps<TData> => {
   const layout = use(DataGridLayoutContextCtx);
+
   if (!layout) {
     throw new Error("useDataGrid must be used within a DataGrid");
   }
-  const table = useTableContext();
-  return { ...layout, table } as DataGridContextProps<object>;
+
+  const table = useTableContext<TData>();
+
+  return { ...layout, table };
 };
 
 const DataGrid = <TData extends RowData>({ children, ...props }: DataGridProps<TData>) => {
@@ -292,9 +306,7 @@ const DataGrid = <TData extends RowData>({ children, ...props }: DataGridProps<T
   );
 
   return (
-    <DataGridLayoutContextCtx.Provider value={value as DataGridLayoutContext<object>}>
-      {children}
-    </DataGridLayoutContextCtx.Provider>
+    <DataGridLayoutContextCtx.Provider value={value}>{children}</DataGridLayoutContextCtx.Provider>
   );
 };
 
@@ -359,10 +371,12 @@ export const SelectionCheckbox = <TData extends RowData>({
   ariaLabel?: string;
 }) => {
   const table = useTableContext<TData>();
+
   const isSelected = useSelector(
     table.atoms.rowSelection,
     (rowSelection) => !!rowSelection?.[row.id],
   );
+
   return (
     <Checkbox
       checked={isSelected}

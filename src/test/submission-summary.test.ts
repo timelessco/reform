@@ -24,6 +24,7 @@ const createTestSubmission = async (formId: string) => {
     createdAt: now,
     updatedAt: now,
   });
+
   return id;
 };
 
@@ -32,6 +33,7 @@ const fetchSubmissionsCount = async (formId: string): Promise<{ total: number }>
     .select({ total: count() })
     .from(submissions)
     .where(eq(submissions.formId, formId));
+
   return { total: result?.total ?? 0 };
 };
 

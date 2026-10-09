@@ -7,6 +7,7 @@ import type { FormTemplateId } from "@/lib/form-templates";
 import { buildPublicFormSettings } from "@/types/form-settings";
 
 const noop = async () => {};
+
 const PREVIEW_SETTINGS = buildPublicFormSettings(undefined);
 
 /**
@@ -16,6 +17,7 @@ const PREVIEW_SETTINGS = buildPublicFormSettings(undefined);
 const TemplatePreviewOnly = () => {
   const { templateId } = Route.useParams();
   const template = findTemplateMeta(templateId);
+
   const content = useMemo(
     () => (template ? buildTemplateContent(template.id as FormTemplateId) : []),
     [template],

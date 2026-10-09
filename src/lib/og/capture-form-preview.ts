@@ -4,6 +4,7 @@ import { uploadFormPreview } from "@/lib/server-fn/form-preview";
 
 // OG / card thumbnail target. 1.91:1 (the OG standard); the dashboard card object-covers it.
 const OUT_WIDTH = 1200;
+
 const OUT_HEIGHT = 630;
 
 const loadImage = (src: string): Promise<HTMLImageElement> =>
@@ -21,6 +22,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> =>
  */
 export const captureFormCanvas = async (): Promise<string | null> => {
   const node = document.querySelector<HTMLElement>("[data-form-canvas]");
+
   if (!node || node.offsetWidth === 0) return null;
 
   // Wait for web fonts so text isn't snapshotted in a fallback face.
@@ -42,6 +44,7 @@ export const captureFormCanvas = async (): Promise<string | null> => {
   canvas.width = OUT_WIDTH;
   canvas.height = OUT_HEIGHT;
   const ctx = canvas.getContext("2d");
+
   if (!ctx) return null;
   // Fill below-the-form area with the theme tint too (not white) for shorter forms.
   ctx.fillStyle = themeBg;
@@ -61,6 +64,7 @@ export const captureFormCanvas = async (): Promise<string | null> => {
  */
 export const captureAndUploadFormPreview = async (formId: string): Promise<void> => {
   const png = await captureFormCanvas();
+
   if (!png) return;
   await uploadFormPreview({
     data: { formId, contentHash: String(Date.now()), pngBase64: png },

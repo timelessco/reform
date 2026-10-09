@@ -12,6 +12,7 @@
     "**/node_modules/**",
     "**/.output/**",
     "**/dist/**",
-    "public/**/*.js"
+    "public/**/*.js",
+    "tools/oxlint/anti-slop/**"
   ]
 }

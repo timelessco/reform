@@ -142,11 +142,7 @@ const EmojiButton = React.memo(function EmojiButton({
         aria-hidden="true"
       />
       <span
-        className="relative"
-        style={{
-          fontFamily:
-            '"Apple Color Emoji", "Segoe UI Emoji", NotoColorEmoji, "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols',
-        }}
+        className='relative [font-family:"Apple_Color_Emoji","Segoe_UI_Emoji",NotoColorEmoji,"Noto_Color_Emoji","Segoe_UI_Symbol","Android_Emoji",EmojiSymbols]'
         data-emoji-set="native"
       >
         {emoji.skins[0].native}
@@ -203,10 +199,10 @@ const EmojiPickerContent = ({
   const getRowWidth = settings.perLine.value * settings.buttonSize.value;
 
   const isCategoryVisible = React.useCallback(
-    (categoryId: string) => {
+    (categoryId: Parameters<typeof visibleCategories.has>[0]) => {
       if (visibleCategories.size === 0) return true;
-      const key = categoryId as Parameters<typeof visibleCategories.has>[0];
-      return visibleCategories.has(key) ? visibleCategories.get(key) : false;
+
+      return visibleCategories.has(categoryId) ? visibleCategories.get(categoryId) : false;
     },
     [visibleCategories],
   );
@@ -224,15 +220,24 @@ const EmojiPickerContent = ({
             <div
               key={categoryId}
               ref={section.root}
-              style={{ width: getRowWidth }}
+              className="w-(--emoji-row-width)"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                { "--emoji-row-width": `${getRowWidth}px` } as React.CSSProperties
+              }
               data-id={categoryId}
             >
               <div className="sticky -top-px z-1 bg-popover/90 p-1 py-2 text-sm font-semibold backdrop-blur-xs">
                 {i18n.categories[categoryId]}
               </div>
               <div
-                className="relative flex flex-wrap"
-                style={{ height: section.getRows().length * buttonSize.value }}
+                className="relative flex h-(--emoji-section-height) flex-wrap"
+                style={
+                  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                  {
+                    "--emoji-section-height": `${section.getRows().length * buttonSize.value}px`,
+                  } as React.CSSProperties
+                }
               >
                 {isCategoryVisible(categoryId) &&
                   section
@@ -263,7 +268,14 @@ const EmojiPickerContent = ({
 
   const SearchList = React.useCallback(
     () => (
-      <div style={{ width: getRowWidth }} data-id="search">
+      <div
+        className="w-(--emoji-row-width)"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--emoji-row-width": `${getRowWidth}px` } as React.CSSProperties
+        }
+        data-id="search"
+      >
         <div className="sticky -top-px z-1 bg-popover/90 p-1 py-2 text-sm font-semibold text-card-foreground backdrop-blur-xs">
           {i18n.searchResult}
         </div>
@@ -416,6 +428,7 @@ const EmojiPickerNavigation = ({
   onClick: (id: EmojiCategoryList) => void;
 } & Pick<UseEmojiPickerType, "emojiLibrary" | "focusedCategory" | "i18n" | "icons">) => {
   const navigationId = React.useId();
+
   return (
     <TooltipProvider delay={500}>
       <nav

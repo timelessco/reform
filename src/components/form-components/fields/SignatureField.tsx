@@ -8,10 +8,6 @@ import { cn } from "@/lib/utils";
 import { getAriaLabelledBy } from "./shared";
 import type { FieldRendererProps } from "./shared";
 
-// Script font stack for the "Sign here" placeholder — no bundled font, falls back across OSes to a
-// handwriting face, then generic cursive.
-const SIGNATURE_FONT = '"Snell Roundhand", "Segoe Script", "Brush Script MT", cursive';
-
 // Themed signature box (Figma: single border, "Sign here" glyph, eraser bottom-left). Drawing is
 // delegated to the vendored shadix-ui pad for gap-free strokes; emits a PNG data URL, "" once
 // cleared. Stroke color follows the form theme via the canvas `color` (text-foreground).
@@ -32,15 +28,15 @@ const SignatureBox = ({
   return (
     <div
       className={cn(
-        "relative h-40 w-full overflow-hidden rounded-[8px] bg-[var(--form-input-bg,var(--color-gray-50))] elevation-sm",
+        "relative h-40 w-full overflow-hidden rounded-lg bg-(--form-input-bg,var(--color-gray-50)) elevation-sm",
         invalid && "form-input-error",
       )}
     >
       {!hasInk && (
-        <span
-          className="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl text-muted-foreground/45 italic select-none"
-          style={{ fontFamily: SIGNATURE_FONT }}
-        >
+        // Script font stack. No bundled font, falls back across OSes to a handwriting face,
+        // then generic cursive.
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- handwriting font stack has no theme token
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center [font-family:'Snell_Roundhand','Segoe_Script','Brush_Script_MT',cursive] text-3xl text-muted-foreground/45 italic select-none">
           Sign here
         </span>
       )}
@@ -80,14 +76,16 @@ const SignatureBox = ({
 
 const SignatureField = ({ element, form, name }: FieldRendererProps<"Signature">) => {
   const fieldName = name ?? element.name;
+
   return (
     <form.AppField name={fieldName}>
       {(f) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+
         return (
           <>
             <SignatureBox
-              value={(f.state.value as string | undefined) ?? ""}
+              value={String(f.state.value ?? "")}
               onChange={(v) => f.handleChange(v)}
               invalid={hasErrors}
               ariaLabelledBy={getAriaLabelledBy(element)}

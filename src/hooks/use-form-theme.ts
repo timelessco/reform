@@ -41,6 +41,7 @@ export const useReanchorThemeProps = (
   baseClassName?: string,
 ): { className: string | undefined; style: CSSProperties | undefined } => {
   const { themeVars, hasCustomization } = useEditorTheme();
+
   return {
     className: cn(baseClassName, hasCustomization && "bf-themed") || undefined,
     // Inside the popup, text contrasts with the popover SURFACE, not the body bg: remap

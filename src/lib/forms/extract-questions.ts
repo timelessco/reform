@@ -20,6 +20,7 @@ export const extractQuestionsForStep = (
   if (stepIndex < 0 || stepIndex >= steps.length) return [];
 
   let globalIndex = 0;
+
   for (let s = 0; s < stepIndex; s++) {
     for (const seg of steps[s]) {
       if (seg.type === "field" && seg.field.fieldType !== "Button") {
@@ -30,8 +31,10 @@ export const extractQuestionsForStep = (
 
   const stepId = `step_${stepIndex}`;
   const out: QuestionRef[] = [];
+
   for (const seg of steps[stepIndex]) {
     if (seg.type !== "field") continue;
+
     if (seg.field.fieldType === "Button") continue;
     out.push({
       questionId: seg.field.id,
@@ -42,6 +45,7 @@ export const extractQuestionsForStep = (
     });
     globalIndex++;
   }
+
   return out;
 };
 
@@ -54,6 +58,7 @@ export const extractQuestionsForStepRSC = (
   if (stepIndex < 0 || stepIndex >= steps.length) return [];
 
   let globalIndex = 0;
+
   for (let s = 0; s < stepIndex; s++) {
     for (const field of steps[s].fields) {
       if (field.fieldType !== "Button") globalIndex++;
@@ -62,6 +67,7 @@ export const extractQuestionsForStepRSC = (
 
   const stepId = `step_${stepIndex}`;
   const out: QuestionRef[] = [];
+
   for (const field of steps[stepIndex].fields) {
     if (field.fieldType === "Button") continue;
     out.push({
@@ -73,6 +79,7 @@ export const extractQuestionsForStepRSC = (
     });
     globalIndex++;
   }
+
   return out;
 };
 
@@ -86,6 +93,8 @@ export const resolveQuestionFromFocus = (
   if (!target) return null;
   const wrapper = target.closest("[data-bf-question-id]");
   const questionId = wrapper?.getAttribute("data-bf-question-id");
+
   if (!questionId) return null;
+
   return questionsById.get(questionId) ?? null;
 };

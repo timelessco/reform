@@ -23,7 +23,9 @@ export const completionRate = (completed: number, visits: number, capAt100 = tru
   if (visits <= 0) {
     return 0;
   }
+
   const rate = Math.round((completed / visits) * 100);
+
   return capAt100 ? Math.min(100, rate) : rate;
 };
 
@@ -34,12 +36,15 @@ export const dropoffRate = (
 ): number | null => {
   const useViewDenominator = mode === "multi-step" && kind === "step";
   const denominator = useViewDenominator ? row.viewCount : row.startCount;
+
   if (denominator <= 0) {
     return null;
   }
+
   const numerator = useViewDenominator
     ? row.viewCount - row.completeCount
     : row.startCount - row.completeCount;
+
   return Math.round((Math.max(0, numerator) / denominator) * 100);
 };
 
@@ -49,13 +54,17 @@ export const median = (values: number[]): number | null => {
   if (values.length === 0) {
     return null;
   }
+
   const sorted = [...values].toSorted((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
+
   if (sorted.length % 2 === 0) {
     const lo = sorted[mid - 1] ?? 0;
     const hi = sorted[mid] ?? 0;
+
     return Math.round((lo + hi) / 2);
   }
+
   return sorted[mid] ?? null;
 };
 
@@ -67,12 +76,14 @@ export const weightedMedianDuration = (
 ): number | null => {
   let weightedSum = 0;
   let samples = 0;
+
   for (const row of rows) {
     if (row.medianDurationMs !== null && row.sampleCount > 0) {
       weightedSum += cappedDurationMs(row.medianDurationMs) * row.sampleCount;
       samples += row.sampleCount;
     }
   }
+
   return samples > 0 ? Math.round(weightedSum / samples) : null;
 };
 
@@ -123,9 +134,11 @@ export const analyticsFunnelData = (
 ): AnalyticsFunnelPoint[] => {
   const sorted = [...(dropoff?.questions ?? [])].sort((a, b) => a.questionIndex - b.questionIndex);
   const first = sorted[0]?.startCount ?? 0;
+
   return sorted.map((question, index) => {
     const count = question.startCount;
     const prev = index === 0 ? null : sorted[index - 1].startCount;
+
     return {
       label: `Q${question.questionIndex + 1}`,
       title: questionDropoffLabel(question),
@@ -165,8 +178,10 @@ export const visibleAnswerQuestions = (
       question.answered > 0 &&
       question.distribution.length > 0,
   );
+
   const charts = visible.filter((question) => question.analysis === "choice");
   const lists = visible.filter((question) => question.analysis !== "choice");
+
   return [...charts, ...lists];
 };
 
@@ -176,7 +191,9 @@ export const mostSkippedQuestion = (
   if (!answers || answers.submissions === 0 || answers.questions.length === 0) {
     return null;
   }
+
   const question = [...answers.questions].sort((a, b) => a.answered - b.answered)[0];
+
   return {
     qLabel: `Q${question.questionIndex + 1}`,
     skip: Math.round((1 - question.answered / answers.submissions) * 100),

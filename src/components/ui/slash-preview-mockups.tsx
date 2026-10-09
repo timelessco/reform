@@ -18,7 +18,7 @@ export const TextPreview = () => (
 
 export const Heading1Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-lg leading-tight font-bold">Heading 1</div>
+    <div className="text-lg leading-tight font-bold">Heading 1</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[80%]" className="h-[5px]" />
   </div>
@@ -26,7 +26,7 @@ export const Heading1Preview = () => (
 
 export const Heading2Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-base leading-tight font-semibold">Heading 2</div>
+    <div className="text-base leading-tight font-semibold">Heading 2</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[85%]" className="h-[5px]" />
   </div>
@@ -34,7 +34,7 @@ export const Heading2Preview = () => (
 
 export const Heading3Preview = () => (
   <div className="flex h-[130px] flex-col justify-center gap-3 px-3">
-    <div className="font-heading text-sm leading-tight font-semibold">Heading 3</div>
+    <div className="text-sm leading-tight font-semibold">Heading 3</div>
     <SkeletonBar width="w-full" className="h-[5px]" />
     <SkeletonBar width="w-[70%]" className="h-[5px]" />
   </div>
@@ -467,10 +467,7 @@ export const FormSignaturePreview = () => (
   <div className="flex h-[130px] flex-col justify-center px-3">
     <FormFieldLabel />
     <div className="flex h-16 items-center justify-center rounded-[8px] bg-card elevation-sm">
-      <span
-        className="text-2xl text-muted-foreground/45 italic"
-        style={{ fontFamily: '"Snell Roundhand", "Segoe Script", "Brush Script MT", cursive' }}
-      >
+      <span className="[font-family:'Snell_Roundhand','Segoe_Script','Brush_Script_MT',cursive] text-2xl text-muted-foreground/45 italic">
         Sign here
       </span>
     </div>

@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { safeStorage } from "@/lib/safe-storage";
 
 const STORAGE_KEY_PREFIX = "betterforms_";
+
 const DEBOUNCE_MS = 500;
 
 export const useFormPersistence = (formId: string, enabled: boolean) => {
@@ -12,9 +13,11 @@ export const useFormPersistence = (formId: string, enabled: boolean) => {
     if (!enabled) return null;
 
     const parsed = safeStorage.getJson<unknown>(storageKey);
+
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
+
     return null;
   }, [storageKey, enabled]);
 
