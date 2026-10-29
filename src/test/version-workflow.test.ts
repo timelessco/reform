@@ -122,7 +122,7 @@ describe("version workflow", () => {
     const detail = createFormListingCollection({
       queryClient,
       queryFn: () => fetchFormListings(formId),
-      onUpdate: async () => ({ refetch: false }),
+      onUpdate: async () => {},
     });
 
     await detail.stateWhenReady();
@@ -141,7 +141,7 @@ describe("version workflow", () => {
     const detail = createFormListingCollection({
       queryClient,
       queryFn: () => fetchFormListings(formId),
-      onUpdate: async () => ({ refetch: false }),
+      onUpdate: async () => {},
     });
 
     await detail.stateWhenReady();

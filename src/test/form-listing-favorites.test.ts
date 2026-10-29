@@ -122,7 +122,7 @@ describe("form listing collection", () => {
     const collection = createFormListingCollection({
       queryClient,
       queryFn: () => fetchFormListings(memberId),
-      onUpdate: async () => ({ refetch: false }),
+      onUpdate: async () => {},
     });
 
     await collection.stateWhenReady();
@@ -180,7 +180,7 @@ describe("favorite collection", () => {
     const collection = createFavoriteCollection({
       queryClient,
       queryFn: () => fetchFavorites(memberId),
-      onInsert: async () => ({ refetch: false }),
+      onInsert: async () => {},
     });
 
     await collection.stateWhenReady();
@@ -233,8 +233,8 @@ describe("favorite collection", () => {
     const collection = createFavoriteCollection({
       queryClient,
       queryFn: () => fetchFavorites(memberId),
-      onInsert: async () => ({ refetch: false }),
-      onDelete: async () => ({ refetch: false }),
+      onInsert: async () => {},
+      onDelete: async () => {},
     });
 
     await collection.stateWhenReady();
