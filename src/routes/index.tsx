@@ -40,8 +40,10 @@ export const Route = createFileRoute("/")({
     }
 
     if (typeof window !== "undefined") {
-      const { localFormCollection } = await import("@/collections");
-      await localFormCollection.preload();
+      // IndexedDB opens asynchronously; warm it here so the gate resolves without a
+      // second round trip after the route renders.
+      const { initLocalFormCollection } = await import("@/collections");
+      await initLocalFormCollection();
     }
   },
   component: RouteComponent,

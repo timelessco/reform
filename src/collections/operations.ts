@@ -66,7 +66,11 @@ export const enrichFormDetail = async (formId: string) => {
   const detail = await serverFns.getFormDetail(formId);
 
   if (detail) {
-    formListings.utils.writeUpdate(mergeFormDetailIntoListing(detail, formListings.get(formId)));
+    // Fire-and-forget: the row lands in the synced store on the next commit; callers
+    // read it through a live query rather than waiting here.
+    void formListings.utils.writeUpdate(
+      mergeFormDetailIntoListing(detail, formListings.get(formId)),
+    );
     state.enrichedFormIds.add(formId);
   }
 
@@ -147,7 +151,7 @@ export const createFormLocal = (
     formListings.insert(formToListing(newForm, { shortId: "", submissionCount: 0 }));
   });
 
-  return { form: newForm, persisted: tx.isPersisted.promise.then(() => undefined) };
+  return { form: newForm, persisted: tx.when("settled").then(() => undefined) };
 };
 
 export const duplicateFormById = (formId: string): { form: Form; persisted: Promise<void> } => {
@@ -198,7 +202,7 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
     );
   });
 
-  return { form: newForm, persisted: tx.isPersisted.promise.then(() => undefined) };
+  return { form: newForm, persisted: tx.when("settled").then(() => undefined) };
 };
 
 export const updateFormStatus = async (id: string, status: "draft" | "published" | "archived") => {

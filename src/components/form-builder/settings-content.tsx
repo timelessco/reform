@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm, withForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { getFormListings } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/config/app-config";
 import {
@@ -111,7 +111,7 @@ const SettingsContentInner = ({ formId, isLocal }: { formId: string; isLocal?: b
     return content.some((node) => (node as { type?: string }).type === "formEmail");
   }, [formDoc]);
 
-  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
+  const collection = (isLocal ? getLocalFormCollection() : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
 

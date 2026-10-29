@@ -10,10 +10,10 @@ export type { SettingsTab, SidebarType };
 export type EmbedType = "standard" | "popup" | "fullpage";
 
 const useEditorUIState = () => {
-  const { data } = useLiveQuery(
-    (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
-    [],
-  );
+  const { data } = useLiveQuery({
+    query: (q) =>
+      q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
+  });
 
   return (
     data?.[0] ?? {

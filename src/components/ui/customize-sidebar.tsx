@@ -23,7 +23,7 @@ import { StyleNumberInput } from "@/components/ui/style-controls";
 import { ToggleSelect } from "@/components/ui/toggle-select";
 import { Textarea } from "@/components/ui/textarea";
 import { getFormListings } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import type { Form as LocalForm } from "@/collections/local/form";
 import type { FormListing } from "@/collections/query/form-listing";
 import { getHeaderMediaSetter } from "@/lib/editor/header-media-registry";
@@ -269,7 +269,8 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   const updateListing = useCallback(
     (id: string, updater: (draft: ListingDraft) => void) => {
       if (isLocal) {
-        localFormCollection.update(id, updater);
+        // Gate guarantees an open collection on every surface that renders a draft.
+        getLocalFormCollection()?.update(id, updater);
       } else {
         getFormListings().update(id, updater);
       }

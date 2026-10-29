@@ -26,24 +26,22 @@ const EMPTY_STATUS = {
 } as const;
 
 export const useFormVersions = (formId: string | undefined) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!formId || !isInitialized()) return undefined;
 
       return q.from({ v: getVersionList(formId) }).orderBy(({ v }) => v.version, "desc");
     },
-    [formId],
-  );
+  });
 
 export const useFormVersionContent = (versionId: string | undefined) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!versionId || !isInitialized()) return undefined;
 
       return q.from({ v: getVersionContent(versionId) }).where(({ v }) => eq(v.id, versionId));
     },
-    [versionId],
-  );
+  });
 
 /** Publish-CTA dirty flags. hasVersionedChanges hashes editor+customization+title/icon/cover vs
  * publishedContentHash, settings excluded (docs/plans/2026-05-04-settings-version-split.md);
@@ -171,7 +169,8 @@ export const restoreVersion = async (formId: string, versionId: string) => {
   const currentForm = detail.get(formId);
 
   if (currentForm) {
-    detail.utils.writeUpdate({
+    // Fire-and-forget: live queries pick the restored row up on the next sync commit.
+    void detail.utils.writeUpdate({
       ...currentForm,
       content: version.content,
       title: version.title,
@@ -198,7 +197,8 @@ export const discardChanges = async (formId: string) => {
   const current = detail.get(formId);
 
   if (current && result.form) {
-    detail.utils.writeUpdate({
+    // Fire-and-forget: live queries re-render from the synced store on the next commit.
+    void detail.utils.writeUpdate({
       ...current,
       ...result.form,
     } as typeof current);

@@ -1,4 +1,5 @@
 import { createRouter } from "@tanstack/react-router";
+import { DbClient } from "@tanstack/db";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
 
@@ -9,6 +10,9 @@ import Loader from "./components/ui/loader";
 
 export const getRouter = () => {
   const rqContext = TanstackQuery.getContext();
+  // One client per router: per request on the server, one per tab in the browser.
+  // DB 1.0 SSR preloads live queries against it and dehydrates the results.
+  const dbClient = new DbClient();
 
   const router = createRouter({
     routeTree,
@@ -19,6 +23,7 @@ export const getRouter = () => {
     context: {
       ...rqContext,
       session: null,
+      dbClient,
     },
     defaultPreload: "intent",
     // Let TanStack Query own caching. Without this the router keeps its own

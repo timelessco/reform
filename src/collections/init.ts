@@ -42,7 +42,7 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
   state.workspaces = createWorkspaceSummaryCollection({
     queryClient,
     queryFn: serverFns.getWorkspacesWithForms,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       const ws = transaction.mutations[0].modified;
       // Forward sortIndex so server writes row + per-user sort entry in one txn, keeping new workspace on top after refetch.
       await serverFns.createWorkspace({
@@ -51,8 +51,11 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
         name: ws.name,
         sortIndex: ws.sortIndex ?? undefined,
       });
+      // Query Collection no longer refetches on its own; without this the optimistic row keeps
+      // its placeholder server fields until the next unrelated fetch.
+      await collection.utils.refetch();
     },
-    onUpdate: async ({ transaction }) => {
+    onUpdate: async ({ transaction, collection }) => {
       const m = transaction.mutations[0];
       const { changes } = m;
       // sortIndex is per-user, routed to dedicated endpoint; other fields go to updateWorkspace
@@ -74,27 +77,30 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
       }
 
       await Promise.all(pending);
+      await collection.utils.refetch();
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
+      await collection.utils.refetch();
     },
   });
 
   state.formListings = createFormListingCollection({
     queryClient,
     queryFn: serverFns.getFormListings,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       const modified = transaction.mutations[0].modified;
       await serverFns.createForm(stripNulls(modified) as ServerFnInput<typeof createForm>);
+      await collection.utils.refetch();
     },
-    onUpdate: async ({ transaction }) => {
+    onUpdate: async ({ transaction, collection }) => {
       const m = transaction.mutations[0];
       const { changes } = m;
 
       // No-op guard: `updatedAt`-only diff means structural diff found no real change (e.g. debouncedSave rewriting same content). Skip the roundtrip.
       const realKeys = Object.keys(changes).filter((k) => k !== "updatedAt");
 
-      if (realKeys.length === 0) return { refetch: false };
+      if (realKeys.length === 0) return;
       const isContentOnly = realKeys.length === 1 && realKeys[0] === "content";
       const isCustomizationOnly = realKeys.length === 1 && realKeys[0] === "customization";
 
@@ -104,12 +110,20 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
       }) as ServerFnInput<typeof updateForm>;
 
       // Coalesce customization-only changes (pickers/scrubbers): handler Promise resolves only when the debounced call lands, so optimistic state holds (no flash-back).
-      // Skip per-handler refetch (`{ refetch: false }`) — would fire N concurrent refetches during a drag; bucket refetches once after the call lands.
+      // One refetch per burst happens in `flushCustomizationUpdate`; refetching here would fire N concurrent ones during a drag.
       if (!isCustomizationOnly) {
         await serverFns.updateForm(data);
 
-        // Keep persisted content without refreshing list recency on each body edit.
-        return isContentOnly ? { refetch: false } : undefined;
+        // Content-only edits skip the refetch to keep the list's recency order stable, so
+        // the persisted change has to be written into the synced store: DB 1.0 drops a
+        // mutation's optimistic write once its handler settles.
+        if (!isContentOnly) {
+          await collection.utils.refetch();
+        } else {
+          await collection.utils.writeUpdate({ id: m.original.id, content: changes.content });
+        }
+
+        return;
       }
 
       const formId = m.original.id;
@@ -137,25 +151,25 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
           });
         }
       });
-
-      return { refetch: false };
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.deleteForm({ id: transaction.mutations[0].original.id });
+      await collection.utils.refetch();
     },
   });
 
   state.favorites = createFavoriteCollection({
     queryClient,
     queryFn: serverFns.getFavorites,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       const modified = transaction.mutations[0].modified;
       await serverFns.addFavorite({
         formId: modified.formId,
         sortIndex: modified.sortIndex ?? undefined,
       });
+      await collection.utils.refetch();
     },
-    onUpdate: async ({ transaction }) => {
+    onUpdate: async ({ transaction, collection }) => {
       const m = transaction.mutations[0];
       const { changes } = m;
 
@@ -164,10 +178,12 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
           formId: m.original.formId,
           sortIndex: changes.sortIndex,
         });
+        await collection.utils.refetch();
       }
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });
+      await collection.utils.refetch();
     },
   });
 };

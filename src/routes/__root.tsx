@@ -5,6 +5,8 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Session } from "@/lib/auth/auth";
+import type { DbClient } from "@tanstack/db";
+import { DbProvider } from "@tanstack/react-db";
 import { seo } from "@/lib/seo";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
@@ -23,7 +25,20 @@ const LazyDevtools = lazy(() =>
 interface MyRouterContext {
   queryClient: QueryClient;
   session: Session | null;
+  /** TanStack DB client: per request on the server, one per tab in the browser. */
+  dbClient: DbClient;
 }
+
+/**
+ * Scopes live queries and hydrated rows to the router's `DbClient`. On the server this
+ * is the request client that preloaded the route's queries; in the browser it is the
+ * one that `hydrate()`d their dehydrated results.
+ */
+const DbScope = ({ children }: { children: React.ReactNode }) => {
+  const { dbClient } = Route.useRouteContext();
+
+  return <DbProvider client={dbClient}>{children}</DbProvider>;
+};
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vite-ui-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}})()`;
 
@@ -62,7 +77,7 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
         <TooltipProvider>
           <GlimmProvider palette="prism">
             <InterceptLinks />
-            {children}
+            <DbScope>{children}</DbScope>
           </GlimmProvider>
           <Suspense fallback={null}>
             <Toaster richColors />

@@ -1,7 +1,7 @@
 import { createTransaction } from "@tanstack/react-db";
 import { log } from "evlog";
 import { logger } from "@/lib/utils";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import type { Form } from "@/collections/local/form";
 import { getFormListings, getWorkspaces, createWorkspaceLocal, formToListing } from "@/collections";
 import { createForm } from "@/lib/server-fn/forms";
@@ -23,6 +23,14 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     if (!organizationId) {
       log.error("syncLocalDataToCloud", "organizationId is required");
       throw new Error("Organization ID is required for sync");
+    }
+
+    const localFormCollection = getLocalFormCollection();
+
+    if (!localFormCollection) {
+      logger("Local draft storage is not open; nothing to sync");
+
+      return null;
     }
 
     const localForms = await localFormCollection.toArrayWhenReady();
@@ -116,10 +124,8 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
     logger(`Successfully synced ${syncedForms.length} forms via createTransaction`);
 
-    // Nuke the localStorage collection entirely so sync never re-runs on reload
-    if (syncedForms.length > 0 && typeof window !== "undefined") {
-      localStorage.removeItem("draft-form");
-    }
+    // Rows are deleted from the store as they sync, so `hasLocalDataToSync()` is false on
+    // reload. The legacy localStorage payload is already drained by the IndexedDB migration.
 
     return {
       success: true,
@@ -133,6 +139,10 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
 export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
+    const localFormCollection = getLocalFormCollection();
+
+    if (!localFormCollection) return false;
+
     const forms = await localFormCollection.toArrayWhenReady();
 
     return forms.length > 0;

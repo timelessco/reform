@@ -492,7 +492,7 @@ const useAppHeaderFormActions = ({
               log.error({ tag: "app-header", msg: "preview capture failed", error }),
             );
 
-          await tx.isPersisted.promise;
+          await tx.when("settled");
           showPublishedToast();
           // Best-effort: thumbnail (card preview + OG) finishes in the background. Never faults publish.
           void previewPromise;
@@ -747,7 +747,7 @@ const SettingsHeaderActions = ({ formId }: { formId: string | undefined }) => {
 
     try {
       const tx = publishFormSettings(formId);
-      await tx.isPersisted.promise;
+      await tx.when("settled");
       toast.success("Settings saved");
     } catch (error) {
       toast.error(parseError(error).message || "Couldn't save settings");

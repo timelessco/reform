@@ -278,8 +278,12 @@ export const useFormGenStream = ({
 
       if (cloud.get(formId)) {
         cloud.update(formId, updateDraft as never);
-      } else if (localModule.localFormCollection.get(formId)) {
-        localModule.localFormCollection.update(formId, updateDraft as never);
+      } else {
+        const localFormCollection = localModule.getLocalFormCollection();
+
+        if (localFormCollection?.get(formId)) {
+          localFormCollection.update(formId, updateDraft as never);
+        }
       }
 
       // All-free-key response → free tier; prompt upgrade. Pro (light:*/dark:* tokens) skips toast.
