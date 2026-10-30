@@ -61,6 +61,10 @@ import {
 } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import { log } from "evlog";
+import type { DehydratedDbState } from "@tanstack/db";
+import { HydrationBoundary } from "@tanstack/react-db";
+import { configureFormListings } from "@/collections/query/form-listing";
+import { orgFormsLiveQueryOptions } from "@/collections/query/org-forms";
 import {
   createFormLocal,
   createWorkspaceLocal,
@@ -251,18 +255,26 @@ const AuthLayout = () => {
   initCollectionsOnClient(queryClient);
   const pathname = useLocation({ select: (s) => s.pathname });
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const { dbState } = Route.useLoaderData();
 
   // HotkeysProvider mounted here (not in __root) so @tanstack/react-hotkeys (~44.6 kB gz) only
   // lands in the authenticated chunk; public-form routes ($shortId, $slug, f/$formId) skip it.
+  const content = (
+    <SidebarProvider style={{ "--app-header-height": "44px" } as React.CSSProperties}>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
+    </SidebarProvider>
+  );
+
   return (
     <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
-      <SidebarProvider style={{ "--app-header-height": "44px" } as React.CSSProperties}>
-        <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-          <MinimalSidebarProvider>
-            <AuthLayoutContent />
-          </MinimalSidebarProvider>
-        </EditorHeaderVisibilityProvider>
-      </SidebarProvider>
+      {/* Hydrate the loader's dehydrated DB state into the scoped DbClient before any live
+          query under it renders, so the first forms render reads preloaded rows. Client-side
+          loader runs return no dbState — the collections' synced stores already hold rows. */}
+      {dbState ? <HydrationBoundary state={dbState}>{content}</HydrationBoundary> : content}
     </HotkeysProvider>
   );
 };
@@ -290,7 +302,41 @@ export const Route = createFileRoute("/_authenticated")({
       context.queryClient.ensureQueryData(context.favoritesQueryOptions),
     ]);
 
-    return { activeOrg: orgResult.activeOrg, orgsData: orgResult.orgsData };
+    /**
+     * Document requests: preload the org-forms live query against this request's `DbClient`
+     * — the same descriptor-backed config `useOrgForms` renders — and dehydrate it into
+     * loader data so `<HydrationBoundary>` can hand the rows to the browser. The collection
+     * shares the form-listings query key with the ensure above, so the sync reads the warm
+     * cache instead of refetching. Client-side loader runs skip this.
+     */
+    let dbState: DehydratedDbState | undefined;
+
+    if (typeof window === "undefined" && context.dbClient) {
+      try {
+        configureFormListings(context.dbClient, {
+          queryClient: context.queryClient,
+          queryFn: getFormListingsServer,
+        });
+        await context.dbClient.preloadLiveQuery(orgFormsLiveQueryOptions());
+        dbState = context.dbClient.dehydrate();
+      } catch (error) {
+        // Preload failure must not fail the route: the browser falls back to its own initial sync.
+        log.error({
+          tag: "_authenticated",
+          msg: "DB preload failed; browser will fetch on mount",
+          error,
+        });
+      }
+    }
+
+    const data = {
+      activeOrg: orgResult.activeOrg,
+      orgsData: orgResult.orgsData,
+    };
+
+    if (dbState) data.dbState = dbState;
+
+    return data;
   },
   staleTime: 500000, // 500 seconds
   component: AuthLayout,

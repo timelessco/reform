@@ -17,6 +17,7 @@ import {
   getFormbyIdQueryOption,
 } from "@/lib/server-fn/forms-queries";
 import type { FormByIdResult } from "@/lib/server-fn/forms-queries";
+import { orgFormsLiveQueryOptions } from "@/collections/query/org-forms";
 
 export const useOrgWorkspaces = (organizationId?: string) =>
   useLiveQuery({
@@ -58,30 +59,13 @@ export const useWorkspace = (workspaceId?: string) => {
   return { ...result, data: result.data?.[0] };
 };
 
-/** formListings collection already filters by org membership server-side. */
-export const useOrgForms = (_organizationId?: string) =>
-  useLiveQuery({
-    query: (q) => {
-      if (!isInitialized()) return undefined;
-
-      return q
-        .from({ form: getFormListings() })
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          createdAt: form.createdAt,
-          icon: form.icon,
-          cover: form.cover,
-          previewImageUrl: form.previewImageUrl,
-          customization: form.customization,
-          sortIndex: form.sortIndex,
-        }))
-        .orderBy(({ form }) => form.updatedAt, "desc");
-    },
-  });
+/**
+ * Descriptor-backed query config shared with the `_authenticated` loader, which preloads
+ * exactly this live query and dehydrates it; hydration then serves the first render, so
+ * this hook needs no `isInitialized()` gate — the provider's `DbClient` materializes the
+ * collections the descriptor names.
+ */
+export const useOrgForms = (_organizationId?: string) => useLiveQuery(orgFormsLiveQueryOptions());
 
 export const useFormMeta = (formId?: string) =>
   useLiveQuery({
