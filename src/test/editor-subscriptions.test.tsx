@@ -116,7 +116,7 @@ describe("editor save subscriptions", () => {
         draft.content = editedContent;
       });
 
-      await tx.isPersisted.promise;
+      await tx.when("settled");
     });
 
     expect(updateForm).toHaveBeenCalledWith({ id: formId, content: editedContent });
@@ -146,7 +146,7 @@ describe("editor save subscriptions", () => {
       draft.content = editedContent;
     });
 
-    await expect(tx.isPersisted.promise).rejects.toThrow("Save failed");
+    await expect(tx.when("settled")).rejects.toThrow("Save failed");
     expect(collection.get(formId)?.content).toEqual(originalContent);
   });
 
@@ -171,7 +171,7 @@ describe("editor save subscriptions", () => {
         draft.title = "Renamed";
       });
 
-      await tx.isPersisted.promise;
+      await tx.when("settled");
     });
 
     expect(getFormListings.mock.calls.length).toBeGreaterThan(requests);

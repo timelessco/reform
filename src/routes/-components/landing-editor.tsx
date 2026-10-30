@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/right-sidebar-resize-handle";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { localFormCollection } from "@/collections/local/form";
+import { LocalFormsGate, useLocalForms } from "@/collections/local/local-forms-gate";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
@@ -74,7 +74,11 @@ const LandingEditor = () => (
       </div>
     }
   >
-    {() => <LandingLayout />}
+    {() => (
+      <LocalFormsGate>
+        <LandingLayout />
+      </LocalFormsGate>
+    )}
   </ClientOnly>
 );
 
@@ -201,6 +205,7 @@ const LandingSidebar = () => {
 
 const LocalEditorApp = () => {
   const localFormId = getLocalFormId();
+  const localFormCollection = useLocalForms();
   const { data: savedDocs } = useLocalForm(localFormId);
 
   // Seed the localStorage record (editor saves + sidebar updates read it). Once on mount; skips insert if present.

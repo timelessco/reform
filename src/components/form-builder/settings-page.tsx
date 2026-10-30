@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { revalidateLogic, useAppForm, withForm } from "@/components/ui/tanstack-form";
 import { getFormListings } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { defaultFormSettings } from "@/types/form-settings";
 import {
@@ -777,7 +777,7 @@ const SettingsPageInner = ({ formId, isLocal }: { formId: string; isLocal?: bool
   const formDoc = formResult.data?.[0] ?? null;
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
-  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
+  const collection = (isLocal ? getLocalFormCollection() : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
 

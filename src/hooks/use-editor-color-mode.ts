@@ -8,10 +8,10 @@ import { editorUICollection } from "@/collections/local/editor-ui";
  * theme (useTheme/setTheme) it never toggles the `.dark` class on <html>, so the app chrome stays put.
  */
 export const useEditorColorMode = () => {
-  const { data } = useLiveQuery(
-    (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
-    [],
-  );
+  const { data } = useLiveQuery({
+    query: (q) =>
+      q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
+  });
 
   const editorColorMode = data?.[0]?.editorColorMode ?? null;
 

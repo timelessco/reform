@@ -260,7 +260,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     async ({ stripProStyles }: PublishOptions) => {
       try {
         const tx = publishForm(formId, { stripProStyles });
-        await tx.isPersisted.promise;
+        await tx.when("settled");
         toast.success(
           stripProStyles ? "Form published without Pro styles" : "Form published successfully!",
         );

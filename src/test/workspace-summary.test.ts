@@ -151,7 +151,7 @@ describe("workspace summary collection", () => {
         serverCalled = true;
 
         // Simulate server write — in real app this calls createWorkspace
-        return { refetch: false }; // skip refetch to isolate optimistic behavior
+        return; // no refetch: isolate optimistic behavior
       },
     });
 
@@ -186,7 +186,7 @@ describe("workspace summary collection", () => {
     const collection = createWorkspaceSummaryCollection({
       queryClient,
       queryFn: () => fetchWorkspacesWithForms(memberId),
-      onDelete: async () => ({ refetch: false }),
+      onDelete: async () => {},
     });
 
     await collection.stateWhenReady();
@@ -204,7 +204,7 @@ describe("workspace summary collection", () => {
     const collection = createWorkspaceSummaryCollection({
       queryClient,
       queryFn: () => fetchWorkspacesWithForms(memberId),
-      onUpdate: async () => ({ refetch: false }),
+      onUpdate: async () => {},
     });
 
     await collection.stateWhenReady();

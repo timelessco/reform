@@ -91,7 +91,7 @@ describe("form data in unified collection", () => {
     const collection = createFormListingCollection({
       queryClient,
       queryFn: () => fetchFormListings(formId),
-      onUpdate: async () => ({ refetch: false }),
+      onUpdate: async () => {},
     });
 
     await collection.stateWhenReady();

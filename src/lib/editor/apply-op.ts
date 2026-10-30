@@ -200,8 +200,10 @@ const applySetTheme = (op: SetThemeOp, ctx: ApplyContext): AppliedOp | null => {
       return;
     }
 
-    if (localModule.localFormCollection.get(ctx.formId)) {
-      localModule.localFormCollection.update(ctx.formId, (draft) => updateDraft(draft));
+    const localFormCollection = localModule.getLocalFormCollection();
+
+    if (localFormCollection?.get(ctx.formId)) {
+      localFormCollection.update(ctx.formId, (draft) => updateDraft(draft));
     }
   })();
 

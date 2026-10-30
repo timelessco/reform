@@ -11,16 +11,17 @@ import {
   mergeFormDetailIntoListing,
 } from "@/collections";
 import type { Form } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import {
   archivedFormListingsQueryOptions,
   getFormbyIdQueryOption,
 } from "@/lib/server-fn/forms-queries";
 import type { FormByIdResult } from "@/lib/server-fn/forms-queries";
+import { orgFormsLiveQueryOptions } from "@/collections/query/org-forms";
 
 export const useOrgWorkspaces = (organizationId?: string) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!organizationId || !isInitialized()) return undefined;
 
       return q
@@ -36,12 +37,11 @@ export const useOrgWorkspaces = (organizationId?: string) =>
           sortIndex: ws.sortIndex,
         }));
     },
-    [organizationId],
-  );
+  });
 
 export const useWorkspace = (workspaceId?: string) => {
-  const result = useLiveQuery(
-    (q) => {
+  const result = useLiveQuery({
+    query: (q) => {
       if (!workspaceId || !isInitialized()) return undefined;
       const query = q.from({ ws: getWorkspaces() }).where(({ ws }) => eq(ws.id, workspaceId));
 
@@ -54,38 +54,20 @@ export const useWorkspace = (workspaceId?: string) => {
         updatedAt: ws.updatedAt,
       }));
     },
-    [workspaceId],
-  );
+  });
 
   return { ...result, data: result.data?.[0] };
 };
 
-/** formListings collection already filters by org membership server-side. */
-export const useOrgForms = (_organizationId?: string) =>
-  useLiveQuery((q) => {
-    if (!isInitialized()) return undefined;
-
-    return q
-      .from({ form: getFormListings() })
-      .select(({ form }) => ({
-        id: form.id,
-        title: form.title,
-        workspaceId: form.workspaceId,
-        status: form.status,
-        updatedAt: form.updatedAt,
-        createdAt: form.createdAt,
-        icon: form.icon,
-        cover: form.cover,
-        previewImageUrl: form.previewImageUrl,
-        customization: form.customization,
-        sortIndex: form.sortIndex,
-      }))
-      .orderBy(({ form }) => form.updatedAt, "desc");
-  }, []);
+/**
+ * Descriptor-backed query config, so this hook needs no `isInitialized()` gate: the
+ * provider's `DbClient` materializes the collections the descriptor names.
+ */
+export const useOrgForms = (_organizationId?: string) => useLiveQuery(orgFormsLiveQueryOptions());
 
 export const useFormMeta = (formId?: string) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!formId || !isInitialized()) return undefined;
 
       return q
@@ -99,12 +81,11 @@ export const useFormMeta = (formId?: string) =>
           lastPublishedVersionId: form.lastPublishedVersionId,
         }));
     },
-    [formId],
-  );
+  });
 
 export const useFormShareMeta = (formId?: string) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!formId || !isInitialized()) return undefined;
 
       return q
@@ -123,19 +104,17 @@ export const useFormShareMeta = (formId?: string) =>
           liveSettings: form.liveSettings,
         }));
     },
-    [formId],
-  );
+  });
 
 /** formListings query, enriched with full detail (content, settings) on demand via TanStack Query. */
 export const useForm = (formId?: string) => {
-  const result = useLiveQuery(
-    (q) => {
+  const result = useLiveQuery({
+    query: (q) => {
       if (!formId || !isInitialized()) return undefined;
 
       return q.from({ form: getFormListings() }).where(({ form }) => eq(form.id, formId));
     },
-    [formId],
-  );
+  });
 
   const needsEnrichment = !!formId && isInitialized() && result.data?.[0]?.content === undefined;
   useQuery({
@@ -168,18 +147,19 @@ export const useForm = (formId?: string) => {
 };
 
 export const useLocalForm = (formId?: string) =>
-  useLiveQuery(
-    (q) => {
-      if (!formId) return undefined;
+  useLiveQuery({
+    query: (q) => {
+      const localForms = getLocalFormCollection();
 
-      return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
+      if (!formId || !localForms) return undefined;
+
+      return q.from({ doc: localForms }).where(({ doc }) => eq(doc.id, formId));
     },
-    [formId],
-  );
+  });
 
 export const useFavorites = (userId?: string) =>
-  useLiveQuery(
-    (q) => {
+  useLiveQuery({
+    query: (q) => {
       if (!userId || !isInitialized()) return undefined;
 
       return q
@@ -193,25 +173,26 @@ export const useFavorites = (userId?: string) =>
           createdAt: fav.createdAt,
         }));
     },
-    [userId],
-  );
+  });
 
 /** Fetches favorites + listings separately, combines them. */
 export const useFavoriteForms = (userId?: string) => {
   const { data: favs } = useFavorites(userId);
 
-  const { data: allForms } = useLiveQuery((q) => {
-    if (!isInitialized()) return undefined;
+  const { data: allForms } = useLiveQuery({
+    query: (q) => {
+      if (!isInitialized()) return undefined;
 
-    return q.from({ form: getFormListings() }).select(({ form }) => ({
-      id: form.id,
-      title: form.title,
-      workspaceId: form.workspaceId,
-      status: form.status,
-      icon: form.icon,
-      customization: form.customization,
-    }));
-  }, []);
+      return q.from({ form: getFormListings() }).select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        icon: form.icon,
+        customization: form.customization,
+      }));
+    },
+  });
 
   return useMemo(() => {
     if (!favs || !allForms) return [];
@@ -239,14 +220,16 @@ export const useArchivedForms = (enabled = true) =>
   useQuery({ ...archivedFormListingsQueryOptions(), enabled });
 
 export const useSubmissionCounts = () => {
-  const { data: allForms } = useLiveQuery((q) => {
-    if (!isInitialized()) return undefined;
+  const { data: allForms } = useLiveQuery({
+    query: (q) => {
+      if (!isInitialized()) return undefined;
 
-    return q.from({ form: getFormListings() }).select(({ form }) => ({
-      id: form.id,
-      submissionCount: form.submissionCount,
-    }));
-  }, []);
+      return q.from({ form: getFormListings() }).select(({ form }) => ({
+        id: form.id,
+        submissionCount: form.submissionCount,
+      }));
+    },
+  });
 
   // Live queries return fresh array refs every notification → new Map identity even when unchanged. Return prev Map ref when contents identical so memoised consumers skip re-render.
   const previousMapRef = useRef<Map<string, number>>(new Map());
