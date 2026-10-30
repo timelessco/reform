@@ -60,10 +60,8 @@ export const useWorkspace = (workspaceId?: string) => {
 };
 
 /**
- * Descriptor-backed query config shared with the `_authenticated` loader, which preloads
- * exactly this live query and dehydrates it; hydration then serves the first render, so
- * this hook needs no `isInitialized()` gate — the provider's `DbClient` materializes the
- * collections the descriptor names.
+ * Descriptor-backed query config, so this hook needs no `isInitialized()` gate: the
+ * provider's `DbClient` materializes the collections the descriptor names.
  */
 export const useOrgForms = (_organizationId?: string) => useLiveQuery(orgFormsLiveQueryOptions());
 

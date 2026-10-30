@@ -225,3 +225,42 @@ describe("FormSchema", () => {
     expect(parsed.content).toEqual([]);
   });
 });
+
+describe("local draft collection open failures", () => {
+  it("rejects a hung open after the timeout so the gate can retry", async () => {
+    vi.useFakeTimers();
+
+    // An open request that never fires success, error or blocked.
+    const hung = { open: () => ({ addEventListener: () => undefined }) };
+    vi.stubGlobal("window", { indexedDB: hung, localStorage: storage });
+    vi.stubGlobal("indexedDB", hung);
+
+    const pending = initLocalFormCollection();
+    const settled = expect(pending).rejects.toThrow(/timed out/);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await settled;
+
+    vi.useRealTimers();
+
+    // The cached promise was cleared: a later open with working storage succeeds.
+    vi.stubGlobal("window", { indexedDB: idbFactory, localStorage: storage });
+    vi.stubGlobal("indexedDB", idbFactory);
+    const collection = await initLocalFormCollection();
+
+    expect(getLocalFormCollection()).toBe(collection);
+  });
+});
+
+describe("hasLocalDataToSync", () => {
+  it("opens the store itself when no route has opened it yet", async () => {
+    // Seed a draft, then drop the singleton as a full page load into /dashboard would.
+    const seeded = await initLocalFormCollection();
+    await seeded.insert(draft()).when("settled");
+    resetLocalFormCollection();
+    expect(getLocalFormCollection()).toBeNull();
+
+    const { hasLocalDataToSync } = await import("@/db/sync");
+
+    expect(await hasLocalDataToSync()).toBe(true);
+  });
+});

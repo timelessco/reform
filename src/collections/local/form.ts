@@ -12,6 +12,7 @@
  */
 import { createCollection, createIndexedDB, indexedDBCollectionOptions } from "@tanstack/db";
 import type { Collection, IndexedDBCollectionUtils, IndexedDBInstance } from "@tanstack/db";
+import { log } from "evlog";
 import * as v from "valibot";
 import { createFormHeaderNode } from "@/lib/form-schema/form-header-factory";
 import { defaultFormSettings } from "@/types/form-settings";
@@ -69,6 +70,12 @@ const DB_VERSION = 1;
 const STORE_NAME = "draft-forms";
 
 const COLLECTION_ID = "draft-forms";
+
+/** An open that neither resolves nor rejects must still reach the gate's retry state. */
+const OPEN_TIMEOUT_MS = 10_000;
+
+const BLOCKED_MESSAGE =
+  "Offline draft storage is held by another tab of this app. Close it and try again.";
 
 /** Pre-1.0 storage key holding drafts as `{ [key]: { versionKey, data } }`. */
 export const LEGACY_STORAGE_KEY = "draft-form";
@@ -157,6 +164,47 @@ const migrateLegacyDrafts = async (target: LocalFormCollection) => {
 };
 
 /**
+ * Open the database, rejecting when another tab blocks the open or it never settles.
+ * A connection that opens after the deadline is closed rather than leaked.
+ */
+const openDatabase = () =>
+  new Promise<IndexedDBInstance>((resolve, reject) => {
+    let settled = false;
+
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    };
+
+    const timer = setTimeout(
+      () => fail(new Error("Opening offline draft storage timed out. Try again.")),
+      OPEN_TIMEOUT_MS,
+    );
+
+    createIndexedDB({
+      name: DB_NAME,
+      version: DB_VERSION,
+      stores: [STORE_NAME],
+      onBlocked: () => fail(new Error(BLOCKED_MESSAGE)),
+    }).then(
+      (db) => {
+        if (settled) {
+          db.close();
+
+          return;
+        }
+
+        settled = true;
+        clearTimeout(timer);
+        resolve(db);
+      },
+      (error: unknown) => fail(error instanceof Error ? error : new Error(String(error))),
+    );
+  });
+
+/**
  * Open the database and create the collection. Idempotent: concurrent callers
  * share one promise, and a rejection clears it so a later call can retry
  * (e.g. after the user grants storage permission).
@@ -171,11 +219,7 @@ export const initLocalFormCollection = (): Promise<LocalFormCollection> => {
       throw new Error("IndexedDB is not available in this environment");
     }
 
-    instance = await createIndexedDB({
-      name: DB_NAME,
-      version: DB_VERSION,
-      stores: [STORE_NAME],
-    });
+    instance = await openDatabase();
 
     const created = createCollection(
       indexedDBCollectionOptions({
@@ -188,12 +232,22 @@ export const initLocalFormCollection = (): Promise<LocalFormCollection> => {
     ) as LocalFormCollection;
 
     await created.preload();
-    await migrateLegacyDrafts(created);
+
+    try {
+      await migrateLegacyDrafts(created);
+    } catch (error) {
+      // The legacy payload stays in localStorage for the next open to retry; existing
+      // IndexedDB rows are untouched because `importData` is atomic.
+      log.error({ tag: "local-forms", msg: "Legacy draft migration failed", error });
+    }
 
     collection = created;
 
     return created;
   })().catch((error: unknown) => {
+    // Closing marks the half-built collection as errored, so a retry starts clean.
+    instance?.close();
+    instance = null;
     initPromise = null;
     throw error;
   });

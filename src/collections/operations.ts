@@ -66,9 +66,8 @@ export const enrichFormDetail = async (formId: string) => {
   const detail = await serverFns.getFormDetail(formId);
 
   if (detail) {
-    // Fire-and-forget: the row lands in the synced store on the next commit; callers
-    // read it through a live query rather than waiting here.
-    void formListings.utils.writeUpdate(
+    // Mark enriched only once the row is in the store, so a failed write retries.
+    await formListings.utils.writeUpdate(
       mergeFormDetailIntoListing(detail, formListings.get(formId)),
     );
     state.enrichedFormIds.add(formId);

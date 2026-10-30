@@ -1,7 +1,7 @@
 import { createTransaction } from "@tanstack/react-db";
 import { log } from "evlog";
 import { logger } from "@/lib/utils";
-import { getLocalFormCollection } from "@/collections/local/form";
+import { initLocalFormCollection, isLocalFormStorageAvailable } from "@/collections/local/form";
 import type { Form } from "@/collections/local/form";
 import { getFormListings, getWorkspaces, createWorkspaceLocal, formToListing } from "@/collections";
 import { createForm } from "@/lib/server-fn/forms";
@@ -25,14 +25,14 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
       throw new Error("Organization ID is required for sync");
     }
 
-    const localFormCollection = getLocalFormCollection();
-
-    if (!localFormCollection) {
-      logger("Local draft storage is not open; nothing to sync");
+    if (!isLocalFormStorageAvailable()) {
+      logger("Local draft storage is unavailable; nothing to sync");
 
       return null;
     }
 
+    // A login redirect is a full page load, so only `/` may have opened the store so far.
+    const localFormCollection = await initLocalFormCollection();
     const localForms = await localFormCollection.toArrayWhenReady();
     logger(`Found ${localForms.length} local forms to sync`);
 
@@ -139,10 +139,9 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
 export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
-    const localFormCollection = getLocalFormCollection();
+    if (!isLocalFormStorageAvailable()) return false;
 
-    if (!localFormCollection) return false;
-
+    const localFormCollection = await initLocalFormCollection();
     const forms = await localFormCollection.toArrayWhenReady();
 
     return forms.length > 0;

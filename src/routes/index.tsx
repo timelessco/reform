@@ -41,9 +41,10 @@ export const Route = createFileRoute("/")({
 
     if (typeof window !== "undefined") {
       // IndexedDB opens asynchronously; warm it here so the gate resolves without a
-      // second round trip after the route renders.
+      // second round trip after the route renders. Best effort: a failed open must reach
+      // LocalFormsGate's retryable state, not the route error boundary.
       const { initLocalFormCollection } = await import("@/collections");
-      await initLocalFormCollection();
+      await initLocalFormCollection().catch(() => undefined);
     }
   },
   component: RouteComponent,

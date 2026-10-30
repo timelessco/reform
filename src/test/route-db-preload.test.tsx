@@ -11,11 +11,10 @@ import { getBrowserDbClient, bindBrowserDbClient } from "@/db/db-client";
 import { queryKeys } from "@/lib/query-keys";
 
 /**
- * Route-level DB 1.0 SSR integration: the `_authenticated` loader preloads the shared
- * org-forms live query (`orgFormsLiveQueryOptions`) against a request-scoped `DbClient`
- * and dehydrates it into loader data; the browser hydrates that state and the REAL
- * `useOrgForms` hook — the same config the loader preloaded — renders rows on its first
- * pass with no extra fetch.
+ * DB 1.0 SSR contract for the org-forms live query: a preload of
+ * `orgFormsLiveQueryOptions` against a request-scoped `DbClient` dehydrates, and the
+ * REAL `useOrgForms` hook renders those rows on its first browser pass with no extra
+ * fetch. No route preloads it today; this pins the hash match for when one does.
  */
 
 const listing = (id: string, title: string) => ({
@@ -47,12 +46,12 @@ const OrgFormsCount = () => {
   );
 };
 
-describe("authenticated route DB preload → browser render", () => {
+describe("org-forms live query preload → browser render", () => {
   it("ships the preloaded org-forms snapshot through the real hook with no browser fetch", async () => {
     const serverFetch = vi.fn(async () => rows());
     const browserFetch = vi.fn(async () => rows());
 
-    // --- loader (server): configure the request's client, preload, dehydrate ---
+    // --- server: configure the request's client, preload, dehydrate ---
     const serverClient = new DbClient();
     configureFormListings(serverClient, {
       queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),

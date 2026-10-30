@@ -4,11 +4,10 @@ import { formListingsDescriptor } from "./form-listing";
 /**
  * The org's form list as the sidebar and dashboard render it.
  *
- * This config object is consumed twice by design: the `_authenticated` loader preloads it
- * against the request's `DbClient` and dehydrates the ordered result, and `useOrgForms`
- * hands the same config to `useLiveQuery`. Both sides build the identical query IR over
- * the same descriptor, so their hashes match and the browser's first render reads the
- * hydrated snapshot instead of refetching.
+ * Descriptor-backed, so any `DbClient` can materialize it: `useOrgForms` renders it, and
+ * a server preload of the same config hashes identically, so a dehydrated snapshot would
+ * serve the browser's first render. `_authenticated` does not preload it: that route is
+ * `ssr: "data-only"`, and its `form-listings` ensure already warms the browser cache.
  */
 export const orgFormsLiveQueryOptions = () => ({
   query: (q: InitialQueryBuilder) =>
