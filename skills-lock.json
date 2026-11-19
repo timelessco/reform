@@ -37,6 +37,12 @@
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
       "computedHash": "ef32aea0a8fab9b365ff9e08a95f8d353e20ca21ea46ec2e73587c86dd341351"
     },
+    "no-use-effect": {
+      "source": "Vijayabaskar56/skills",
+      "sourceType": "github",
+      "skillPath": "skills/no-use-effect/SKILL.md",
+      "computedHash": "562626ce4609e81006f78ce5666474ba2521c9ca3ca16f3efa5973c5362dae1f"
+    },
     "review-logging-patterns": {
       "source": "hugorcd/evlog",
       "sourceType": "github",
